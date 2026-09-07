@@ -149,6 +149,7 @@
     <span class="brand">Lớp học online</span>
     <span class="who" id="whoAmI"></span>
     <a class="btn" id="teachLink" href="quan-tri.html" hidden title="Chỉ giáo viên thấy nút này">▦ Quản trị</a>
+    <a class="btn" id="soanLink" href="so-bai-tap.html" hidden title="Chỉ giáo viên thấy nút này">📓 Soạn bài</a>
     <button class="btn" id="pwBtn" title="Đổi mật khẩu">Mật khẩu</button>
     <button class="btn" id="outBtn">Thoát</button>
   </div>
@@ -272,7 +273,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       return;
     }
     $('whoAmI').textContent = profile.full_name || user.email;
-    if (profile.role === 'admin' || profile.role === 'teacher') $('teachLink').hidden = false;
+    if (profile.role === 'admin' || profile.role === 'teacher') { $('teachLink').hidden = false; $('soanLink').hidden = false; }
     show($('loginScreen'), false);
     $('loginScreen').style.display = 'none';
     show($('appScreen'), true);
