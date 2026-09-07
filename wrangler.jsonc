@@ -1,0 +1,10 @@
+{
+  // Cấu hình cho Cloudflare Workers: chỉ phục vụ file tĩnh, không có mã chạy trên máy chủ.
+  // "directory": "./web"  →  CHỈ ba trang trong thư mục web được đưa lên mạng.
+  // Mấy file .sql và hướng dẫn nằm ngoài web nên không bao giờ lộ ra ngoài.
+  "name": "lop-hoc-online",
+  "compatibility_date": "2025-06-01",
+  "assets": {
+    "directory": "./web"
+  }
+}
