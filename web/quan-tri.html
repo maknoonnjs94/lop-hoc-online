@@ -823,12 +823,21 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('addStuBtn').addEventListener('click', function () {
     dialog('Thêm sinh viên vào lớp',
       '<label class="f">Email sinh viên<input id="fEmail" type="email" placeholder="sinhvien@example.com">'
-      + '<small>Sinh viên phải có tài khoản trước. Tạo ở Supabase → Authentication → Users → Add user, nhớ bật Auto Confirm User.</small></label>',
+      + '<small>Sinh viên phải có tài khoản trước. Tạo ở Supabase → Authentication → Users → Add user, nhớ bật Auto Confirm User.<br>'
+      + 'Mỗi tài khoản chỉ thuộc một khóa. Ai học hai khóa thì cần hai tài khoản.</small></label>',
       async function () {
         var mail = val('fEmail');
         if (!mail) { msg($('dlgMsg'), 'Chưa nhập email.'); return false; }
         var r = await sb.rpc('enroll_by_email', { p_class: curClass, p_email: mail });
-        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        if (r.error) {
+          var m2 = r.error.message || '';
+          if (/chỉ thuộc một khóa/i.test(m2)) {
+            msg($('dlgMsg'), m2 + ' (Muốn cho học cả hai khóa thì tạo cho họ một tài khoản email khác.)');
+          } else if (/Chưa có tài khoản/i.test(m2)) {
+            msg($('dlgMsg'), m2 + ' Tạo ở Supabase → Authentication → Users → Add user, nhớ bật Auto Confirm User.');
+          } else msg($('dlgMsg'), m2);
+          return false;
+        }
         toast('Đã thêm vào lớp.');
         await loadRoster();
       }, 'Thêm');
