@@ -2398,7 +2398,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-08 · đợt 61 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-08 · đợt 62 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2556,6 +2556,7 @@
             <span id="bankScopeLabel">Tất cả câu hỏi</span>
             <span style="display:flex;gap:6px">
               <button type="button" class="mini-btn" id="theoryToggleBtn">Lý thuyết</button>
+              <button type="button" class="mini-btn" id="bankLockBtn" title="Đặt hoặc đổi mã bảo vệ kho — cần mã này mới xoá được câu khỏi kho">🔒 Mã bảo vệ</button>
               <button type="button" class="mini-btn" id="trashBtn" title="Câu đã xoá nằm ở đây — khôi phục lại được bất cứ lúc nào">🗑 Thùng rác</button>
               <button type="button" class="mini-btn" id="bulkBtn">＋ Nhập hàng loạt</button>
             </span>
@@ -3044,6 +3045,7 @@
               <li><span class="k">⬡</span><span><b>Vẽ cấu tạo / sơ đồ phản ứng</b>: menu ⋯ của câu → thẻ Cấu tạo nhanh (mẫu, SMILES, xem trước) hoặc thẻ Sơ đồ nhanh (chất → tác nhân → ? …, tự xuống dòng, sửa lại được bằng ✎ Sơ đồ); bảng ký hiệu Ω → ⬡ chèn ảnh nhỏ ngay chỗ con trỏ. Thẻ <b>Bảng vẽ đầy đủ</b> (Kekule.js): bảng vẽ hoá học đầy đủ — nhiều chất trên một bảng, nhóm viết tắt Ph/Et/Boc, vòng và ghế xiclohexan, mũi tên phản ứng/cân bằng/tổng hợp ngược, mũi tên cong cơ chế, chữ; vẽ tay xong bấm <b>Cân đối sơ đồ</b> để liên kết cùng dài, chất và mũi tên thẳng hàng cách đều; chèn với cỡ liên kết 7 mm để mọi hình in cùng cỡ (cấu tạo nhanh cũng vậy); chữ trên bảng như H2SO4, 10^-3 tự thành H₂SO₄, 10⁻³ khi Cân đối/Chèn; sửa lại bằng ✎ Kekule; ảnh cũ tự dọn khi thay/xoá hình.</span></li>
               <li><span class="k">✍</span><span><b>Bảng giảng</b> (nút trên thanh đầu): trang thành bảng viết tay — bút S Pen / bút cảm ứng / chuột viết, ngón tay cuộn trang, nút bên hông bút = tẩy, ＋ chỗ thêm khoảng trống dưới câu, bảng trắng cuối bài; nét tự lưu vào kho theo từng tài liệu, In / PDF lấy cả nét; Ctrl+Z hoàn tác nét, Esc thoát. Một ngón cuộn trang, <b>hai ngón chụm để phóng to</b>; <b>⁄ Thẳng</b> (phím T) nắn nét thành đoạn thẳng; ô màu bên cạnh bút để chọn màu bất kỳ.</span></li>
               <li><span class="k">🔴</span><span><b>Dạy online trên Bảng giảng</b>: 🔴 Laser / 🔦 Vòng sáng để chỉ khi chia sẻ màn hình (phím L, không lưu); ô "Trang / câu…" hoặc phím ← → / PgUp PgDn để nhảy trang; ▲ ẩn thanh công cụ (phím H, ✍ góc phải để hiện); ⋯ mở hàng phụ (đổi tài liệu, ngón tay, đáp án, in, toàn màn hình); thanh tự mờ khi đang viết; P bút, E tẩy. Tài liệu vào thùng rác vẫn giữ nét và tệp, xoá hẳn mới dọn; "Dọn ảnh rác" dọn luôn nét / tệp mồ côi. Chấm tròn trên thanh giảng báo trạng thái lưu nét (vàng đang lưu, xanh đã lưu, đỏ hỏng).</span></li>
+              <li><span class="k">🔒</span><span><b>Khoá kho</b>: xoá câu khỏi kho, xoá hẳn trong thùng rác hay dọn sạch thùng rác đều phải nhập mã bảo vệ. Đặt hoặc đổi mã bằng nút 🔒 Mã bảo vệ trong Kho bài tập. Xoá câu trên trang soạn và xoá cả tài liệu tuần thì không hỏi mã, vì hai việc đó không đụng tới kho.</span></li>
               <li><span class="k">🔍</span><span><b>Tìm bài trong kho</b>: gõ không dấu vẫn ra, nhiều từ khoá tìm câu có đủ cả, “cụm trong ngoặc kép” tìm đúng cụm, <b>-từ</b> để loại trừ; H2SO4 khớp cả H₂SO₄; tìm cả trong ý nhỏ, phương án, đáp án, nhãn và tên dạng bài. Chip lọc nhanh: Cả kho, Tự luận / Trắc nghiệm / Đúng-Sai, Có đáp án, Có hình. Chỗ khớp được tô vàng.</span></li>
               <li><span class="k">☰</span><span><b>Cột điều hướng bên trái</b> gom mọi nút theo nhóm Soạn · Bài giảng · Kho · Xuất · Cài đặt (« để thu gọn; máy bảng bấm ☰). Thẻ tài liệu vẫn nằm hàng trên trang, mỗi thẻ mang tên thật của tài liệu; bấm ✎ trên thẻ đang mở để đổi tên. Ngay dưới ô tìm nhanh là <b>Đang xem: Bản HS / Bản GV</b> — bấm Bản GV để hiện đáp án và lời giải (Ctrl+K cũng đổi được).</span></li>
               <li><span class="k">＋</span><span><b>Bài giảng viết tay</b>: tài liệu chỉ gồm trang trắng / kẻ ô / kẻ dòng / ảnh slide (mỗi trang PDF hay ảnh thành một trang; pptx lưu thành PDF trước). Viết bằng ✍ Bảng giảng, hết chỗ bấm ＋ trang; In / PDF ra mỗi trang một tờ kèm nét.</span></li>
@@ -6974,6 +6976,72 @@
 
   /* ============ 4.3 kho câu hỏi ============ */
 
+  /* ================= đợt 62: khoá kho =================
+     Kho câu hỏi là tài sản lâu năm, mất là mất thật. Từ đợt này, ba việc sau phải nhập mã bảo vệ:
+       - xoá một câu khỏi kho
+       - xoá nhiều câu đã chọn khỏi kho
+       - xoá hẳn trong thùng rác (kể cả dọn sạch)
+     Xoá câu trên trang soạn và xoá cả tài liệu tuần thì KHÔNG hỏi mã, vì hai việc đó chỉ bỏ khỏi
+     tài liệu, câu trong kho vẫn nguyên.
+     Mã được băm (SHA-256) rồi mới cất, không lưu mã thật. Đây là khoá chống lỡ tay, không phải
+     khoá chống người khác đọc dữ liệu. */
+  async function bankHash(text) {
+    var s = 'sbt-kho-v1:' + String(text);
+    try {
+      var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    } catch (e) {
+      var h = 5381;                       /* nơi không dùng được SHA thì băm đơn giản, vẫn không lưu mã thật */
+      for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+      return 'x' + h.toString(16);
+    }
+  }
+  function askSecret(title, hint) {
+    var inp = document.getElementById('askInput');
+    inp.type = 'password';
+    return askText(title, '', hint).then(function (v) { inp.type = 'text'; return v; });
+  }
+  /* Trả về true khi được phép xoá. Chưa có mã thì mời đặt ngay lần đầu. */
+  async function bankUnlock(what) {
+    var stored = state.settings.bankLock;
+    if (!stored) {
+      var a = await askSecret('Đặt mã bảo vệ kho',
+        'Kho chưa có mã. Đặt một mã (ít nhất 4 ký tự) — từ nay muốn xoá câu khỏi kho hay xoá hẳn trong thùng rác đều phải nhập mã này. Ghi lại chỗ nào an toàn.');
+      if (a == null) return false;
+      a = String(a).trim();
+      if (a.length < 4) { notify('Mã quá ngắn, cần ít nhất 4 ký tự. Chưa xoá gì cả.'); return false; }
+      state.settings.bankLock = await bankHash(a);
+      persistSettings();
+      notify('Đã đặt mã bảo vệ kho.');
+      return true;
+    }
+    var v = await askSecret('Nhập mã bảo vệ kho', 'Cần mã để ' + what + '.');
+    if (v == null) return false;
+    if ((await bankHash(String(v))) !== stored) { notify('Sai mã. Không xoá gì cả.'); return false; }
+    return true;
+  }
+  async function bankChangeLock() {
+    if (state.settings.bankLock) {
+      var old = await askSecret('Đổi mã bảo vệ kho', 'Nhập mã hiện tại trước đã.');
+      if (old == null) return;
+      if ((await bankHash(String(old))) !== state.settings.bankLock) { notify('Sai mã hiện tại.'); return; }
+    }
+    var neu = await askSecret(state.settings.bankLock ? 'Mã mới' : 'Đặt mã bảo vệ kho',
+      'Ít nhất 4 ký tự. Để trống rồi bấm Xong thì bỏ khoá (không khuyến khích).');
+    if (neu == null) return;
+    neu = String(neu).trim();
+    if (!neu) {
+      delete state.settings.bankLock;
+      persistSettings();
+      notify('Đã bỏ khoá kho. Từ giờ xoá câu khỏi kho không cần mã nữa.');
+      return;
+    }
+    if (neu.length < 4) { notify('Mã quá ngắn, giữ nguyên mã cũ.'); return; }
+    state.settings.bankLock = await bankHash(neu);
+    persistSettings();
+    notify('Đã đổi mã bảo vệ kho.');
+  }
+
   var bankItems = [];
   var bankTree = { topics: [] };
   var bankSel = { topicId: null, themeId: null, typeId: null };
@@ -7993,7 +8061,9 @@
       restoreFromTrash([b.dataset.id]);
     } else if (b.dataset.trash === 'purge') {
       var okP = await askConfirm('Xoá hẳn mục này?', 'Xoá hẳn là mất thật, không khôi phục được nữa.', 'Xoá hẳn');
-      if (okP) purgeTrash([b.dataset.id]);
+      if (!okP) return;
+      if (!(await bankUnlock('xoá hẳn mục này'))) return;
+      purgeTrash([b.dataset.id]);
     }
   });
   document.getElementById('trashRestoreAll').addEventListener('click', function () {
@@ -8007,8 +8077,11 @@
     var okAll = await askConfirm(trashFilter === 'all' ? 'Dọn sạch thùng rác?' : 'Xoá hẳn các mục đang hiện?',
       'Xoá hẳn ' + list.length + ' mục — mất thật, không khôi phục được nữa.',
       'Xoá hẳn ' + list.length + ' mục');
-    if (okAll) purgeTrash(list.map(function (e) { return e.id; }));
+    if (!okAll) return;
+    if (!(await bankUnlock('dọn sạch thùng rác'))) return;
+    purgeTrash(list.map(function (e) { return e.id; }));
   });
+  document.getElementById('bankLockBtn').addEventListener('click', bankChangeLock);
   document.getElementById('pickDeleteBtn').addEventListener('click', async function () {
     var items = pickedItems();
     if (!items.length) return;
@@ -8021,6 +8094,7 @@
       + '\n\nCác câu này chuyển vào Thùng rác — bấm "Hoàn tác" ngay sau đó, hoặc mở 🗑 Thùng rác để khôi phục.',
       'Xoá ' + items.length + ' câu');
     if (!okDel) return;
+    if (!(await bankUnlock('xoá ' + items.length + ' câu khỏi kho'))) return;
     var delIds = trashItems(items);
     notify('Đã chuyển ' + delIds.length + ' câu vào thùng rác.', 'Hoàn tác', function () { restoreFromTrash(delIds); });
   });
@@ -10049,6 +10123,7 @@
         + '\n\nCâu sẽ chuyển vào Thùng rác — hoàn tác hoặc khôi phục lại được.',
         'Xóa');
       if (!okDelQ) return;
+      if (!(await bankUnlock('xoá câu này khỏi kho'))) return;
       var delOne = trashItems([it]);
       notify('Đã chuyển vào thùng rác.', 'Hoàn tác', function () { restoreFromTrash(delOne); });
     }
