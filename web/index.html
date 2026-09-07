@@ -262,6 +262,36 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     alert(r.error ? ('Không đổi được: ' + r.error.message) : 'Đã đổi mật khẩu.');
   });
 
+  /* ---------------- khoá một thiết bị ----------------
+     Mã thiết bị sinh một lần rồi nằm lại trong máy. Máy chủ giữ đúng một mã cho mỗi
+     sinh viên; máy thứ hai xin vào là bị từ chối. Xoá dữ liệu trình duyệt sẽ mất mã,
+     lúc đó phải nhờ giáo viên gỡ thiết bị cũ — cái giá của chặt chẽ. */
+  var DEV_KEY = 'hoc-thiet-bi-v1';
+  function maThietBi() {
+    var v = '';
+    try { v = localStorage.getItem(DEV_KEY) || ''; } catch (e) { return ''; }
+    if (v) return v;
+    v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : 'd-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+    try {
+      localStorage.setItem(DEV_KEY, v);
+      if (localStorage.getItem(DEV_KEY) !== v) return '';   /* không giữ được thì coi như không có */
+    } catch (e) { return ''; }
+    return v;
+  }
+  async function xinThietBi() {
+    var ma = maThietBi();
+    if (!ma) return { ok: false, reason: 'khong_luu_duoc' };
+    try {
+      var r = await sb.rpc('claim_device', { p_device: ma, p_ua: String(navigator.userAgent || '').slice(0, 300) });
+      if (r.error) return { ok: false, reason: r.error.message };
+      return r.data || { ok: false, reason: 'khong_ro' };
+    } catch (e) { return { ok: false, reason: 'loi_mang' }; }
+  }
+  function ngayGio(s) {
+    try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; }
+  }
+
   /* ---------------- vào trong ---------------- */
   async function enter(user) {
     me = user;
@@ -272,6 +302,25 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       await sb.auth.signOut();
       return;
     }
+    var chot = await xinThietBi();
+    if (!chot.ok) {
+      me = null;
+      if (chot.reason === 'other_device') {
+        alert('Tài khoản này đã gắn với một thiết bị khác'
+          + (chot.gan_tu ? ' từ ' + ngayGio(chot.gan_tu) : '') + '.\n\n'
+          + 'Mỗi tài khoản chỉ học được trên một máy. Muốn đổi máy thì nhắn giáo viên gỡ thiết bị cũ.');
+      } else if (chot.reason === 'tai_khoan_da_tat') {
+        alert('Tài khoản đang bị khoá. Liên hệ giáo viên.');
+      } else if (chot.reason === 'khong_luu_duoc') {
+        alert('Trình duyệt đang chặn lưu dữ liệu nên không nhận diện được máy.\n\n'
+          + 'Tắt chế độ ẩn danh (riêng tư) rồi vào lại. Nếu vẫn không được thì bật cho phép lưu dữ liệu trang này.');
+      } else {
+        alert('Chưa kiểm tra được thiết bị: ' + (chot.reason || 'lỗi mạng') + '. Thử lại sau ít phút.');
+      }
+      await sb.auth.signOut();
+      return;
+    }
+
     $('whoAmI').textContent = profile.full_name || user.email;
     if (profile.role === 'admin' || profile.role === 'teacher') { $('teachLink').hidden = false; $('soanLink').hidden = false; }
     show($('loginScreen'), false);

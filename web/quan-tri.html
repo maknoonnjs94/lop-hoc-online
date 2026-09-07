@@ -791,8 +791,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       return String((a.profiles || {}).full_name || '').localeCompare(String((b.profiles || {}).full_name || ''), 'vi');
     });
     if (!roster.length) { box.innerHTML = '<div class="empty">Lớp này chưa có sinh viên nào.</div>'; return; }
+
+    /* Mỗi tài khoản sinh viên chỉ gắn được một thiết bị. Lấy về để hiện trạng thái
+       và cho phép gỡ khi sinh viên đổi máy. */
+    var dev = {};
+    var rd = await sb.from('device_bindings')
+      .select('user_id, ua, first_seen, last_seen')
+      .in('user_id', roster.map(function (e) { return e.student; }));
+    (rd.data || []).forEach(function (d) { dev[d.user_id] = d; });
+
     var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
-    box.innerHTML = '<table class="roster"><thead><tr><th>Họ tên</th><th>Email</th><th>Quyền</th><th></th></tr></thead><tbody>'
+    var ngay = function (s) { try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; } };
+    box.innerHTML = '<table class="roster"><thead><tr><th>Họ tên</th><th>Email</th><th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
       + roster.map(function (e) {
         var p = e.profiles || {}, r = p.role || 'student', self = e.student === me.id;
         return '<tr><td>' + esc(p.full_name || '(chưa đặt tên)')
@@ -802,6 +812,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           + (self ? '' : ' <button class="btn sm" data-role="' + (r === 'student' ? 'teacher' : 'student')
               + '" data-id="' + e.student + '" title="Đổi quyền của người này">'
               + (r === 'student' ? 'Cho làm giáo viên' : 'Hạ về sinh viên') + '</button>')
+          + '</td>'
+          + '<td>' + (r !== 'student'
+              ? '<span class="pill">không khoá</span>'
+              : (dev[e.student]
+                  ? '<span class="pill on" title="Gắn từ ' + esc(ngay(dev[e.student].first_seen))
+                      + '\nVào gần nhất ' + esc(ngay(dev[e.student].last_seen))
+                      + '\n' + esc(String(dev[e.student].ua || '').slice(0, 120)) + '">đã gắn máy</span>'
+                      + ' <button class="btn sm" data-dev="' + e.student + '" title="Xoá thiết bị đang gắn để sinh viên đăng nhập được trên máy mới">Gỡ</button>'
+                  : '<span class="pill">chưa gắn</span>'))
           + '</td>'
           + '<td style="text-align:right"><button class="btn sm danger" data-rm="' + e.student + '">Bỏ khỏi lớp</button></td></tr>';
       }).join('') + '</tbody></table>';
@@ -814,6 +833,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var ru = await sb.from('profiles').update({ role: want }).eq('id', rl.dataset.id);
       if (ru.error) toast('Lỗi: ' + ru.error.message);
       else { toast(want === 'teacher' ? 'Đã cho làm giáo viên.' : 'Đã hạ về sinh viên.'); await loadRoster(); }
+      return;
+    }
+    var dv = e.target.closest('button[data-dev]');
+    if (dv) {
+      var ten = (roster.filter(function (x) { return x.student === dv.dataset.dev; })[0] || {}).profiles || {};
+      if (!confirm('Gỡ thiết bị đang gắn của ' + (ten.full_name || ten.email || 'sinh viên này') + '?\n\n'
+        + 'Sau khi gỡ, máy đầu tiên họ đăng nhập sẽ thành máy mới được gắn.')) return;
+      var rdv = await sb.rpc('reset_device', { p_user: dv.dataset.dev });
+      if (rdv.error) toast('Lỗi: ' + rdv.error.message);
+      else if (rdv.data && rdv.data.ok === false) toast('Không gỡ được: ' + (rdv.data.reason || ''));
+      else { toast('Đã gỡ thiết bị. Sinh viên đăng nhập lại được rồi.'); await loadRoster(); }
       return;
     }
     var b = e.target.closest('button[data-rm]'); if (!b) return;
