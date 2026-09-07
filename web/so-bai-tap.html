@@ -2398,7 +2398,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-08 · đợt 62 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-08 · đợt 63 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2556,6 +2556,7 @@
             <span id="bankScopeLabel">Tất cả câu hỏi</span>
             <span style="display:flex;gap:6px">
               <button type="button" class="mini-btn" id="theoryToggleBtn">Lý thuyết</button>
+              <button type="button" class="mini-btn" id="bankSyncBtn" title="Đối chiếu kho trên máy với kho chung rồi đẩy nốt câu còn thiếu lên">⇪ Đẩy lên kho chung</button>
               <button type="button" class="mini-btn" id="bankLockBtn" title="Đặt hoặc đổi mã bảo vệ kho — cần mã này mới xoá được câu khỏi kho">🔒 Mã bảo vệ</button>
               <button type="button" class="mini-btn" id="trashBtn" title="Câu đã xoá nằm ở đây — khôi phục lại được bất cứ lúc nào">🗑 Thùng rác</button>
               <button type="button" class="mini-btn" id="bulkBtn">＋ Nhập hàng loạt</button>
@@ -3045,6 +3046,7 @@
               <li><span class="k">⬡</span><span><b>Vẽ cấu tạo / sơ đồ phản ứng</b>: menu ⋯ của câu → thẻ Cấu tạo nhanh (mẫu, SMILES, xem trước) hoặc thẻ Sơ đồ nhanh (chất → tác nhân → ? …, tự xuống dòng, sửa lại được bằng ✎ Sơ đồ); bảng ký hiệu Ω → ⬡ chèn ảnh nhỏ ngay chỗ con trỏ. Thẻ <b>Bảng vẽ đầy đủ</b> (Kekule.js): bảng vẽ hoá học đầy đủ — nhiều chất trên một bảng, nhóm viết tắt Ph/Et/Boc, vòng và ghế xiclohexan, mũi tên phản ứng/cân bằng/tổng hợp ngược, mũi tên cong cơ chế, chữ; vẽ tay xong bấm <b>Cân đối sơ đồ</b> để liên kết cùng dài, chất và mũi tên thẳng hàng cách đều; chèn với cỡ liên kết 7 mm để mọi hình in cùng cỡ (cấu tạo nhanh cũng vậy); chữ trên bảng như H2SO4, 10^-3 tự thành H₂SO₄, 10⁻³ khi Cân đối/Chèn; sửa lại bằng ✎ Kekule; ảnh cũ tự dọn khi thay/xoá hình.</span></li>
               <li><span class="k">✍</span><span><b>Bảng giảng</b> (nút trên thanh đầu): trang thành bảng viết tay — bút S Pen / bút cảm ứng / chuột viết, ngón tay cuộn trang, nút bên hông bút = tẩy, ＋ chỗ thêm khoảng trống dưới câu, bảng trắng cuối bài; nét tự lưu vào kho theo từng tài liệu, In / PDF lấy cả nét; Ctrl+Z hoàn tác nét, Esc thoát. Một ngón cuộn trang, <b>hai ngón chụm để phóng to</b>; <b>⁄ Thẳng</b> (phím T) nắn nét thành đoạn thẳng; ô màu bên cạnh bút để chọn màu bất kỳ.</span></li>
               <li><span class="k">🔴</span><span><b>Dạy online trên Bảng giảng</b>: 🔴 Laser / 🔦 Vòng sáng để chỉ khi chia sẻ màn hình (phím L, không lưu); ô "Trang / câu…" hoặc phím ← → / PgUp PgDn để nhảy trang; ▲ ẩn thanh công cụ (phím H, ✍ góc phải để hiện); ⋯ mở hàng phụ (đổi tài liệu, ngón tay, đáp án, in, toàn màn hình); thanh tự mờ khi đang viết; P bút, E tẩy. Tài liệu vào thùng rác vẫn giữ nét và tệp, xoá hẳn mới dọn; "Dọn ảnh rác" dọn luôn nét / tệp mồ côi. Chấm tròn trên thanh giảng báo trạng thái lưu nét (vàng đang lưu, xanh đã lưu, đỏ hỏng).</span></li>
+              <li><span class="k">⇪</span><span><b>Đẩy lên kho chung</b>: câu lưu lúc mạng chập chờn có thể chỉ nằm trên máy đang dùng — máy khác không thấy, file sao lưu cũng không có. Mở sổ là app tự đẩy nốt lên; muốn tự kiểm thì bấm ⇪ Đẩy lên kho chung trong Kho bài tập, nó nói rõ đã đẩy bao nhiêu câu.</span></li>
               <li><span class="k">🔒</span><span><b>Khoá kho</b>: xoá câu khỏi kho, xoá hẳn trong thùng rác hay dọn sạch thùng rác đều phải nhập mã bảo vệ. Đặt hoặc đổi mã bằng nút 🔒 Mã bảo vệ trong Kho bài tập. Xoá câu trên trang soạn và xoá cả tài liệu tuần thì không hỏi mã, vì hai việc đó không đụng tới kho.</span></li>
               <li><span class="k">🔍</span><span><b>Tìm bài trong kho</b>: gõ không dấu vẫn ra, nhiều từ khoá tìm câu có đủ cả, “cụm trong ngoặc kép” tìm đúng cụm, <b>-từ</b> để loại trừ; H2SO4 khớp cả H₂SO₄; tìm cả trong ý nhỏ, phương án, đáp án, nhãn và tên dạng bài. Chip lọc nhanh: Cả kho, Tự luận / Trắc nghiệm / Đúng-Sai, Có đáp án, Có hình. Chỗ khớp được tô vàng.</span></li>
               <li><span class="k">☰</span><span><b>Cột điều hướng bên trái</b> gom mọi nút theo nhóm Soạn · Bài giảng · Kho · Xuất · Cài đặt (« để thu gọn; máy bảng bấm ☰). Thẻ tài liệu vẫn nằm hàng trên trang, mỗi thẻ mang tên thật của tài liệu; bấm ✎ trên thẻ đang mở để đổi tên. Ngay dưới ô tìm nhanh là <b>Đang xem: Bản HS / Bản GV</b> — bấm Bản GV để hiện đáp án và lời giải (Ctrl+K cũng đổi được).</span></li>
@@ -4406,6 +4408,8 @@
       loadLocal();
     }
     loadTrash();   /* để nút 🗑 Thùng rác trên thanh đầu trang có số lượng ngay, không cần mở Kho trước */
+    loadBank();    /* đợt 63: đọc kho ngay lúc mở sổ, để câu chỉ nằm trên máy được đẩy lên máy chủ
+                      mà không phải chờ tới lúc mở màn hình Kho — không đọc thì không biết là đang thiếu */
   }
 
   /* ---------------- data helpers ---------------- */
@@ -7604,6 +7608,60 @@
      bankMutSeq lên. */
   var bankMutSeq = 0;
 
+  /* ================= đợt 63: cứu câu chỉ nằm trên máy =================
+     loadBank và loadTrash trộn bản lưu trên máy vào bản đọc từ máy chủ, nên màn hình vẫn thấy
+     đủ câu ngay cả khi lần ghi lên máy chủ trước đó hỏng (mọi chỗ ghi đều .catch rồi bỏ qua).
+     Kết quả: máy này thấy 160 câu, máy chủ chỉ có 148, và file sao lưu đọc từ máy chủ cũng chỉ
+     có 148 — mất 12 câu mà không ai hay. Từ đợt này câu chỉ có trên máy được đẩy lên ngay. */
+  function pushUpDocs(list, writeOne) {
+    var ok = 0, fail = 0, i = 0;
+    function step() {
+      if (i >= list.length) return Promise.resolve({ ok: ok, fail: fail });
+      var it = list[i++];
+      return writeOne(it).then(function () { ok++; }, function () {
+        return writeOne(it).then(function () { ok++; }, function () { fail++; });   /* hỏng thì thử lại 1 lần */
+      }).then(step);
+    }
+    return step();
+  }
+  function bankWriteOne(it) { return dbApi.collection('bank').doc(it.id).set(it); }
+  function trashWriteOne(e) {
+    return dbApi.collection('trash').doc(e.id).set({ kind: e.kind, item: e.item, meta: e.meta || null, deletedAt: e.deletedAt });
+  }
+  function rescueLocalOnly(list, writeOne, what) {
+    if (!dbApi || !list.length) return Promise.resolve(0);
+    return pushUpDocs(list, writeOne).then(function (r) {
+      setTimeout(function () {                       /* đợi app dựng xong màn hình rồi mới báo */
+        if (r.ok) notify('Đã đẩy ' + r.ok + ' ' + what + ' chỉ có trên máy này lên kho chung.');
+        if (r.fail) notify('Còn ' + r.fail + ' ' + what + ' chưa đẩy lên được — bấm ⇪ Đẩy lên kho chung để thử lại.');
+      }, 1500);
+      return r.ok;
+    });
+  }
+  /* Nút bấm tay: đối chiếu toàn bộ kho và thùng rác với máy chủ, đẩy nốt phần thiếu. */
+  async function bankForceSync() {
+    if (!dbApi) { notify('Bản này không nối kho chung, mọi thứ nằm trên máy.'); return; }
+    notify('Đang đối chiếu kho với máy chủ…');
+    try {
+      var snap = await dbApi.collection('bank').get();
+      var on = {}; snap.docs.forEach(function (d) { on[d.id] = true; });
+      var miss = bankItems.filter(function (it) { return it && it.id && !on[it.id]; });
+      var snapT = await dbApi.collection('trash').get();
+      var onT = {}; snapT.docs.forEach(function (d) { onT[d.id] = true; });
+      var missT = trashBin.filter(function (e) { return e && e.id && !onT[e.id]; });
+      if (!miss.length && !missT.length) {
+        notify('Kho chung đã đủ ' + bankItems.length + ' câu. Không thiếu gì cả.');
+        return;
+      }
+      var r1 = await pushUpDocs(miss, bankWriteOne);
+      var r2 = await pushUpDocs(missT, trashWriteOne);
+      notify('Đã đẩy lên ' + r1.ok + '/' + miss.length + ' câu và ' + r2.ok + '/' + missT.length + ' mục thùng rác.'
+        + ((r1.fail + r2.fail) ? ' Còn ' + (r1.fail + r2.fail) + ' mục hỏng, kiểm tra mạng rồi bấm lại.' : ' Giờ sao lưu là đủ.'));
+    } catch (e) {
+      notify('Không đối chiếu được với máy chủ. Kiểm tra mạng rồi bấm lại.');
+    }
+  }
+
   function loadBank() {
     var mySeq = bankMutSeq;
     var local = localBank();
@@ -7616,10 +7674,13 @@
         data.id = d.id;
         byId[d.id] = data;
       });
-      /* câu vừa lưu mà máy chủ chưa kịp trả về thì vẫn phải thấy */
-      local.forEach(function (it) { if (it && it.id && !byId[it.id]) byId[it.id] = it; });
+      /* câu vừa lưu mà máy chủ chưa kịp trả về thì vẫn phải thấy — nhưng đợt 63 không dừng ở
+         chỗ hiện ra nữa: câu nào chỉ có trên máy là đẩy thẳng lên máy chủ. */
+      var onlyLocal = [];
+      local.forEach(function (it) { if (it && it.id && !byId[it.id]) { byId[it.id] = it; onlyLocal.push(it); } });
       bankItems = Object.keys(byId).map(function (k) { return byId[k]; })
         .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+      if (onlyLocal.length) rescueLocalOnly(onlyLocal, bankWriteOne, 'câu');
     }).catch(function () { if (mySeq === bankMutSeq) bankItems = local; });
   }
 
@@ -7869,7 +7930,9 @@
         var data = JSON.parse(JSON.stringify(d.data()));
         if (data && data.item) byId[d.id] = { id: d.id, kind: data.kind || 'bank', item: data.item, meta: data.meta || null, deletedAt: data.deletedAt || 0 };
       });
-      local.forEach(function (e) { if (e && e.id && e.item && !byId[e.id]) byId[e.id] = e; });
+      var onlyLocalT = [];
+      local.forEach(function (e) { if (e && e.id && e.item && !byId[e.id]) { byId[e.id] = e; onlyLocalT.push(e); } });
+      if (onlyLocalT.length) rescueLocalOnly(onlyLocalT, trashWriteOne, 'mục thùng rác');
       trashBin = Object.keys(byId).map(function (k) { return byId[k]; })
         .sort(function (a, b) { return (b.deletedAt || 0) - (a.deletedAt || 0); });
     }).catch(function () { trashBin = local; }).then(updateTrashBtn);
@@ -8081,6 +8144,7 @@
     if (!(await bankUnlock('dọn sạch thùng rác'))) return;
     purgeTrash(list.map(function (e) { return e.id; }));
   });
+  document.getElementById('bankSyncBtn').addEventListener('click', bankForceSync);
   document.getElementById('bankLockBtn').addEventListener('click', bankChangeLock);
   document.getElementById('pickDeleteBtn').addEventListener('click', async function () {
     var items = pickedItems();
