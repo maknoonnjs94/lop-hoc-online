@@ -110,6 +110,16 @@
           box-shadow:0 8px 26px rgba(0,0,0,.3); max-width:calc(100vw - 24px) }
   .toast[hidden]{ display:none }
   .hint{ font-size:12px; color:var(--muted); line-height:1.5 }
+  .steps{ padding:20px 22px; }
+  .steps h3{ margin:0 0 4px; font-size:16px }
+  .steps p.lead{ margin:0 0 14px; color:var(--muted); font-size:13.5px }
+  .steps ol{ margin:0; padding-left:20px }
+  .steps li{ margin-bottom:9px; font-size:14px }
+  .steps li b{ font-weight:700 }
+  .steps .now{ background:var(--bg); border:1px solid var(--accent); border-radius:9px; padding:9px 11px; margin-left:-8px }
+  .flow{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px; font-size:12px; color:var(--muted) }
+  .flow span{ padding:4px 9px; border:1px solid var(--line); border-radius:999px; background:var(--surface) }
+  .flow span.on{ border-color:var(--accent); color:var(--accent); font-weight:700 }
 </style>
 </head>
 <body>
@@ -156,6 +166,7 @@
             <button class="btn sm danger" id="delClsBtn">Xoá lớp</button>
             <button class="btn primary" id="addSesBtn">＋ Buổi mới</button>
           </div>
+          <div class="flow" id="flowBar"></div>
           <div id="sesList"></div>
         </div>
         <div id="paneKho" hidden>
@@ -385,7 +396,21 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('clsName').textContent = c ? c.name : '';
     ['addSesBtn', 'renameClsBtn', 'delClsBtn', 'addStuBtn'].forEach(function (id) { $(id).disabled = !c; });
     if (tab === 'kho') { await loadKho(); return; }          /* kho gom tệp của MỌI lớp nên không cần chọn lớp */
-    if (!c) { $('sesList').innerHTML = '<div class="empty">Tạo một lớp trước đã.</div>'; $('roster').innerHTML = ''; return; }
+    if (!c) {
+      $('flowBar').innerHTML = '';
+      $('sesList').innerHTML = '<div class="card steps">'
+        + '<h3>Bắt đầu từ đây</h3>'
+        + '<p class="lead">Để một tài liệu hiện ra trên máy sinh viên, cần đủ năm mắt xích. Làm lần lượt từ trên xuống.</p>'
+        + '<ol>'
+        + '<li class="now"><b>Tạo lớp</b> — bấm <b>＋ Lớp mới</b> ở cột bên trái.</li>'
+        + '<li>Thêm sinh viên vào lớp (tab Sinh viên).</li>'
+        + '<li>Tạo buổi học.</li>'
+        + '<li>Thêm tài liệu vào buổi.</li>'
+        + '<li>Bật buổi ở trạng thái Đã mở.</li>'
+        + '</ol></div>';
+      $('roster').innerHTML = '';
+      return;
+    }
     if (tab === 'ses') await loadSessions();
     else if (tab === 'stu') await loadRoster();
     else await loadKho();
@@ -400,10 +425,31 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       .eq('class_id', curClass).order('no', { ascending: false });
     if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
     sessions = r.data || [];
-    if (!sessions.length) { box.innerHTML = '<div class="empty">Lớp này chưa có buổi nào. Bấm “＋ Buổi mới”.</div>'; return; }
-    box.innerHTML = sessions.map(function (s) {
+    (function () {
+      var hasSes = sessions.length > 0;
+      var hasMat = sessions.some(function (x) { return (x.materials || []).length > 0; });
+      var hasPub = sessions.some(function (x) { return x.published; });
+      $('flowBar').innerHTML =
+        '<span class="on">① Lớp ✓</span><span' + (hasSes ? ' class="on"' : '') + '>② Buổi' + (hasSes ? ' ✓' : '') + '</span>'
+        + '<span' + (hasMat ? ' class="on"' : '') + '>③ Tài liệu' + (hasMat ? ' ✓' : '') + '</span>'
+        + '<span' + (hasPub ? ' class="on"' : '') + '>④ Mở cho sinh viên' + (hasPub ? ' ✓' : '') + '</span>'
+        + '<span>⑤ Sinh viên trong lớp → tab Sinh viên</span>';
+    })();
+    if (!sessions.length) {
+      box.innerHTML = '<div class="card steps">'
+        + '<h3>Lớp này chưa có buổi nào</h3>'
+        + '<p class="lead">Buổi học là nơi chứa tài liệu. Mỗi buổi dạy làm một buổi.</p>'
+        + '<ol>'
+        + '<li class="now"><b>Bấm ＋ Buổi mới</b> ở góc trên bên phải, đặt tên rồi Tạo buổi.</li>'
+        + '<li>Buổi vừa tạo sẽ tự mở ra, bên trong có hàng nút <b>＋ Video</b>, <b>＋ Tệp PDF / ảnh</b>…</li>'
+        + '<li>Thêm xong là sinh viên trong lớp thấy ngay.</li>'
+        + '</ol></div>';
+      return;
+    }
+    box.innerHTML = sessions.map(function (s, si) {
       var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
-      return '<details class="card ses" data-s="' + s.id + '">'
+      var openIt = justOpenSes ? (s.id === justOpenSes) : (si === 0);   /* mở sẵn để thấy hàng nút thêm tài liệu */
+      return '<details class="card ses"' + (openIt ? ' open' : '') + ' data-s="' + s.id + '">'
         + '<summary><span class="no">' + esc(s.no != null ? s.no : '•') + '</span>'
         + '<span class="t"><b>' + esc(s.title || 'Chưa đặt tên') + '</b><span>'
         + (s.held_on ? fmtDate(s.held_on) + ' · ' : '') + mats.length + ' tài liệu</span></span>'
@@ -446,15 +492,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + '<label class="f">Tên buổi<input id="fTitle" placeholder="Nồng độ và pha dung dịch"></label>'
       + '<label class="f">Ngày dạy<input id="fDate" type="date" value="' + today + '"></label>'
       + '<label class="f">Ghi chú cho sinh viên<textarea id="fNote" placeholder="Xem video trước, làm phiếu bài tập rồi mang tới lớp."></textarea></label>'
-      + '<label class="f"><input type="checkbox" id="fPub" style="width:auto;display:inline;margin-right:6px">Mở cho sinh viên xem ngay'
+      + '<label class="f"><input type="checkbox" id="fPub" checked style="width:auto;display:inline;margin-right:6px">Mở cho sinh viên xem ngay'
       + '<small>Chưa tick thì buổi ở dạng nháp, sinh viên không thấy gì.</small></label>',
       async function () {
         var r = await sb.from('sessions').insert({
           class_id: curClass, no: Number(val('fNo')) || null, title: val('fTitle'),
           held_on: val('fDate') || null, note: val('fNote'), published: $('fPub').checked
-        });
+        }).select('id').single();
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
-        toast('Đã tạo buổi.');
+        justOpenSes = r.data.id;                 /* mở sẵn buổi vừa tạo */
+        toast('Đã tạo buổi. Giờ thêm tài liệu bằng hàng nút ＋ bên trong buổi.');
         await loadSessions();
       }, 'Tạo buổi');
   });
@@ -638,6 +685,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- kho tệp ---------------- */
   var khoRows = [];
+  var justOpenSes = null;
   async function loadKho() {
     var box = $('khoList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
