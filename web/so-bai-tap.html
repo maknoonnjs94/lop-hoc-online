@@ -1837,7 +1837,26 @@
     'color:inherit;font:inherit;cursor:pointer;text-decoration:none}' +
     '#sbtMenu a:hover,#sbtMenu button:hover{background:#f1f5f9}' +
     '#sbtMenu button.out{color:#c0392b}' +
-    '@media print{#sbtBadge,#sbtMenu{display:none!important}}';
+    '@media print{#sbtBadge,#sbtMenu,#sbtSend{display:none!important}}' +
+    '#sbtSend{position:fixed;inset:0;z-index:99998;background:rgba(12,18,24,.55);display:flex;align-items:center;justify-content:center;padding:16px;' +
+    'font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1b2734}' +
+    '#sbtSend[hidden]{display:none}' +
+    '#sbtSend .box{width:min(480px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}' +
+    '#sbtSend h2{margin:0 0 3px;font-size:18px}' +
+    '#sbtSend .lead{margin:0 0 15px;font-size:13px;color:#6b7a8a}' +
+    '#sbtSend label{display:block;margin-bottom:12px;font-size:12.5px;font-weight:600;color:#6b7a8a}' +
+    '#sbtSend input,#sbtSend select{display:block;width:100%;margin-top:5px;padding:10px 12px;border:1px solid #dfe6ee;border-radius:9px;' +
+    'font:inherit;font-size:14.5px;background:#f5f7fa;color:#1b2734}' +
+    '#sbtSend .row{display:flex;gap:8px}#sbtSend .row>*{flex:1}' +
+    '#sbtSend .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}' +
+    '#sbtSend .btn{padding:10px 15px;border:1px solid #dfe6ee;border-radius:9px;background:#fff;font:inherit;font-weight:600;cursor:pointer}' +
+    '#sbtSend .btn.go{background:#1888c9;border-color:#1888c9;color:#fff}' +
+    '#sbtSend .btn:disabled{opacity:.55;cursor:default}' +
+    '#sbtSend .note{margin-top:10px;padding:9px 11px;border-radius:9px;font-size:12.5px;display:none}' +
+    '#sbtSend .note.show{display:block}' +
+    '#sbtSend .note.err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}' +
+    '#sbtSend .note.ok{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}' +
+    '#sbtSend .note.wait{background:#fffbeb;color:#b45309;border:1px solid #fde68a}';
   document.head.appendChild(css);
 
   var gate = document.createElement('div');
@@ -1872,6 +1891,7 @@
       menu.hidden = true;
       menu.innerHTML =
         '<div class="who" id="sbtWho"></div>' +
+        '<button type="button" id="sbtGiao">📤 Giao tài liệu này cho lớp</button>' +
         '<a href="quan-tri.html">▦ Trang quản trị lớp</a>' +
         '<a href="index.html" target="_blank" rel="noopener">👁 Trang học (xem như sinh viên)</a>' +
         '<button type="button" class="out" id="sbtOut">⎋ Đăng xuất</button>';
@@ -1880,6 +1900,7 @@
       document.addEventListener('click', function () { menu.hidden = true; });
       menu.addEventListener('click', function (e) { e.stopPropagation(); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') menu.hidden = true; });
+      menu.querySelector('#sbtGiao').addEventListener('click', function () { menu.hidden = true; openSend(); });
       menu.querySelector('#sbtOut').addEventListener('click', async function () {
         await sb.auth.signOut();
         location.reload();
@@ -2036,6 +2057,11 @@
   /* ================= tải file xuống ================= */
   var downloads = {
     save: function (req) {
+      if (sendCatch) {                       /* đang giao cho lớp: giữ tệp lại, không tải xuống máy */
+        var c = sendCatch; sendCatch = null;
+        c.res(req);
+        return Promise.resolve({ status: 'saved' });
+      }
       return new Promise(function (resolve, reject) {
         try {
           var data = req && req.data;
@@ -2050,6 +2076,160 @@
       });
     }
   };
+
+  /* ================= giao tài liệu thẳng cho lớp =================
+     Bấm nút → chọn lớp và buổi → sổ tự dựng PDF như khi In → cầu nối bắt lấy tệp đó,
+     đẩy lên kho rồi tạo dòng tài liệu trong buổi. Không có file nào rơi xuống máy. */
+  var sendCatch = null;                     /* đang chờ tệp PDF từ sổ */
+  function q(id) { return document.getElementById(id); }
+  function sendNote(t, kind) {
+    var n = q('sbtNote');
+    if (n) { n.textContent = t || ''; n.className = t ? ('note show ' + (kind || 'err')) : 'note'; }
+  }
+  function buildSendUI() {
+    if (q('sbtSend')) return;
+    var d = document.createElement('div');
+    d.id = 'sbtSend';
+    d.hidden = true;
+    d.innerHTML =
+      '<div class="box">' +
+      '<h2>Giao cho lớp</h2>' +
+      '<p class="lead">Sổ sẽ tự dựng bản PDF của tài liệu đang mở rồi đẩy thẳng lên lớp. Không tải gì về máy.</p>' +
+      '<label>Lớp<select id="sbtCls"></select></label>' +
+      '<label>Buổi<select id="sbtSes"></select></label>' +
+      '<div id="sbtNewSes" style="display:none"><div class="row">' +
+      '<label>Buổi số<input id="sbtNo" type="number" min="1"></label>' +
+      '<label>Tên buổi<input id="sbtSesName" placeholder="Nồng độ dung dịch"></label>' +
+      '</div></div>' +
+      '<label>Gửi bản nào<select id="sbtKind">' +
+      '<option value="hs">Bản học sinh — ẩn đáp án, chừa chỗ làm bài</option>' +
+      '<option value="gv">Bản có đáp án và lời giải</option>' +
+      '</select></label>' +
+      '<label>Tên hiển thị cho sinh viên<input id="sbtTitle"></label>' +
+      '<label>Mở lúc (để trống là mở ngay)<input id="sbtOpen" type="datetime-local"></label>' +
+      '<div class="foot"><button type="button" class="btn" id="sbtCancel">Huỷ</button>' +
+      '<button type="button" class="btn go" id="sbtGo2">Gửi lên lớp</button></div>' +
+      '<div class="note" id="sbtNote"></div>' +
+      '</div>';
+    document.body.appendChild(d);
+    d.addEventListener('click', function (e) { if (e.target === d) d.hidden = true; });
+    q('sbtCancel').addEventListener('click', function () { d.hidden = true; });
+    q('sbtCls').addEventListener('change', loadSesList);
+    q('sbtSes').addEventListener('change', function () {
+      q('sbtNewSes').style.display = this.value === '__new__' ? '' : 'none';
+    });
+    q('sbtKind').addEventListener('change', function () {
+      var t = q('sbtTitle');
+      if (this.value === 'gv' && !/đáp án/i.test(t.value)) t.value = 'Đáp án · ' + t.value;
+      if (this.value === 'hs') t.value = t.value.replace(/^Đáp án · /, '');
+    });
+    q('sbtGo2').addEventListener('click', doSend);
+  }
+  async function loadSesList() {
+    var sel = q('sbtSes');
+    sel.innerHTML = '<option>Đang tải…</option>';
+    var r = await sb.from('sessions').select('id, no, title').eq('class_id', q('sbtCls').value).order('no', { ascending: false });
+    var opts = (r.data || []).map(function (x) {
+      return '<option value="' + x.id + '">Buổi ' + (x.no != null ? x.no : '?') + ' · ' + (x.title || '') + '</option>';
+    });
+    sel.innerHTML = opts.join('') + '<option value="__new__">＋ Tạo buổi mới…</option>';
+    if (!opts.length) sel.value = '__new__';
+    q('sbtNewSes').style.display = sel.value === '__new__' ? '' : 'none';
+    var nxt = (r.data || []).reduce(function (m, x) { return Math.max(m, x.no || 0); }, 0) + 1;
+    q('sbtNo').value = nxt;
+  }
+  function docTitleNow() {
+    var el = document.querySelector('#sheet .hero-title, #sheet .exam-title');
+    var t = el ? el.textContent.trim() : '';
+    return t || 'Tài liệu';
+  }
+  async function openSend() {
+    buildSendUI();
+    if (!document.querySelector('#sheet .problem, #sheet .lec-page')) {
+      alert('Mở một tài liệu trong sổ trước đã, rồi mới giao cho lớp.');
+      return;
+    }
+    sendNote('');
+    q('sbtTitle').value = docTitleNow();
+    q('sbtOpen').value = '';
+    q('sbtGo2').disabled = false;
+    q('sbtGo2').textContent = 'Gửi lên lớp';
+    var r = await sb.from('classes').select('id, name').eq('archived', false).order('name');
+    var cls = r.data || [];
+    if (!cls.length) {
+      alert('Chưa có lớp nào. Vào Trang quản trị lớp tạo một lớp trước đã.');
+      return;
+    }
+    q('sbtCls').innerHTML = cls.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+    await loadSesList();
+    q('sbtSend').hidden = false;
+  }
+  /* chờ sổ đưa tệp PDF ra */
+  function catchPdf() {
+    return new Promise(function (res, rej) {
+      sendCatch = { res: res };
+      setTimeout(function () { if (sendCatch) { sendCatch = null; rej(new Error('dựng PDF quá lâu')); } }, 180000);
+    });
+  }
+  async function doSend() {
+    var btn = q('sbtGo2');
+    btn.disabled = true;
+    sendNote('Đang chuẩn bị…', 'wait');
+    try {
+      var sesId = q('sbtSes').value;
+      if (sesId === '__new__') {
+        var ins = await sb.from('sessions').insert({
+          class_id: q('sbtCls').value,
+          no: Number(q('sbtNo').value) || null,
+          title: q('sbtSesName').value.trim() || docTitleNow(),
+          published: true
+        }).select('id').single();
+        if (ins.error) throw new Error(ins.error.message);
+        sesId = ins.data.id;
+      }
+      var wantGV = q('sbtKind').value === 'gv';
+      var modeBtn = document.querySelector('#modeSwitch button.on');
+      var wasGV = modeBtn && modeBtn.dataset.mode === 'teacher';
+      if (wantGV !== wasGV) {
+        var b = document.querySelector('#modeSwitch button[data-mode="' + (wantGV ? 'teacher' : 'student') + '"]');
+        if (b) { b.click(); await new Promise(function (r) { setTimeout(r, 700); }); }
+      }
+      sendNote('Đang dựng PDF, việc này mất khoảng mươi giây…', 'wait');
+      var waiter = catchPdf();
+      var pb = document.getElementById('printBtn');
+      if (!pb) throw new Error('không thấy nút xuất PDF của sổ');
+      pb.click();
+      var req = await waiter;
+      sendNote('Đang đẩy lên lớp…', 'wait');
+      var blob = (req.data instanceof Blob) ? req.data : new Blob([req.data], { type: 'application/pdf' });
+      var safe = (req.filename || 'tai-lieu.pdf').replace(/[^\w.\-]+/g, '_');
+      var pathName = sesId + '/' + Date.now() + '_' + safe;
+      var up = await sb.storage.from('tailieu').upload(pathName, blob, { contentType: 'application/pdf' });
+      if (up.error) throw new Error(up.error.message);
+      var openAt = q('sbtOpen').value ? new Date(q('sbtOpen').value).toISOString() : null;
+      var mi = await sb.from('materials').insert({
+        session_id: sesId,
+        kind: wantGV ? 'answer' : 'pdf',
+        title: q('sbtTitle').value.trim() || docTitleNow(),
+        open_at: openAt,
+        order_no: wantGV ? 50 : 10
+      }).select('id').single();
+      if (mi.error) throw new Error(mi.error.message);
+      var ci = await sb.from('material_contents').insert({ material_id: mi.data.id, storage_path: pathName });
+      if (ci.error) throw new Error(ci.error.message);
+      if (wantGV !== wasGV) {
+        var back = document.querySelector('#modeSwitch button[data-mode="' + (wasGV ? 'teacher' : 'student') + '"]');
+        if (back) back.click();
+      }
+      sendNote('Xong. Sinh viên trong lớp đã thấy tài liệu này.' + (openAt ? ' Nội dung mở theo giờ đã đặt.' : ''), 'ok');
+      btn.textContent = 'Gửi tiếp';
+      btn.disabled = false;
+    } catch (e) {
+      sendCatch = null;
+      sendNote('Không gửi được: ' + (e && e.message || e), 'err');
+      btn.disabled = false;
+    }
+  }
 
   /* ================= window.claude giả ================= */
   window.claude = {
