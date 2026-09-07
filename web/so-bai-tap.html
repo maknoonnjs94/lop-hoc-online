@@ -1948,6 +1948,50 @@
 
   /* ================= cầu nối cơ sở dữ liệu ================= */
   function fail(r) { if (r && r.error) throw new Error(r.error.message); return r; }
+
+  /* ---- xếp hàng ghi: tối đa 4 lệnh một lúc, rớt thì thử lại 4 lần ----
+     Khôi phục từ file sao lưu bắn cả trăm lệnh cùng lúc; không xếp hàng thì Supabase chặn bớt
+     và app nuốt lỗi, mất dữ liệu mà không báo. */
+  var QMAX = 4, qRunning = 0, qWait = [], qFail = 0, qDone = 0, qNoteTimer = null;
+  function qSlot() {
+    if (qRunning < QMAX) { qRunning++; return Promise.resolve(); }
+    return new Promise(function (res) { qWait.push(res); });
+  }
+  function qRelease() {
+    qRunning--;
+    var next = qWait.shift();
+    if (next) { qRunning++; next(); }
+  }
+  function qReport() {
+    clearTimeout(qNoteTimer);
+    qNoteTimer = setTimeout(function () {
+      if (qFail > 0) {
+        alert('Có ' + qFail + ' mục không ghi được lên kho (mạng chập chờn). Hãy làm lại thao tác vừa rồi, '
+          + 'ví dụ khôi phục lại từ file sao lưu — ghi lại đè lên là an toàn, không nhân đôi.');
+        qFail = 0;
+      }
+      qDone = 0;
+    }, 2500);
+  }
+  async function qRun(fn) {
+    await qSlot();
+    try {
+      var lastErr = null;
+      for (var i = 0; i < 4; i++) {
+        try {
+          var r = await fn();
+          if (r && r.error) throw new Error(r.error.message);
+          qDone++; qReport();
+          return r;
+        } catch (e) {
+          lastErr = e;
+          await new Promise(function (res) { setTimeout(res, 250 * Math.pow(2, i)); });
+        }
+      }
+      qFail++; qReport();
+      throw lastErr;
+    } finally { qRelease(); }
+  }
   function splitPath(path) {
     var s = String(path || '');
     var i = s.lastIndexOf('/');
@@ -1991,11 +2035,14 @@
           .maybeSingle().then(function (r) { return snapOne(id, r.data); });
       },
       set: function (data) {
-        return sb.from(TABLE).upsert({
+        var body = {
           owner: me.id, collection: collection, doc_id: id,
           data: JSON.parse(JSON.stringify(data == null ? {} : data)),
           updated_at: new Date().toISOString()
-        }, { onConflict: 'owner,collection,doc_id' }).then(fail).then(function () {});
+        };
+        return qRun(function () {
+          return sb.from(TABLE).upsert(body, { onConflict: 'owner,collection,doc_id' });
+        }).then(function () {});
       },
       update: function (patch) {
         return this.get().then(function (s) {
@@ -2004,7 +2051,9 @@
         });
       },
       delete: function () {
-        return sb.from(TABLE).delete().eq('collection', collection).eq('doc_id', id).then(fail).then(function () {});
+        return qRun(function () {
+          return sb.from(TABLE).delete().eq('collection', collection).eq('doc_id', id);
+        }).then(function () {});
       },
       onSnapshot: function (next, onErr) {
         var self = this, alive = true;
