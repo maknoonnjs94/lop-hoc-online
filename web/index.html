@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lớp học online</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  /* ---------- nền & chữ ---------- */
+  :root{
+    --bg:#f5f7fa; --surface:#fff; --line:#dfe6ee; --ink:#1b2734; --muted:#6b7a8a;
+    --accent:#1888c9; --accent-ink:#fff; --ok:#15803d; --warn:#b45309; --danger:#c0392b;
+    --shadow:0 1px 3px rgba(16,32,48,.07), 0 6px 20px rgba(16,32,48,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#11171d; --surface:#19212a; --line:#2b3742; --ink:#e8eef4; --muted:#93a3b3;
+           --accent:#38a3e0; --shadow:0 1px 3px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35); }
+  }
+  *{ box-sizing:border-box }
+  html,body{ margin:0; padding:0 }
+  body{
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  button,input,select{ font:inherit; color:inherit }
+  .wrap{ max-width:880px; margin:0 auto; padding:0 14px 60px }
+
+  /* ---------- thanh đầu ---------- */
+  .top{
+    position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px;
+    padding:11px 14px; background:var(--surface); border-bottom:1px solid var(--line);
+  }
+  .top .brand{ font-weight:800; letter-spacing:-.01em; margin-right:auto; font-size:15px }
+  .top .who{ font-size:12px; color:var(--muted); max-width:42vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .btn{
+    display:inline-block; text-decoration:none;
+    padding:8px 13px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{ border-color:var(--accent) }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink) }
+  .btn.primary:hover{ filter:brightness(1.06) }
+  .btn:disabled{ opacity:.5; cursor:default }
+
+  /* ---------- đăng nhập ---------- */
+  .login{ max-width:390px; margin:9vh auto; padding:0 16px }
+  .login h1{ font-size:21px; margin:0 0 4px }
+  .login p.sub{ margin:0 0 20px; color:var(--muted); font-size:13.5px }
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow) }
+  .login .card{ padding:18px }
+  label.f{ display:block; margin-bottom:12px; font-size:13px; font-weight:600; color:var(--muted) }
+  label.f input{
+    display:block; width:100%; margin-top:5px; padding:11px 12px; border-radius:9px;
+    border:1px solid var(--line); background:var(--bg); font-size:15px;
+  }
+  label.f input:focus{ outline:2px solid var(--accent); outline-offset:-1px }
+  .msg{ margin:10px 0 0; padding:9px 11px; border-radius:9px; font-size:13px; display:none }
+  .msg.show{ display:block }
+  .msg.err{ background:#fef2f2; color:#b91c1c; border:1px solid #fecaca }
+  .msg.ok{ background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0 }
+  .linkish{ background:none; border:0; color:var(--accent); font-size:12.5px; cursor:pointer; padding:6px 0; text-decoration:underline }
+
+  /* ---------- danh sách ---------- */
+  h2.sec{ font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:22px 2px 9px }
+  .classbar{ display:flex; gap:7px; overflow-x:auto; padding:12px 0 2px; scrollbar-width:none }
+  .classbar::-webkit-scrollbar{ display:none }
+  .classbar button{
+    padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+    color:var(--muted); font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .classbar button.on{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink) }
+  .ses{ margin-bottom:11px; overflow:hidden }
+  .ses > summary{
+    list-style:none; cursor:pointer; padding:13px 15px; display:flex; align-items:center; gap:11px;
+  }
+  .ses > summary::-webkit-details-marker{ display:none }
+  .ses .no{
+    flex:none; width:38px; height:38px; border-radius:10px; display:grid; place-items:center;
+    background:var(--bg); border:1px solid var(--line); font-weight:800; font-size:14px; color:var(--accent);
+  }
+  .ses .t{ flex:1; min-width:0 }
+  .ses .t b{ display:block; font-size:15px; font-weight:700 }
+  .ses .t span{ font-size:12.5px; color:var(--muted) }
+  .ses .cnt{ font-size:12px; color:var(--muted); flex:none }
+  .ses[open] > summary{ border-bottom:1px solid var(--line) }
+  .items{ padding:6px }
+  .item{
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left; padding:11px 10px;
+    border:0; background:none; border-radius:10px; cursor:pointer;
+  }
+  .item:hover{ background:var(--bg) }
+  .item .ic{ flex:none; font-size:20px; width:26px; text-align:center }
+  .item .tx{ flex:1; min-width:0 }
+  .item .tx b{ display:block; font-weight:600; font-size:14.5px }
+  .item .tx span{ font-size:12px; color:var(--muted) }
+  .item.locked{ cursor:default; opacity:.75 }
+  .item.locked:hover{ background:none }
+  .note{ padding:0 15px 13px; font-size:13.5px; color:var(--muted); white-space:pre-wrap }
+  .empty{ padding:40px 16px; text-align:center; color:var(--muted); font-size:14px }
+
+  /* ---------- cửa sổ xem ---------- */
+  .viewer{ position:fixed; inset:0; z-index:60; background:rgba(12,18,24,.92); display:none; flex-direction:column }
+  .viewer.show{ display:flex }
+  .vhead{ display:flex; align-items:center; gap:10px; padding:10px 12px; color:#fff }
+  .vhead b{ flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .vhead .btn{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); color:#fff }
+  .vbody{ flex:1; overflow:auto; padding:0 8px 20px; -webkit-overflow-scrolling:touch }
+  .vbody canvas{ display:block; max-width:100%; margin:0 auto 10px; background:#fff; border-radius:6px; box-shadow:0 3px 14px rgba(0,0,0,.4) }
+  .vstage{ position:relative; max-width:1000px; margin:0 auto }
+  .vstage iframe{ width:100%; aspect-ratio:16/9; border:0; border-radius:10px; background:#000; display:block }
+  .vtext{ max-width:760px; margin:0 auto; background:var(--surface); color:var(--ink); padding:18px; border-radius:12px; white-space:pre-wrap }
+  .vload{ color:#cfe0ee; text-align:center; padding:40px 10px; font-size:14px }
+
+  /* dấu chìm chống phát tán: tên + email người đang xem, tự đổi chỗ */
+  .wm{
+    position:absolute; z-index:5; pointer-events:none; user-select:none;
+    font-size:12px; font-weight:700; color:rgba(255,255,255,.42);
+    text-shadow:0 1px 3px rgba(0,0,0,.65); transition:left .8s ease, top .8s ease;
+  }
+  .vbody{ user-select:none; -webkit-user-select:none; -webkit-touch-callout:none }
+</style>
+</head>
+<body>
+
+<!-- ================= ĐĂNG NHẬP ================= -->
+<section class="login" id="loginScreen">
+  <h1>Lớp học online</h1>
+  <p class="sub" id="loginSub">Đăng nhập bằng tài khoản giáo viên cấp cho em.</p>
+  <div class="card">
+    <form id="loginForm">
+      <label class="f">Email
+        <input type="email" id="email" autocomplete="username" required placeholder="email@example.com">
+      </label>
+      <label class="f">Mật khẩu
+        <input type="password" id="pass" autocomplete="current-password" required placeholder="••••••••">
+      </label>
+      <button class="btn primary" type="submit" id="loginBtn" style="width:100%;padding:11px">Vào lớp</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+    <button class="linkish" id="forgotBtn" type="button">Quên mật khẩu</button>
+  </div>
+</section>
+
+<!-- ================= TRANG HỌC ================= -->
+<div id="appScreen" hidden>
+  <div class="top">
+    <span class="brand">Lớp học online</span>
+    <span class="who" id="whoAmI"></span>
+    <a class="btn" id="teachLink" href="quan-tri.html" hidden title="Chỉ giáo viên thấy nút này">▦ Quản trị</a>
+    <button class="btn" id="pwBtn" title="Đổi mật khẩu">Mật khẩu</button>
+    <button class="btn" id="outBtn">Thoát</button>
+  </div>
+  <div class="wrap">
+    <div class="classbar" id="classBar"></div>
+    <div id="sessionList"></div>
+  </div>
+</div>
+
+<!-- ================= CỬA SỔ XEM ================= -->
+<div class="viewer" id="viewer">
+  <div class="vhead">
+    <b id="vTitle"></b>
+    <button class="btn" id="vClose">✕ Đóng</button>
+  </div>
+  <div class="vbody" id="vBody"></div>
+</div>
+
+<script>
+/* =====================================================================
+   CẤU HÌNH — dán hai giá trị CÔNG KHAI của dự án Supabase vào đây.
+   Supabase → Project Settings → API:
+     • Project URL          → SUPABASE_URL
+     • anon / public key    → SUPABASE_ANON_KEY
+   TUYỆT ĐỐI KHÔNG dán khoá service_role vào file này (nó mở toàn bộ dữ liệu).
+   ===================================================================== */
+var SUPABASE_URL = 'https://euyrrodppbpnkmificbs.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
+
+(function () {
+  'use strict';
+  var sb = null, me = null, profile = null, classes = [], curClass = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function show(el, on) { el.hidden = !on; }
+  function msg(box, text, kind) {
+    box.textContent = text;
+    box.className = 'msg show ' + (kind || 'err');
+    if (!text) box.className = 'msg';
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
+    });
+  }
+  function fmtDate(d) {
+    if (!d) return '';
+    var p = String(d).slice(0, 10).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : String(d);
+  }
+  function fmtWhen(ts) {
+    if (!ts) return '';
+    var d = new Date(ts), p = function (n) { return ('0' + n).slice(-2); };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' lúc ' + p(d.getHours()) + 'h' + p(d.getMinutes());
+  }
+
+  var KIND = {
+    pdf:     { ic: '📄', name: 'Phiếu bài tập' },
+    lecture: { ic: '✍️', name: 'Bài giảng' },
+    video:   { ic: '▶️', name: 'Video bài giảng' },
+    link:    { ic: '🔗', name: 'Liên kết' },
+    answer:  { ic: '🔑', name: 'Đáp án / lời giải' },
+    text:    { ic: '📝', name: 'Ghi chú' }
+  };
+
+  /* ---------------- khởi động ---------------- */
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co/.test(SUPABASE_URL)) {
+    $('loginSub').textContent = 'Trang chưa được cấu hình: mở file index.html và dán Project URL cùng anon key vào phần CẤU HÌNH ở đầu thẻ script.';
+    $('loginForm').style.display = 'none';
+    $('forgotBtn').style.display = 'none';
+  } else {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb.auth.getSession().then(function (r) { if (r.data.session) enter(r.data.session.user); });
+    sb.auth.onAuthStateChange(function (ev, s) {
+      if (ev === 'SIGNED_OUT') location.reload();
+      else if (s && !me) enter(s.user);
+    });
+  }
+
+  /* ---------------- đăng nhập ---------------- */
+  $('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = $('loginBtn');
+    btn.disabled = true; btn.textContent = 'Đang vào…'; msg($('loginMsg'), '');
+    var r = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pass').value });
+    btn.disabled = false; btn.textContent = 'Vào lớp';
+    if (r.error) {
+      msg($('loginMsg'), r.error.message === 'Invalid login credentials'
+        ? 'Sai email hoặc mật khẩu.' : 'Không vào được: ' + r.error.message);
+      return;
+    }
+    enter(r.data.user);
+  });
+
+  $('forgotBtn').addEventListener('click', async function () {
+    var mail = $('email').value.trim();
+    if (!mail) { msg($('loginMsg'), 'Gõ email vào ô trên rồi bấm lại, hệ thống sẽ gửi link đặt lại mật khẩu.'); return; }
+    var r = await sb.auth.resetPasswordForEmail(mail, { redirectTo: location.href });
+    msg($('loginMsg'), r.error ? ('Không gửi được: ' + r.error.message)
+      : 'Đã gửi link đặt lại mật khẩu tới ' + mail + '. Kiểm tra hộp thư (cả mục spam).', r.error ? 'err' : 'ok');
+  });
+
+  $('outBtn').addEventListener('click', function () { sb.auth.signOut(); });
+
+  $('pwBtn').addEventListener('click', async function () {
+    var p1 = prompt('Mật khẩu mới (ít nhất 6 ký tự):');
+    if (!p1) return;
+    if (p1.length < 6) { alert('Mật khẩu quá ngắn.'); return; }
+    var r = await sb.auth.updateUser({ password: p1 });
+    alert(r.error ? ('Không đổi được: ' + r.error.message) : 'Đã đổi mật khẩu.');
+  });
+
+  /* ---------------- vào trong ---------------- */
+  async function enter(user) {
+    me = user;
+    var pr = await sb.from('profiles').select('full_name, role, active').eq('id', user.id).maybeSingle();
+    profile = pr.data || { full_name: '', role: 'student', active: true };
+    if (profile.active === false) {
+      alert('Tài khoản đang bị khoá. Liên hệ giáo viên.');
+      await sb.auth.signOut();
+      return;
+    }
+    $('whoAmI').textContent = profile.full_name || user.email;
+    if (profile.role === 'admin' || profile.role === 'teacher') $('teachLink').hidden = false;
+    show($('loginScreen'), false);
+    $('loginScreen').style.display = 'none';
+    show($('appScreen'), true);
+    await loadClasses();
+  }
+
+  async function loadClasses() {
+    var r = await sb.from('classes').select('id, name, subject').eq('archived', false).order('name');
+    classes = r.data || [];
+    var bar = $('classBar');
+    if (!classes.length) {
+      bar.innerHTML = '';
+      $('sessionList').innerHTML = '<div class="empty">Chưa có lớp nào. Giáo viên cần thêm em vào lớp trước.</div>';
+      return;
+    }
+    curClass = curClass && classes.some(function (c) { return c.id === curClass; }) ? curClass : classes[0].id;
+    bar.innerHTML = classes.map(function (c) {
+      return '<button data-c="' + c.id + '" class="' + (c.id === curClass ? 'on' : '') + '">' + esc(c.name) + '</button>';
+    }).join('');
+    if (classes.length === 1) bar.style.display = 'none';
+    await loadSessions();
+  }
+
+  $('classBar').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-c]');
+    if (!b) return;
+    curClass = b.dataset.c;
+    [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
+    loadSessions();
+  });
+
+  async function loadSessions() {
+    var box = $('sessionList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('sessions')
+      .select('id, no, title, held_on, note, materials(id, kind, title, open_at, order_no)')
+      .eq('class_id', curClass).eq('published', true)
+      .order('no', { ascending: false });
+    if (r.error) { box.innerHTML = '<div class="empty">Không tải được danh sách buổi: ' + esc(r.error.message) + '</div>'; return; }
+    var list = r.data || [];
+    if (!list.length) { box.innerHTML = '<div class="empty">Lớp này chưa có buổi nào được mở.</div>'; return; }
+    var now = Date.now();
+    box.innerHTML = '<h2 class="sec">' + list.length + ' buổi</h2>' + list.map(function (s, i) {
+      var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+      var rows = mats.map(function (m) {
+        var k = KIND[m.kind] || KIND.link;
+        var locked = m.open_at && new Date(m.open_at).getTime() > now;
+        return '<button class="item' + (locked ? ' locked' : '') + '"' + (locked ? ' disabled' : '') + ' data-m="' + m.id + '" data-kind="' + m.kind + '" data-title="' + esc(m.title || k.name) + '">'
+          + '<span class="ic">' + (locked ? '🔒' : k.ic) + '</span>'
+          + '<span class="tx"><b>' + esc(m.title || k.name) + '</b><span>'
+          + (locked ? 'Mở ' + fmtWhen(m.open_at) : k.name) + '</span></span></button>';
+      }).join('');
+      return '<details class="card ses"' + (i === 0 ? ' open' : '') + '>'
+        + '<summary><span class="no">' + esc(s.no != null ? s.no : '•') + '</span>'
+        + '<span class="t"><b>' + esc(s.title || ('Buổi ' + (s.no != null ? s.no : ''))) + '</b>'
+        + '<span>' + (s.held_on ? fmtDate(s.held_on) + ' · ' : '') + mats.length + ' tài liệu</span></span>'
+        + '</summary>'
+        + (s.note ? '<div class="note">' + esc(s.note) + '</div>' : '')
+        + '<div class="items">' + (rows || '<div class="empty" style="padding:18px">Buổi này chưa có tài liệu.</div>') + '</div>'
+        + '</details>';
+    }).join('');
+  }
+
+  $('sessionList').addEventListener('click', function (e) {
+    var b = e.target.closest('.item[data-m]');
+    if (b && !b.disabled) openMaterial(b.dataset.m, b.dataset.kind, b.dataset.title);
+  });
+
+  /* ---------------- xem tài liệu ---------------- */
+  var wmTimer = null;
+  function watermark(stage) {
+    var tag = document.createElement('div');
+    tag.className = 'wm';
+    tag.textContent = (profile.full_name ? profile.full_name + ' · ' : '') + (me.email || '');
+    stage.appendChild(tag);
+    function move() {
+      tag.style.left = (8 + Math.random() * 62) + '%';
+      tag.style.top = (8 + Math.random() * 78) + '%';
+    }
+    move();
+    clearInterval(wmTimer);
+    wmTimer = setInterval(move, 9000);
+  }
+
+  function embedUrl(u) {
+    var m;
+    if ((m = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([\w-]+)/)))
+      return 'https://www.youtube.com/embed/' + m[1] + '?rel=0&modestbranding=1';
+    if ((m = u.match(/drive\.google\.com\/file\/d\/([^/]+)/)))
+      return 'https://drive.google.com/file/d/' + m[1] + '/preview';
+    if ((m = u.match(/vimeo\.com\/(\d+)/))) return 'https://player.vimeo.com/video/' + m[1];
+    return u;
+  }
+
+  async function openMaterial(id, kind, title) {
+    var v = $('viewer'), body = $('vBody');
+    $('vTitle').textContent = title;
+    body.innerHTML = '<div class="vload">Đang mở…</div>';
+    v.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    var r = await sb.from('material_contents').select('url, storage_path, body').eq('material_id', id).maybeSingle();
+    if (r.error || !r.data) {
+      body.innerHTML = '<div class="vload">Chưa mở được nội dung này. Nếu là đáp án thì hãy chờ tới giờ giáo viên đặt.</div>';
+      return;
+    }
+    var c = r.data;
+
+    if (kind === 'text' || (!c.url && !c.storage_path)) {
+      body.innerHTML = '<div class="vtext"></div>';
+      body.querySelector('.vtext').textContent = c.body || '(trống)';
+      return;
+    }
+
+    if (kind === 'video' || (c.url && /youtube|youtu\.be|vimeo|drive\.google|bunnycdn|b-cdn\.net|cloudflarestream|videodelivery/.test(c.url))) {
+      body.innerHTML = '<div class="vstage"><iframe allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+      body.querySelector('iframe').src = embedUrl(c.url || '');
+      watermark(body.querySelector('.vstage'));
+      return;
+    }
+
+    if (c.url && !c.storage_path) {          /* link ngoài không phải video */
+      body.innerHTML = '<div class="vstage"><iframe referrerpolicy="strict-origin-when-cross-origin"></iframe>'
+        + '<p style="color:#cfe0ee;font-size:13px;text-align:center">Trang không hiện được thì mở bằng nút bên dưới.</p>'
+        + '<p style="text-align:center"><a class="btn" target="_blank" rel="noopener">↗ Mở ở tab mới</a></p></div>';
+      body.querySelector('iframe').src = c.url;
+      body.querySelector('a.btn').href = c.url;
+      return;
+    }
+
+    /* tệp trong kho: lấy link tạm thời rồi vẽ ra màn hình, không đưa link tải */
+    var sig = await sb.storage.from('tailieu').createSignedUrl(c.storage_path, 3600);
+    if (sig.error) { body.innerHTML = '<div class="vload">Không mở được tệp: ' + esc(sig.error.message) + '</div>'; return; }
+    var url = sig.data.signedUrl;
+
+    if (/\.(png|jpe?g|webp|gif)$/i.test(c.storage_path)) {
+      body.innerHTML = '<div class="vstage"><img src="' + url + '" style="width:100%;border-radius:10px" alt=""></div>';
+      watermark(body.querySelector('.vstage'));
+      return;
+    }
+    await renderPdf(url, body);
+  }
+
+  async function renderPdf(url, body) {
+    if (!window.pdfjsLib) { body.innerHTML = '<div class="vload">Không tải được bộ đọc PDF.</div>'; return; }
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      var pdf = await pdfjsLib.getDocument({ url: url }).promise;
+      body.innerHTML = '<div class="vstage" id="pdfStage"></div>';
+      var stage = $('pdfStage');
+      var maxW = Math.min(1000, body.clientWidth - 16);
+      for (var i = 1; i <= pdf.numPages; i++) {
+        var page = await pdf.getPage(i);
+        var vp1 = page.getViewport({ scale: 1 });
+        var scale = Math.min(2.6, (maxW / vp1.width) * (window.devicePixelRatio || 1));
+        var vp = page.getViewport({ scale: scale });
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+        cv.style.width = Math.round(vp.width / (window.devicePixelRatio || 1)) + 'px';
+        stage.appendChild(cv);
+        await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      }
+      watermark(stage);
+    } catch (err) {
+      body.innerHTML = '<div class="vload">Không đọc được tệp này: ' + esc(err && err.message || err) + '</div>';
+    }
+  }
+
+  function closeViewer() {
+    $('viewer').classList.remove('show');
+    $('vBody').innerHTML = '';
+    document.body.style.overflow = '';
+    clearInterval(wmTimer);
+  }
+  $('vClose').addEventListener('click', closeViewer);
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeViewer(); });
+
+  /* giảm thao tác chép nhanh: chuột phải và kéo ảnh trong cửa sổ xem */
+  $('vBody').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  $('vBody').addEventListener('dragstart', function (e) { e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quản trị lớp học</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg:#f5f7fa; --surface:#fff; --line:#dfe6ee; --ink:#1b2734; --muted:#6b7a8a;
+    --accent:#1888c9; --accent-ink:#fff; --ok:#15803d; --warn:#b45309; --danger:#c0392b;
+    --shadow:0 1px 3px rgba(16,32,48,.07), 0 6px 20px rgba(16,32,48,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#11171d; --surface:#19212a; --line:#2b3742; --ink:#e8eef4; --muted:#93a3b3;
+           --accent:#38a3e0; --shadow:0 1px 3px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35); }
+  }
+  *{ box-sizing:border-box }
+  html,body{ margin:0; padding:0 }
+  body{ background:var(--bg); color:var(--ink); min-height:100vh;
+        font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100% }
+  button,input,select,textarea{ font:inherit; color:inherit }
+  .top{ position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px;
+        padding:11px 14px; background:var(--surface); border-bottom:1px solid var(--line) }
+  .top .brand{ font-weight:800; margin-right:auto; font-size:15px }
+  .top .who{ font-size:12px; color:var(--muted) }
+  .btn{ display:inline-block; text-decoration:none; padding:8px 13px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+        color:var(--ink); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap }
+  .btn:hover{ border-color:var(--accent) }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink) }
+  .btn.danger{ color:var(--danger); border-color:#f0b4b4 }
+  .btn.sm{ padding:5px 9px; font-size:12px }
+  .btn:disabled{ opacity:.5; cursor:default }
+  .wrap{ max-width:1100px; margin:0 auto; padding:14px 14px 70px }
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:13px; box-shadow:var(--shadow) }
+
+  /* đăng nhập */
+  .login{ max-width:390px; margin:9vh auto; padding:0 16px }
+  .login h1{ font-size:21px; margin:0 0 4px }
+  .login p.sub{ margin:0 0 20px; color:var(--muted); font-size:13.5px }
+  .login .card{ padding:18px }
+  label.f{ display:block; margin-bottom:12px; font-size:13px; font-weight:600; color:var(--muted) }
+  label.f input,label.f select,label.f textarea{ display:block; width:100%; margin-top:5px; padding:10px 12px;
+        border-radius:9px; border:1px solid var(--line); background:var(--bg); font-size:14.5px }
+  label.f textarea{ min-height:70px; resize:vertical }
+  label.f small{ display:block; margin-top:4px; font-weight:400; font-size:11.5px }
+  .msg{ margin:10px 0 0; padding:9px 11px; border-radius:9px; font-size:13px; display:none }
+  .msg.show{ display:block }
+  .msg.err{ background:#fef2f2; color:#b91c1c; border:1px solid #fecaca }
+  .msg.ok{ background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0 }
+
+  /* bố cục */
+  .cols{ display:grid; grid-template-columns:250px 1fr; gap:14px; align-items:start }
+  @media (max-width:820px){ .cols{ grid-template-columns:1fr } }
+  h2.sec{ font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 8px 4px }
+  .clist{ padding:8px }
+  .citem{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:9px 10px; margin:1px 0;
+          border:1px solid transparent; border-radius:9px; background:none; cursor:pointer; font-size:14px }
+  .citem:hover{ background:var(--bg); border-color:var(--line) }
+  .citem.on{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700 }
+  .citem span.sub{ display:block; font-size:11.5px; opacity:.75; font-weight:400 }
+  .tabs{ display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap }
+  .tabs button{ padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+                color:var(--muted); font-size:13px; font-weight:700; cursor:pointer }
+  .tabs button.on{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink) }
+  .bar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px }
+  .bar .grow{ margin-left:auto }
+
+  /* buổi + tài liệu */
+  .ses{ margin-bottom:10px; overflow:hidden }
+  .ses > summary{ list-style:none; cursor:pointer; padding:11px 13px; display:flex; align-items:center; gap:10px }
+  .ses > summary::-webkit-details-marker{ display:none }
+  .ses .no{ flex:none; width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
+            background:var(--bg); border:1px solid var(--line); font-weight:800; font-size:13px; color:var(--accent) }
+  .ses .t{ flex:1; min-width:0 }
+  .ses .t b{ display:block; font-size:14.5px }
+  .ses .t span{ font-size:12px; color:var(--muted) }
+  .ses[open] > summary{ border-bottom:1px solid var(--line) }
+  .pill{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; border:1px solid var(--line); white-space:nowrap }
+  .pill.on{ background:#ecfdf5; border-color:#a7f3d0; color:#15803d }
+  .pill.off{ background:#fff7ed; border-color:#fed7aa; color:#b45309 }
+  .mats{ padding:8px 10px 12px }
+  .mat{ display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:9px }
+  .mat:hover{ background:var(--bg) }
+  .mat .ic{ width:24px; text-align:center; font-size:17px; flex:none }
+  .mat .tx{ flex:1; min-width:0 }
+  .mat .tx b{ display:block; font-weight:600; font-size:14px }
+  .mat .tx span{ font-size:11.5px; color:var(--muted); word-break:break-all }
+  .mat .acts{ display:flex; gap:4px; flex:none }
+  .addrow{ display:flex; gap:6px; flex-wrap:wrap; padding:4px 9px 0 }
+  .empty{ padding:26px 14px; text-align:center; color:var(--muted); font-size:13.5px }
+
+  /* danh sách sinh viên */
+  table.roster{ width:100%; border-collapse:collapse; font-size:14px }
+  table.roster th{ text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em;
+                   color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line) }
+  table.roster td{ padding:9px 10px; border-bottom:1px solid var(--line) }
+  table.roster tr:last-child td{ border-bottom:0 }
+
+  /* hộp thoại */
+  .modal-back{ position:fixed; inset:0; z-index:60; background:rgba(12,18,24,.55); display:flex;
+               align-items:center; justify-content:center; padding:16px }
+  .modal-back[hidden]{ display:none }
+  .modal{ width:min(520px,100%); max-height:90vh; overflow:auto; padding:18px; border-radius:14px;
+          background:var(--surface); box-shadow:0 20px 60px rgba(0,0,0,.3) }
+  .modal h3{ margin:0 0 14px; font-size:17px }
+  .modal .foot{ display:flex; gap:8px; justify-content:flex-end; margin-top:6px }
+  .toast{ position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:80;
+          padding:10px 16px; border-radius:11px; background:#1b2734; color:#fff; font-size:13.5px;
+          box-shadow:0 8px 26px rgba(0,0,0,.3); max-width:calc(100vw - 24px) }
+  .toast[hidden]{ display:none }
+  .hint{ font-size:12px; color:var(--muted); line-height:1.5 }
+</style>
+</head>
+<body>
+
+<section class="login" id="loginScreen">
+  <h1>Quản trị lớp học</h1>
+  <p class="sub" id="loginSub">Chỉ tài khoản giáo viên mới vào được trang này.</p>
+  <div class="card">
+    <form id="loginForm">
+      <label class="f">Email<input type="email" id="email" autocomplete="username" required></label>
+      <label class="f">Mật khẩu<input type="password" id="pass" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit" id="loginBtn" style="width:100%;padding:11px">Đăng nhập</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+  </div>
+</section>
+
+<div id="appScreen" hidden>
+  <div class="top">
+    <span class="brand">Quản trị lớp học</span>
+    <span class="who" id="whoAmI"></span>
+    <a class="btn" href="so-bai-tap.html">📓 Sổ Bài Tập</a>
+    <a class="btn" href="index.html" target="_blank" rel="noopener">👁 Trang học</a>
+    <button class="btn" id="outBtn">Thoát</button>
+  </div>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <h2 class="sec">Lớp</h2>
+        <div class="card clist" id="classList"></div>
+        <button class="btn" id="addClassBtn" style="width:100%;margin-top:8px">＋ Lớp mới</button>
+      </div>
+      <div>
+        <div class="tabs">
+          <button data-tab="ses" class="on">Buổi học</button>
+          <button data-tab="stu">Sinh viên</button>
+          <button data-tab="kho">Kho tệp</button>
+        </div>
+        <div id="paneSes">
+          <div class="bar">
+            <b id="clsName" style="font-size:16px"></b>
+            <span class="grow"></span>
+            <button class="btn sm" id="renameClsBtn">✎ Đổi tên</button>
+            <button class="btn sm danger" id="delClsBtn">Xoá lớp</button>
+            <button class="btn primary" id="addSesBtn">＋ Buổi mới</button>
+          </div>
+          <div id="sesList"></div>
+        </div>
+        <div id="paneKho" hidden>
+          <div class="bar">
+            <b style="font-size:16px">Kho tệp đã tải lên</b>
+            <span class="grow"></span>
+            <input id="khoFind" placeholder="Tìm theo tên tệp hoặc buổi…" style="padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-size:13px;min-width:220px">
+          </div>
+          <div class="card" id="khoList"></div>
+          <p class="hint" style="margin-top:10px">
+            Kho gom tệp của mọi lớp. Mỗi tệp chỉ nằm một bản: “Dùng lại” gắn đúng tệp đó sang buổi khác mà không phải tải lên lần nữa.
+          </p>
+        </div>
+        <div id="paneStu" hidden>
+          <div class="bar">
+            <b style="font-size:16px">Sinh viên trong lớp</b>
+            <span class="grow"></span>
+            <button class="btn primary" id="addStuBtn">＋ Thêm bằng email</button>
+          </div>
+          <div class="card" id="roster"></div>
+          <p class="hint" style="margin-top:10px">
+            Tài khoản sinh viên tạo trong Supabase → Authentication → Users → Add user (nhớ bật Auto Confirm User),
+            rồi quay lại đây bấm “Thêm bằng email”. Sinh viên chưa có tài khoản thì không thêm được.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="dlg" hidden><div class="modal">
+  <h3 id="dlgTitle"></h3>
+  <div id="dlgBody"></div>
+  <div class="msg" id="dlgMsg"></div>
+  <div class="foot">
+    <button class="btn" id="dlgCancel">Huỷ</button>
+    <button class="btn primary" id="dlgOk">Lưu</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* =====================================================================
+   CẤU HÌNH — giống hệt trang học. Hai giá trị CÔNG KHAI của dự án Supabase.
+   Không bao giờ dán khoá service_role vào đây.
+   ===================================================================== */
+var SUPABASE_URL = 'https://euyrrodppbpnkmificbs.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
+
+(function () {
+  'use strict';
+  var sb = null, me = null, profile = null;
+  var classes = [], curClass = null, sessions = [], roster = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
+    });
+  }
+  var toastT = null;
+  function toast(t) {
+    var el = $('toast'); el.textContent = t; el.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, 3200);
+  }
+  function msg(box, text, kind) {
+    box.textContent = text || '';
+    box.className = text ? ('msg show ' + (kind || 'err')) : 'msg';
+  }
+  function fmtDate(d) {
+    if (!d) return '';
+    var p = String(d).slice(0, 10).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : String(d);
+  }
+  function fmtWhen(ts) {
+    if (!ts) return '';
+    var d = new Date(ts), p = function (n) { return ('0' + n).slice(-2); };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' lúc ' + p(d.getHours()) + 'h' + p(d.getMinutes());
+  }
+  /* <input type="datetime-local"> cần giờ ĐỊA PHƯƠNG dạng YYYY-MM-DDTHH:MM */
+  function toLocalInput(ts) {
+    if (!ts) return '';
+    var d = new Date(ts), p = function (n) { return ('0' + n).slice(-2); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function fromLocalInput(v) { return v ? new Date(v).toISOString() : null; }
+
+  var KIND = {
+    pdf:     { ic: '📄', name: 'Phiếu bài tập (tệp)' },
+    lecture: { ic: '✍️', name: 'Bài giảng viết tay (tệp)' },
+    video:   { ic: '▶️', name: 'Video (link)' },
+    link:    { ic: '🔗', name: 'Liên kết' },
+    answer:  { ic: '🔑', name: 'Đáp án / lời giải' },
+    text:    { ic: '📝', name: 'Ghi chú (chữ)' }
+  };
+
+  /* ---------------- hộp thoại chung ---------------- */
+  var dlgOnOk = null;
+  function dialog(title, bodyHtml, onOk, okLabel) {
+    $('dlgTitle').textContent = title;
+    $('dlgBody').innerHTML = bodyHtml;
+    $('dlgOk').textContent = okLabel || 'Lưu';
+    msg($('dlgMsg'), '');
+    dlgOnOk = onOk;
+    $('dlg').hidden = false;
+    var first = $('dlgBody').querySelector('input,select,textarea');
+    if (first) setTimeout(function () { first.focus(); }, 50);
+  }
+  function closeDlg() { $('dlg').hidden = true; dlgOnOk = null; }
+  $('dlgCancel').addEventListener('click', closeDlg);
+  $('dlg').addEventListener('click', function (e) { if (e.target === this) closeDlg(); });
+  $('dlgOk').addEventListener('click', async function () {
+    if (!dlgOnOk) return;
+    this.disabled = true;
+    try { var ok = await dlgOnOk(); if (ok !== false) closeDlg(); }
+    catch (err) { msg($('dlgMsg'), 'Lỗi: ' + (err && err.message || err)); }
+    this.disabled = false;
+  });
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dlg').hidden) closeDlg(); });
+  function val(id) { var el = $(id); return el ? el.value.trim() : ''; }
+
+  /* ---------------- đăng nhập ---------------- */
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co/.test(SUPABASE_URL)) {
+    $('loginSub').textContent = 'Trang chưa được cấu hình: dán Project URL và anon key vào phần CẤU HÌNH.';
+    $('loginForm').style.display = 'none';
+  } else {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb.auth.getSession().then(function (r) { if (r.data.session) enter(r.data.session.user); });
+    sb.auth.onAuthStateChange(function (ev) { if (ev === 'SIGNED_OUT') location.reload(); });
+  }
+  $('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var b = $('loginBtn'); b.disabled = true; b.textContent = 'Đang vào…'; msg($('loginMsg'), '');
+    var r = await sb.auth.signInWithPassword({ email: val('email'), password: $('pass').value });
+    b.disabled = false; b.textContent = 'Đăng nhập';
+    if (r.error) { msg($('loginMsg'), r.error.message === 'Invalid login credentials' ? 'Sai email hoặc mật khẩu.' : r.error.message); return; }
+    enter(r.data.user);
+  });
+  $('outBtn').addEventListener('click', function () { sb.auth.signOut(); });
+
+  async function enter(user) {
+    me = user;
+    var pr = await sb.from('profiles').select('full_name, role, active').eq('id', user.id).maybeSingle();
+    profile = pr.data || {};
+    if (profile.role !== 'admin' && profile.role !== 'teacher') {
+      msg($('loginMsg'), 'Tài khoản này không có quyền quản trị. Chỉ giáo viên mới vào được.');
+      await sb.auth.signOut();
+      return;
+    }
+    $('whoAmI').textContent = (profile.full_name || user.email) + ' · ' + profile.role;
+    $('loginScreen').style.display = 'none';
+    $('appScreen').hidden = false;
+    await loadClasses();
+  }
+
+  /* ---------------- lớp ---------------- */
+  async function loadClasses() {
+    var r = await sb.from('classes').select('id, name, subject, archived').order('name');
+    if (r.error) { toast('Không tải được lớp: ' + r.error.message); return; }
+    classes = r.data || [];
+    if (!classes.some(function (c) { return c.id === curClass; })) curClass = classes[0] ? classes[0].id : null;
+    $('classList').innerHTML = classes.length ? classes.map(function (c) {
+      return '<button class="citem' + (c.id === curClass ? ' on' : '') + '" data-c="' + c.id + '">'
+        + '<span>' + esc(c.name) + '<span class="sub">' + esc(c.subject || '—') + '</span></span></button>';
+    }).join('') : '<div class="empty">Chưa có lớp nào.</div>';
+    await refreshPane();
+  }
+  $('classList').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-c]'); if (!b) return;
+    curClass = b.dataset.c;
+    [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
+    refreshPane();
+  });
+  $('addClassBtn').addEventListener('click', function () {
+    dialog('Lớp mới',
+      '<label class="f">Tên lớp<input id="fName" placeholder="Hóa phân tích K68 · tối 3-5"></label>'
+      + '<label class="f">Môn<input id="fSubj" placeholder="Hóa phân tích"></label>',
+      async function () {
+        if (!val('fName')) { msg($('dlgMsg'), 'Chưa đặt tên lớp.'); return false; }
+        var r = await sb.from('classes').insert({ name: val('fName'), subject: val('fSubj'), owner: me.id }).select('id').single();
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        curClass = r.data.id;
+        toast('Đã tạo lớp.');
+        await loadClasses();
+      }, 'Tạo lớp');
+  });
+  $('renameClsBtn').addEventListener('click', function () {
+    var c = classes.filter(function (x) { return x.id === curClass; })[0]; if (!c) return;
+    dialog('Đổi tên lớp',
+      '<label class="f">Tên lớp<input id="fName" value="' + esc(c.name) + '"></label>'
+      + '<label class="f">Môn<input id="fSubj" value="' + esc(c.subject || '') + '"></label>',
+      async function () {
+        var r = await sb.from('classes').update({ name: val('fName'), subject: val('fSubj') }).eq('id', c.id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã lưu.');
+        await loadClasses();
+      });
+  });
+  $('delClsBtn').addEventListener('click', function () {
+    var c = classes.filter(function (x) { return x.id === curClass; })[0]; if (!c) return;
+    dialog('Xoá lớp “' + c.name + '”?',
+      '<p class="hint">Xoá lớp là xoá luôn mọi buổi, tài liệu và danh sách sinh viên của lớp đó. Không lấy lại được.<br>'
+      + 'Gõ <b>XOA</b> để xác nhận.</p><label class="f"><input id="fConfirm" placeholder="XOA"></label>',
+      async function () {
+        if (val('fConfirm') !== 'XOA') { msg($('dlgMsg'), 'Gõ đúng chữ XOA để xác nhận.'); return false; }
+        var r = await sb.from('classes').delete().eq('id', c.id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        curClass = null; toast('Đã xoá lớp.');
+        await loadClasses();
+      }, 'Xoá hẳn');
+  });
+
+  /* ---------------- tab ---------------- */
+  var tab = 'ses';
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]'); if (!b) return;
+    tab = b.dataset.tab;
+    [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
+    $('paneSes').hidden = tab !== 'ses';
+    $('paneStu').hidden = tab !== 'stu';
+    $('paneKho').hidden = tab !== 'kho';
+    refreshPane();
+  });
+  async function refreshPane() {
+    var c = classes.filter(function (x) { return x.id === curClass; })[0];
+    $('clsName').textContent = c ? c.name : '';
+    ['addSesBtn', 'renameClsBtn', 'delClsBtn', 'addStuBtn'].forEach(function (id) { $(id).disabled = !c; });
+    if (tab === 'kho') { await loadKho(); return; }          /* kho gom tệp của MỌI lớp nên không cần chọn lớp */
+    if (!c) { $('sesList').innerHTML = '<div class="empty">Tạo một lớp trước đã.</div>'; $('roster').innerHTML = ''; return; }
+    if (tab === 'ses') await loadSessions();
+    else if (tab === 'stu') await loadRoster();
+    else await loadKho();
+  }
+
+  /* ---------------- buổi học ---------------- */
+  async function loadSessions() {
+    var box = $('sesList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('sessions')
+      .select('id, no, title, held_on, note, published, materials(id, kind, title, open_at, order_no)')
+      .eq('class_id', curClass).order('no', { ascending: false });
+    if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
+    sessions = r.data || [];
+    if (!sessions.length) { box.innerHTML = '<div class="empty">Lớp này chưa có buổi nào. Bấm “＋ Buổi mới”.</div>'; return; }
+    box.innerHTML = sessions.map(function (s) {
+      var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+      return '<details class="card ses" data-s="' + s.id + '">'
+        + '<summary><span class="no">' + esc(s.no != null ? s.no : '•') + '</span>'
+        + '<span class="t"><b>' + esc(s.title || 'Chưa đặt tên') + '</b><span>'
+        + (s.held_on ? fmtDate(s.held_on) + ' · ' : '') + mats.length + ' tài liệu</span></span>'
+        + '<span class="pill ' + (s.published ? 'on' : 'off') + '">' + (s.published ? 'Đã mở' : 'Nháp') + '</span>'
+        + '</summary>'
+        + '<div class="mats">'
+        + '<div class="bar" style="margin:4px 0 8px">'
+        + '  <button class="btn sm" data-a="pub" data-s="' + s.id + '">' + (s.published ? '🙈 Chuyển về nháp' : '👁 Mở cho sinh viên') + '</button>'
+        + '  <button class="btn sm" data-a="edit-ses" data-s="' + s.id + '">✎ Sửa buổi</button>'
+        + '  <button class="btn sm danger" data-a="del-ses" data-s="' + s.id + '">Xoá buổi</button>'
+        + '</div>'
+        + (mats.length ? mats.map(function (m, i) {
+            var k = KIND[m.kind] || KIND.link;
+            return '<div class="mat"><span class="ic">' + k.ic + '</span>'
+              + '<span class="tx"><b>' + esc(m.title || k.name) + '</b><span>' + k.name
+              + (m.open_at ? ' · mở ' + fmtWhen(m.open_at) : '') + '</span></span>'
+              + '<span class="acts">'
+              + '<button class="btn sm" data-a="up" data-m="' + m.id + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>'
+              + '<button class="btn sm" data-a="down" data-m="' + m.id + '"' + (i === mats.length - 1 ? ' disabled' : '') + '>↓</button>'
+              + '<button class="btn sm" data-a="edit-mat" data-m="' + m.id + '">✎</button>'
+              + '<button class="btn sm danger" data-a="del-mat" data-m="' + m.id + '">×</button>'
+              + '</span></div>';
+          }).join('') : '<div class="empty" style="padding:14px">Buổi này chưa có tài liệu.</div>')
+        + '<div class="addrow">'
+        + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="video">＋ Video</button>'
+        + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="pdf">＋ Tệp PDF / ảnh</button>'
+        + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="lecture">＋ Bài giảng viết tay</button>'
+        + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="link">＋ Liên kết</button>'
+        + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="text">＋ Ghi chú</button>'
+        + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="answer">＋ Đáp án (khoá theo giờ)</button>'
+        + '</div></div></details>';
+    }).join('');
+  }
+
+  $('addSesBtn').addEventListener('click', function () {
+    var next = sessions.reduce(function (m, s) { return Math.max(m, s.no || 0); }, 0) + 1;
+    var today = new Date().toISOString().slice(0, 10);
+    dialog('Buổi mới',
+      '<label class="f">Buổi số<input id="fNo" type="number" value="' + next + '"></label>'
+      + '<label class="f">Tên buổi<input id="fTitle" placeholder="Nồng độ và pha dung dịch"></label>'
+      + '<label class="f">Ngày dạy<input id="fDate" type="date" value="' + today + '"></label>'
+      + '<label class="f">Ghi chú cho sinh viên<textarea id="fNote" placeholder="Xem video trước, làm phiếu bài tập rồi mang tới lớp."></textarea></label>'
+      + '<label class="f"><input type="checkbox" id="fPub" style="width:auto;display:inline;margin-right:6px">Mở cho sinh viên xem ngay'
+      + '<small>Chưa tick thì buổi ở dạng nháp, sinh viên không thấy gì.</small></label>',
+      async function () {
+        var r = await sb.from('sessions').insert({
+          class_id: curClass, no: Number(val('fNo')) || null, title: val('fTitle'),
+          held_on: val('fDate') || null, note: val('fNote'), published: $('fPub').checked
+        });
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã tạo buổi.');
+        await loadSessions();
+      }, 'Tạo buổi');
+  });
+
+  $('sesList').addEventListener('click', async function (e) {
+    var b = e.target.closest('button[data-a]'); if (!b) return;
+    e.preventDefault();
+    var a = b.dataset.a;
+    if (a === 'pub') {
+      var s = sessions.filter(function (x) { return x.id === b.dataset.s; })[0];
+      var r = await sb.from('sessions').update({ published: !s.published }).eq('id', s.id);
+      if (r.error) toast('Lỗi: ' + r.error.message);
+      else { toast(!s.published ? 'Đã mở cho sinh viên.' : 'Đã chuyển về nháp.'); await loadSessions(); }
+    } else if (a === 'edit-ses') editSession(b.dataset.s);
+    else if (a === 'del-ses') delSession(b.dataset.s);
+    else if (a === 'add-mat') addMaterial(b.dataset.s, b.dataset.k);
+    else if (a === 'edit-mat') editMaterial(b.dataset.m);
+    else if (a === 'del-mat') delMaterial(b.dataset.m);
+    else if (a === 'up' || a === 'down') moveMaterial(b.dataset.m, a === 'up' ? -1 : 1);
+  });
+
+  function editSession(id) {
+    var s = sessions.filter(function (x) { return x.id === id; })[0]; if (!s) return;
+    dialog('Sửa buổi',
+      '<label class="f">Buổi số<input id="fNo" type="number" value="' + (s.no != null ? s.no : '') + '"></label>'
+      + '<label class="f">Tên buổi<input id="fTitle" value="' + esc(s.title || '') + '"></label>'
+      + '<label class="f">Ngày dạy<input id="fDate" type="date" value="' + (s.held_on || '') + '"></label>'
+      + '<label class="f">Ghi chú<textarea id="fNote">' + esc(s.note || '') + '</textarea></label>',
+      async function () {
+        var r = await sb.from('sessions').update({
+          no: Number(val('fNo')) || null, title: val('fTitle'),
+          held_on: val('fDate') || null, note: val('fNote')
+        }).eq('id', id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã lưu.');
+        await loadSessions();
+      });
+  }
+  function delSession(id) {
+    var s = sessions.filter(function (x) { return x.id === id; })[0]; if (!s) return;
+    dialog('Xoá buổi ' + (s.no || '') + '?',
+      '<p class="hint">Mọi tài liệu trong buổi cũng bị xoá. Tệp đã tải lên kho thì xoá riêng ở Supabase → Storage.</p>',
+      async function () {
+        var r = await sb.from('sessions').delete().eq('id', id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã xoá buổi.');
+        await loadSessions();
+      }, 'Xoá');
+  }
+
+  /* ---------------- tài liệu ---------------- */
+  function matById(id) {
+    for (var i = 0; i < sessions.length; i++) {
+      var m = (sessions[i].materials || []).filter(function (x) { return x.id === id; })[0];
+      if (m) { m._ses = sessions[i]; return m; }
+    }
+    return null;
+  }
+  function fileKind(k) { return k === 'pdf' || k === 'lecture'; }
+
+  function addMaterial(sesId, kind) {
+    var k = KIND[kind] || KIND.link;
+    var body = '<label class="f">Tên hiển thị<input id="fTitle" placeholder="' + esc(k.name) + '"></label>';
+    if (kind === 'video' || kind === 'link') {
+      body += '<label class="f">Đường dẫn<input id="fUrl" placeholder="https://www.youtube.com/watch?v=..."><small>YouTube, Drive, Vimeo, Bunny… dán nguyên link là được.</small></label>';
+    } else if (kind === 'text') {
+      body += '<label class="f">Nội dung<textarea id="fBody" style="min-height:120px"></textarea></label>';
+    } else if (kind === 'answer') {
+      body += '<label class="f">Kiểu<select id="fMode"><option value="file">Tệp PDF</option><option value="text">Gõ chữ</option><option value="url">Link</option></select></label>'
+        + '<div id="fSlot"></div>';
+    } else {
+      body += '<label class="f">Chọn tệp<input id="fFile" type="file" accept=".pdf,image/*"><small>Tệp nằm trong kho riêng, sinh viên xem trên trang chứ không có nút tải.</small></label>';
+    }
+    if (kind === 'answer' || kind === 'pdf' || kind === 'lecture') {
+      body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local">'
+        + '<small>Trước giờ này sinh viên thấy tên tài liệu kèm ổ khoá, máy chủ từ chối trả nội dung.</small></label>';
+    }
+    dialog('Thêm ' + k.name, body, async function () {
+      return saveMaterial(null, sesId, kind);
+    }, 'Thêm');
+    if (kind === 'answer') {
+      var slot = $('fSlot');
+      var draw = function () {
+        var m = $('fMode').value;
+        slot.innerHTML = m === 'file' ? '<label class="f">Chọn tệp<input id="fFile" type="file" accept=".pdf,image/*"></label>'
+          : m === 'text' ? '<label class="f">Nội dung<textarea id="fBody" style="min-height:110px"></textarea></label>'
+          : '<label class="f">Đường dẫn<input id="fUrl" placeholder="https://…"></label>';
+      };
+      $('fMode').addEventListener('change', draw); draw();
+    }
+  }
+
+  function editMaterial(id) {
+    var m = matById(id); if (!m) return;
+    var k = KIND[m.kind] || KIND.link;
+    sb.from('material_contents').select('url, storage_path, body').eq('material_id', id).maybeSingle().then(function (r) {
+      var c = r.data || {};
+      var body = '<label class="f">Tên hiển thị<input id="fTitle" value="' + esc(m.title || '') + '"></label>';
+      if (c.storage_path) {
+        body += '<label class="f">Tệp hiện tại<input value="' + esc(c.storage_path) + '" disabled></label>'
+          + '<label class="f">Thay bằng tệp khác (bỏ trống nếu giữ nguyên)<input id="fFile" type="file" accept=".pdf,image/*"></label>';
+      } else if (c.body != null && !c.url) {
+        body += '<label class="f">Nội dung<textarea id="fBody" style="min-height:120px">' + esc(c.body) + '</textarea></label>';
+      } else {
+        body += '<label class="f">Đường dẫn<input id="fUrl" value="' + esc(c.url || '') + '"></label>';
+      }
+      body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local" value="' + toLocalInput(m.open_at) + '"></label>';
+      dialog('Sửa ' + k.name, body, async function () { return saveMaterial(id, m._ses.id, m.kind); });
+    });
+  }
+
+  async function saveMaterial(id, sesId, kind) {
+    var title = val('fTitle');
+    var openAt = $('fOpen') ? fromLocalInput(val('fOpen')) : null;
+    var fileEl = $('fFile'), file = fileEl && fileEl.files && fileEl.files[0];
+    var url = $('fUrl') ? val('fUrl') : null;
+    var textBody = $('fBody') ? $('fBody').value : null;
+
+    if (!id && !file && !url && !textBody) { msg($('dlgMsg'), 'Chưa có nội dung: chọn tệp, dán link hoặc gõ chữ.'); return false; }
+    if (url && !/^https?:\/\//i.test(url)) { msg($('dlgMsg'), 'Link phải bắt đầu bằng http:// hoặc https://'); return false; }
+
+    var storagePath = null;
+    if (file) {
+      if (file.size > 40 * 1024 * 1024) { msg($('dlgMsg'), 'Tệp lớn hơn 40 MB, nên nén lại hoặc tách nhỏ.'); return false; }
+      msg($('dlgMsg'), 'Đang tải tệp lên…', 'ok');
+      var safe = file.name.replace(/[^\w.\-]+/g, '_');
+      storagePath = sesId + '/' + Date.now() + '_' + safe;
+      var up = await sb.storage.from('tailieu').upload(storagePath, file, { upsert: false });
+      if (up.error) { msg($('dlgMsg'), 'Tải tệp hỏng: ' + up.error.message); return false; }
+    }
+
+    var matId = id;
+    if (id) {
+      var u = await sb.from('materials').update({ title: title, open_at: openAt }).eq('id', id);
+      if (u.error) { msg($('dlgMsg'), u.error.message); return false; }
+    } else {
+      var ses = sessions.filter(function (x) { return x.id === sesId; })[0];
+      var order = ((ses && ses.materials) || []).reduce(function (m, x) { return Math.max(m, x.order_no || 0); }, 0) + 1;
+      var ins = await sb.from('materials').insert({
+        session_id: sesId, kind: kind, title: title || (KIND[kind] || {}).name || '', open_at: openAt, order_no: order
+      }).select('id').single();
+      if (ins.error) { msg($('dlgMsg'), ins.error.message); return false; }
+      matId = ins.data.id;
+    }
+
+    var content = {};
+    if (storagePath) content.storage_path = storagePath;
+    if (url) content.url = url;
+    if (textBody != null && textBody !== '') content.body = textBody;
+    if (Object.keys(content).length) {
+      content.material_id = matId;
+      var cu = await sb.from('material_contents').upsert(content, { onConflict: 'material_id' });
+      if (cu.error) { msg($('dlgMsg'), cu.error.message); return false; }
+    }
+    toast(id ? 'Đã lưu.' : 'Đã thêm tài liệu.');
+    await loadSessions();
+  }
+
+  function delMaterial(id) {
+    var m = matById(id); if (!m) return;
+    dialog('Xoá “' + (m.title || '') + '”?', '<p class="hint">Chỉ xoá khỏi buổi học. Tệp trong kho xoá riêng ở Supabase → Storage nếu cần.</p>',
+      async function () {
+        var r = await sb.from('materials').delete().eq('id', id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã xoá.');
+        await loadSessions();
+      }, 'Xoá');
+  }
+
+  async function moveMaterial(id, dir) {
+    var m = matById(id); if (!m) return;
+    var list = (m._ses.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+    var i = list.findIndex(function (x) { return x.id === id; });
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    var a = list[i], b = list[j];
+    await sb.from('materials').update({ order_no: b.order_no || (j + 1) }).eq('id', a.id);
+    await sb.from('materials').update({ order_no: a.order_no || (i + 1) }).eq('id', b.id);
+    await loadSessions();
+  }
+
+  /* ---------------- kho tệp ---------------- */
+  var khoRows = [];
+  async function loadKho() {
+    var box = $('khoList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('materials')
+      .select('id, title, kind, session_id, material_contents(storage_path), sessions(no, title, class_id, classes(name))');
+    if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
+    var byPath = {};
+    (r.data || []).forEach(function (m) {
+      var mc = m.material_contents;
+      var pth = mc && (Array.isArray(mc) ? (mc[0] || {}).storage_path : mc.storage_path);
+      if (!pth) return;
+      if (!byPath[pth]) byPath[pth] = { path: pth, kind: m.kind, name: fileNameOf(pth), used: [] };
+      var ss = m.sessions || {}, cc = ss.classes || {};
+      byPath[pth].used.push({ title: m.title, cls: cc.name || '', no: ss.no, ses: ss.title || '' });
+    });
+    khoRows = Object.keys(byPath).map(function (k) { return byPath[k]; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name, 'vi'); });
+    drawKho();
+  }
+  function fileNameOf(pth) {
+    var n = String(pth).split('/').pop() || '';
+    return n.replace(/^[0-9]+_/, "");
+  }
+  function drawKho() {
+    var box = $('khoList');
+    var q = ($('khoFind').value || '').toLowerCase().trim();
+    var list = khoRows.filter(function (f) {
+      if (!q) return true;
+      var hay = f.name + ' ' + f.used.map(function (u) { return u.title + ' ' + u.cls + ' ' + u.ses; }).join(' ');
+      return hay.toLowerCase().indexOf(q) >= 0;
+    });
+    if (!khoRows.length) { box.innerHTML = '<div class="empty">Kho chưa có tệp nào. Tệp vào đây khi m thêm tài liệu dạng tệp vào một buổi.</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="empty">Không có tệp nào khớp.</div>'; return; }
+    box.innerHTML = '<table class="roster"><thead><tr><th>Tệp</th><th>Đang dùng ở</th><th></th></tr></thead><tbody>'
+      + list.map(function (f) {
+        var k = KIND[f.kind] || KIND.pdf;
+        return '<tr><td><b>' + k.ic + ' ' + esc(f.name) + '</b></td>'
+          + '<td>' + f.used.map(function (u) {
+              return '<div style="font-size:12.5px">' + esc(u.cls) + ' · buổi ' + esc(u.no != null ? u.no : '?') + ' — ' + esc(u.title || '') + '</div>';
+            }).join('') + '</td>'
+          + '<td style="text-align:right;white-space:nowrap">'
+          + '<button class="btn sm" data-kho="xem" data-p="' + esc(f.path) + '">Xem</button> '
+          + '<button class="btn sm" data-kho="dung" data-p="' + esc(f.path) + '" data-k="' + esc(f.kind) + '">Dùng lại</button>'
+          + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  $('khoFind').addEventListener('input', drawKho);
+  $('khoList').addEventListener('click', async function (e) {
+    var b = e.target.closest('button[data-kho]'); if (!b) return;
+    var pth = b.dataset.p;
+    if (b.dataset.kho === 'xem') {
+      var sig = await sb.storage.from('tailieu').createSignedUrl(pth, 600);
+      if (sig.error) { toast('Không mở được: ' + sig.error.message); return; }
+      window.open(sig.data.signedUrl, '_blank', 'noopener');
+      return;
+    }
+    reuseFile(pth, b.dataset.k);
+  });
+  function reuseFile(pth, kind) {
+    var name = fileNameOf(pth);
+    dialog('Dùng lại tệp cho buổi khác',
+      '<p class="hint" style="margin-top:0">Tệp: <b>' + esc(name) + '</b></p>'
+      + '<label class="f">Lớp<select id="fCls">' + classes.map(function (c) {
+          return '<option value="' + c.id + '"' + (c.id === curClass ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+        }).join('') + '</select></label>'
+      + '<label class="f">Buổi<select id="fSes"><option>Đang tải…</option></select></label>'
+      + '<label class="f">Tên hiển thị<input id="fTitle" value="' + esc(name) + '"></label>'
+      + '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local"></label>',
+      async function () {
+        var sesId = val('fSes');
+        if (!sesId) { msg($('dlgMsg'), 'Chọn một buổi.'); return false; }
+        var ins = await sb.from('materials').insert({
+          session_id: sesId, kind: kind, title: val('fTitle') || name,
+          open_at: fromLocalInput(val('fOpen')), order_no: 99
+        }).select('id').single();
+        if (ins.error) { msg($('dlgMsg'), ins.error.message); return false; }
+        var cu = await sb.from('material_contents').insert({ material_id: ins.data.id, storage_path: pth });
+        if (cu.error) { msg($('dlgMsg'), cu.error.message); return false; }
+        toast('Đã gắn tệp vào buổi.');
+        await loadKho();
+      }, 'Gắn vào buổi');
+    var fillSes = async function () {
+      var sel = $('fSes');
+      sel.innerHTML = '<option>Đang tải…</option>';
+      var rr = await sb.from('sessions').select('id, no, title').eq('class_id', val('fCls')).order('no');
+      sel.innerHTML = (rr.data || []).length
+        ? rr.data.map(function (ss) { return '<option value="' + ss.id + '">Buổi ' + (ss.no != null ? ss.no : '?') + ' · ' + esc(ss.title || '') + '</option>'; }).join('')
+        : '<option value="">(lớp này chưa có buổi nào)</option>';
+    };
+    $('fCls').addEventListener('change', fillSes);
+    fillSes();
+  }
+
+  /* ---------------- sinh viên ---------------- */
+  async function loadRoster() {
+    var box = $('roster');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('enrollments')
+      .select('student, joined_at, profiles(full_name, email, student_no, active, role)')
+      .eq('class_id', curClass);
+    if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
+    roster = (r.data || []).sort(function (a, b) {
+      return String((a.profiles || {}).full_name || '').localeCompare(String((b.profiles || {}).full_name || ''), 'vi');
+    });
+    if (!roster.length) { box.innerHTML = '<div class="empty">Lớp này chưa có sinh viên nào.</div>'; return; }
+    var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
+    box.innerHTML = '<table class="roster"><thead><tr><th>Họ tên</th><th>Email</th><th>Quyền</th><th></th></tr></thead><tbody>'
+      + roster.map(function (e) {
+        var p = e.profiles || {}, r = p.role || 'student', self = e.student === me.id;
+        return '<tr><td>' + esc(p.full_name || '(chưa đặt tên)')
+          + (p.active === false ? ' <span class="pill off">đang khoá</span>' : '')
+          + '</td><td>' + esc(p.email || '') + '</td>'
+          + '<td><span class="pill ' + (r === 'student' ? '' : 'on') + '">' + (ROLE[r] || r) + '</span>'
+          + (self ? '' : ' <button class="btn sm" data-role="' + (r === 'student' ? 'teacher' : 'student')
+              + '" data-id="' + e.student + '" title="Đổi quyền của người này">'
+              + (r === 'student' ? 'Cho làm giáo viên' : 'Hạ về sinh viên') + '</button>')
+          + '</td>'
+          + '<td style="text-align:right"><button class="btn sm danger" data-rm="' + e.student + '">Bỏ khỏi lớp</button></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  $('roster').addEventListener('click', async function (e) {
+    var rl = e.target.closest('button[data-role]');
+    if (rl) {
+      var want = rl.dataset.role;
+      if (want === 'teacher' && !confirm('Cho người này làm giáo viên? Họ sẽ mở được trang quản trị và Sổ Bài Tập.')) return;
+      var ru = await sb.from('profiles').update({ role: want }).eq('id', rl.dataset.id);
+      if (ru.error) toast('Lỗi: ' + ru.error.message);
+      else { toast(want === 'teacher' ? 'Đã cho làm giáo viên.' : 'Đã hạ về sinh viên.'); await loadRoster(); }
+      return;
+    }
+    var b = e.target.closest('button[data-rm]'); if (!b) return;
+    var r = await sb.from('enrollments').delete().eq('class_id', curClass).eq('student', b.dataset.rm);
+    if (r.error) toast('Lỗi: ' + r.error.message); else { toast('Đã bỏ khỏi lớp.'); await loadRoster(); }
+  });
+  $('addStuBtn').addEventListener('click', function () {
+    dialog('Thêm sinh viên vào lớp',
+      '<label class="f">Email sinh viên<input id="fEmail" type="email" placeholder="sinhvien@example.com">'
+      + '<small>Sinh viên phải có tài khoản trước. Tạo ở Supabase → Authentication → Users → Add user, nhớ bật Auto Confirm User.</small></label>',
+      async function () {
+        var mail = val('fEmail');
+        if (!mail) { msg($('dlgMsg'), 'Chưa nhập email.'); return false; }
+        var r = await sb.rpc('enroll_by_email', { p_class: curClass, p_email: mail });
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã thêm vào lớp.');
+        await loadRoster();
+      }, 'Thêm');
+  });
+})();
+</script>
+</body>
+</html>
