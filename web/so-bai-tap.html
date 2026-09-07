@@ -1901,6 +1901,7 @@
       menu.addEventListener('click', function (e) { e.stopPropagation(); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') menu.hidden = true; });
       menu.querySelector('#sbtGiao').addEventListener('click', function () { menu.hidden = true; openSend(); });
+      mountNavGiao();
       menu.querySelector('#sbtOut').addEventListener('click', async function () {
         await sb.auth.signOut();
         location.reload();
@@ -2192,6 +2193,30 @@
     var t = el ? el.textContent.trim() : '';
     return t || 'Tài liệu';
   }
+  /* Cột trái của sổ dựng sau khi app khởi động, nên chờ nó xuất hiện rồi mới cắm nút vào
+     nhóm "Xuất" — cạnh In / Xuất PDF, đúng chỗ tay người ta tìm tới khi muốn phát tài liệu. */
+  function mountNavGiao() {
+    var lan = 0;
+    (function thu() {
+      if (document.getElementById('sbtNavGiao')) return;
+      var nhom = null;
+      var gs = document.querySelectorAll('.sn-group');
+      for (var i = 0; i < gs.length; i++) {
+        var h = gs[i].querySelector('h4');
+        if (h && h.textContent.trim() === 'Xuất') { nhom = gs[i]; break; }
+      }
+      if (!nhom) { if (++lan < 40) setTimeout(thu, 300); return; }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.id = 'sbtNavGiao';
+      b.className = 'sn-item sn-primary';
+      b.textContent = '📤 Giao cho lớp';
+      b.title = 'Đẩy thẳng tài liệu đang mở lên lớp cho sinh viên xem — không tải tệp nào về máy';
+      b.addEventListener('click', openSend);
+      nhom.insertBefore(b, nhom.querySelector('h4').nextSibling);
+    })();
+  }
+
   async function openSend() {
     buildSendUI();
     if (!document.querySelector('#sheet .problem, #sheet .lec-page')) {
