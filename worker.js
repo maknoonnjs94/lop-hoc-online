@@ -27,7 +27,7 @@ export default {
       let body = {};
       try { body = await request.json(); } catch (e) { body = {}; }
       const ai = await nguoiGoi(request, env);
-      if (ai.loi) return json({ ok: false, reason: ai.loi }, 401, request);
+      if (ai.loi) return json({ ok: false, reason: ai.loi, chi_tiet: ai.email ? (ai.email + (ai.vai_tro ? ' — vai trò máy chủ thấy: ' + ai.vai_tro : '')) : undefined }, 401, request);
       if (url.pathname === '/api/tao-tai-khoan') return await taoTaiKhoan(body, ai, env, request);
       if (url.pathname === '/api/cap-lai-mat-khau') return await capLaiMatKhau(body, ai, env, request);
       return json({ ok: false, reason: 'khong_co_duong_nay' }, 404, request);
@@ -86,8 +86,8 @@ async function nguoiGoi(request, env) {
   const p = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + u.id + '&select=role,active', { headers: adminHeaders(env) });
   const rows = p.ok ? await p.json() : [];
   const ho = rows[0] || {};
-  if (ho.active === false) return { loi: 'tai_khoan_da_tat' };
-  if (ho.role !== 'teacher' && ho.role !== 'admin') return { loi: 'khong_phai_giang_vien' };
+  if (ho.active === false) return { loi: 'tai_khoan_da_tat', email: u.email };
+  if (ho.role !== 'teacher' && ho.role !== 'admin') return { loi: 'khong_phai_giang_vien', email: u.email, vai_tro: ho.role || '(chưa có hồ sơ ở bảng profiles)' };
   return { id: u.id, email: u.email, role: ho.role, token: token };
 }
 
