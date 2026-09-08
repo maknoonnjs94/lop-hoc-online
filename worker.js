@@ -19,7 +19,23 @@ export default {
       return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
     }
     /* GET /api/trang-thai: Worker đã thấy khoá chưa — chỉ trả có/không và TÊN các biến, không bao giờ trả giá trị */
-    if (url.pathname === '/api/trang-thai') return json({ ok: true, co_khoa: !!env.SUPABASE_SERVICE_ROLE_KEY, bien: Object.keys(env).filter(function (k) { return k !== 'ASSETS'; }) }, 200, request);
+    if (url.pathname === '/api/trang-thai') {
+      const k = env.SUPABASE_SERVICE_ROLE_KEY || '';
+      /* Phân loại khoá mà KHÔNG lộ giá trị: chỉ nói nó thuộc kiểu nào và dài bao nhiêu. */
+      const kieu = !k ? 'khong_co'
+        : (k.indexOf('sb_publishable_') === 0 ? 'CONG_KHAI_dan_nham'
+        : (k.indexOf('sb_secret_') === 0 ? 'bi_mat_kieu_moi'
+        : (k.indexOf('eyJ') === 0 ? 'jwt_kieu_cu' : 'la')));
+      let thu = { status: 0, so_dong: -1 };
+      if (k) {
+        try {
+          const t = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id&limit=1', { headers: adminHeaders(env) });
+          const b = t.ok ? await t.json() : [];
+          thu = { status: t.status, so_dong: Array.isArray(b) ? b.length : -1 };
+        } catch (e) { thu = { status: -1, so_dong: -1 }; }
+      }
+      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
+    }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (request.method !== 'POST') return json({ ok: false, reason: 'chi_post' }, 405, request);
     if (!env.SUPABASE_SERVICE_ROLE_KEY) return json({ ok: false, reason: 'chua_cau_hinh' }, 503, request);
