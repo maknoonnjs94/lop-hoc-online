@@ -385,6 +385,7 @@ async function streamTaiLenLon(body, env, request) {
   ].join(',');
   const r = await fetch(CF_API + env.CF_ACCOUNT_ID + '/stream?direct_user=true', {
     method: 'POST',
+    body: '',   /* gửi Content-Length: 0 — một số máy chủ từ chối POST không có thân (411) */
     headers: {
       Authorization: 'Bearer ' + env.CF_STREAM_TOKEN,
       'Tus-Resumable': '1.0.0',
