@@ -9,3 +9,6 @@ web/_test_*.html
 
 # tệp tạm chứa khoá, không bao giờ đưa lên kho
 khoa.txt
+
+# thư mục tạm của wrangler
+.wrangler/
