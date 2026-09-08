@@ -87,6 +87,14 @@ jobs:
           # cắt khoảng trắng / xuống dòng lỡ dán kèm theo khoá (đã gặp thật: Access Key ID có ký tự xuống dòng ở đuôi)
           export AWS_ACCESS_KEY_ID="$(printf "%s" "$AWS_ACCESS_KEY_ID" | tr -d "[:space:]")"
           export AWS_SECRET_ACCESS_KEY="$(printf "%s" "$AWS_SECRET_ACCESS_KEY" | tr -d "[:space:]")"
+          # Hai ô bị dán tráo (Access Key ID phải 32 ký tự, Secret 64) thì tự đảo lại; cùng một chuỗi ở cả hai ô thì báo rõ.
+          if [ "${#AWS_ACCESS_KEY_ID}" = "64" ] && [ "${#AWS_SECRET_ACCESS_KEY}" = "32" ]; then
+            echo "::warning::R2_ACCESS_KEY_ID và R2_SECRET_ACCESS_KEY bị dán tráo chỗ — tự đảo lại. Sửa lại secret cho đúng khi rảnh."
+            T="$AWS_ACCESS_KEY_ID"; export AWS_ACCESS_KEY_ID="$AWS_SECRET_ACCESS_KEY"; export AWS_SECRET_ACCESS_KEY="$T"
+          fi
+          if [ "${#AWS_ACCESS_KEY_ID}" != "32" ]; then
+            echo "::error::R2_ACCESS_KEY_ID đang dài ${#AWS_ACCESS_KEY_ID} ký tự, phải là Access Key ID 32 ký tự (Secret Access Key mới dài 64). Sửa secret trên GitHub."; exit 1
+          fi
           echo "aws: $(aws --version 2>&1)"
           echo "endpoint: $EP · kho: $R2_BUCKET · độ dài Access Key ID: ${#AWS_ACCESS_KEY_ID} · độ dài Secret: ${#AWS_SECRET_ACCESS_KEY}"
           if ! aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP" > r2out.txt 2> r2err.txt; then
