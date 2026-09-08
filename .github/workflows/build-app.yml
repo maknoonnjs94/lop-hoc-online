@@ -79,7 +79,10 @@ jobs:
             echo "Chưa có secrets R2 (R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY) — bỏ qua bước chép lên R2."
             exit 0
           fi
-          EP="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          # Chấp nhận cả khi secret dán nguyên dòng https://<mã>.r2.cloudflarestorage.com — chỉ lấy 32 ký tự mã
+          ID=$(printf '%s' "$R2_ACCOUNT_ID" | tr -d '[:space:]' | grep -oE '[0-9a-f]{32}' | head -1)
+          if [ -z "$ID" ]; then echo "R2_ACCOUNT_ID không đúng dạng (cần mã 32 ký tự hex)"; exit 1; fi
+          EP="https://$ID.r2.cloudflarestorage.com"
           for f in dist/LopHoc-win.exe dist/LopHoc-win.exe.blockmap dist/LopHoc-mac.dmg dist/LopHoc-mac.dmg.blockmap; do
             [ -f "$f" ] && aws s3 cp "$f" "s3://lop-hoc-app/$(basename "$f")" --endpoint-url "$EP" --content-type application/octet-stream --cache-control "public, max-age=300" && echo "đã chép $f"
           done
