@@ -24,7 +24,7 @@ M còn phải làm (bên Supabase → SQL Editor, chạy theo thứ tự nếu c
 4. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
 5. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
-Chưa rõ / đang chờ m: "tài khoản sv.thu@example.com chưa thấy" — web đã phát bản mới (t kiểm trực tiếp), nên hoặc app/Chrome còn giữ trang cũ (app phải tắt hẳn bằng ✕ rồi mở lại; Chrome Ctrl+F5), hoặc chính hồ sơ ấy chưa có dòng / đã đánh dấu khai xong. Câu SQL cuối trong v10b trả lời việc này.
+Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
 
 ---
 
