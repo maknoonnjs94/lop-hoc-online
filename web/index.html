@@ -1018,11 +1018,21 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     /* 2b. trong app: app dò thấy phần mềm quay / chụp màn hình đang chạy → báo + ghi + tính lần.
        Bản quay vẫn đen dù có dò được hay không (cửa sổ được hệ điều hành bảo vệ). */
+    /* Mở một công cụ không phải là chụp. Chỉ phần mềm chuyên quay, hoặc công cụ hệ thống ĐANG ghi / đang chia sẻ
+       mới tính là chắc chắn. Snipping Tool, Game Bar, QuickTime mới mở thì nhắc nhẹ, không tính lần. */
+    var QUAY_NHE = { 'snippingtool.exe': 'Snipping Tool', 'gamebar.exe': 'Game Bar', 'quicktime player': 'QuickTime' };
     function baoQuay(names) {
-      var ten = (names || []).join(', ');
-      if (!ten) return;
-      viPhamChac('quay', 'Phát hiện phần mềm quay / chụp màn hình',
-        'Đang chạy: ' + ten + '. Cửa sổ này hiện đen trong bản quay. Thao tác đã được ghi lại kèm tên bạn và báo cho giảng viên.');
+      var chac = [], nhe = [];
+      (names || []).forEach(function (n) { (QUAY_NHE[n] ? nhe : chac).push(QUAY_NHE[n] || n); });
+      if (chac.length) {
+        viPhamChac('quay', 'Phát hiện phần mềm quay / chụp màn hình',
+          'Đang chạy: ' + chac.join(', ') + '. Cửa sổ này hiện đen trong bản quay. Thao tác đã được ghi lại kèm tên bạn và báo cho giảng viên.');
+      }
+      if (nhe.length) {
+        ghiSuKien('nghi_chup');
+        baoChup(nhe.join(', ') + ' đang mở',
+          'Cửa sổ này hiện đen trong mọi ảnh chụp và bản quay. Chụp hay quay sẽ được ghi nhận kèm tên bạn.', 'info');
+      }
     }
     if (window.lopHocApp && typeof window.lopHocApp.onRecorder === 'function') {
       window.lopHocApp.onRecorder(baoQuay);
