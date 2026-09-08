@@ -179,9 +179,10 @@
   .thcard{ display:flex; gap:12px; align-items:center; padding:12px }
   .thcard .sw{ flex:none; width:54px; height:54px; border-radius:14px; border:1px solid rgba(0,0,0,.06) }
   .thcard b{ display:block; font-size:15px; line-height:1.3 } .thcard small{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px }
-  .avrow{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px }
-  .avcard{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px; font-weight:700 }
-  .avcard img{ width:72px; height:72px; border-radius:50%; object-fit:cover; pointer-events:none }
+  .avrow{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px }
+  .avcard{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 6px; font-weight:700; font-size:12.5px; text-align:center }
+  .avcard small{ display:block; color:var(--muted); font-weight:500; font-size:11px }
+  .avcard img{ width:64px; height:64px; border-radius:50%; object-fit:cover; pointer-events:none; margin-bottom:3px; box-shadow:0 2px 6px rgba(0,0,0,.08) }
   .avpho{ display:flex; gap:14px; align-items:flex-start; margin-bottom:22px }
   .avatar.to{ width:78px; height:78px; font-size:22px }
   .avpho .btns{ display:flex; gap:8px; flex-wrap:wrap }
@@ -227,18 +228,19 @@
   .pcard h2{ font-size:20px; line-height:1.3; display:flex; gap:10px; align-items:center; margin-bottom:16px }
   .pcard h2 .ico{ font-size:22px; color:var(--primary) }
   .pcard h2 .more{ margin-left:auto; font-size:13px; font-weight:600; color:var(--primary); display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0 }
-  .hero{ min-height:300px; overflow:hidden; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; align-items:center }
-  .hero .copy{ position:relative; z-index:1; width:50% }
+  .hero{ min-height:300px; overflow:hidden; padding:0; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); align-items:center }
+  .hero .copy{ position:relative; z-index:1; width:auto; padding:24px 6px 24px 24px }
   .eyebrow{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); padding:7px 12px; border-radius:999px; font-size:11px; letter-spacing:1px; color:var(--primary); font-weight:800; text-transform:uppercase }
   .hero h2{ font-size:clamp(23px,2.3vw,32px); margin:14px 0 6px; letter-spacing:-.02em; display:block; text-wrap:balance }
   .hero p{ color:var(--muted); margin-bottom:20px }
-  .hero .art{ position:absolute; right:0; top:0; bottom:0; width:62%; pointer-events:none }
+  .hero .art{ position:relative; align-self:stretch; min-height:300px; pointer-events:none }
   /* Minh hoạ "khoảnh khắc học tập": ảnh giữ nguyên tỉ lệ, bo góc, đổi theo nhân vật đã chọn. */
   .canh{ display:block; width:100%; height:auto; max-width:260px; margin:0 auto; border-radius:16px; box-shadow:0 6px 18px rgba(20,30,40,.09) }
   .canhbox{ padding:10px 0 6px }
   /* Ảnh cảnh học phủ trọn cạnh phải, mép trái tan dần vào nền thẻ nên nhìn như một khối. */
-  .hero .art img.canh{ width:100%; height:100%; max-width:none; margin:0; object-fit:cover; object-position:right center; border-radius:0; box-shadow:none;
-    -webkit-mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.55) 18%, #000 34%); mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.55) 18%, #000 34%) }
+  /* Ảnh nằm trọn cột phải, chỉ mép trái tan nhẹ vào nền để liền khối — không có chữ nào đè lên nhân vật. */
+  .hero .art img.canh{ position:absolute; inset:0; width:100%; height:100%; max-width:none; margin:0; object-fit:cover; object-position:center; border-radius:0; box-shadow:none;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 16%); mask-image:linear-gradient(90deg, transparent 0, #000 16%) }
   .weekly .canh{ max-width:220px; margin:-2px auto 12px }
   .hero .quip{ position:relative; z-index:1; font-size:13px; color:var(--primary); font-weight:600; margin-top:14px }
   .today{ display:flex; flex-direction:column }
@@ -419,9 +421,9 @@
     .shell{ display:block; padding:10px } .side{ position:relative; inset:auto; min-height:0; height:auto; padding:10px 8px; margin-bottom:12px }
     .brand{ font-size:16px; justify-content:flex-start; padding:0 6px; gap:10px } .brand img.logo{ width:46px; height:46px } .nav{ grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; gap:2px }
     .nav button{ min-width:0; padding:10px 2px; border-radius:12px; font-size:10px }
-    .hero{ display:block } .hero .copy{ width:100% } .hero .art{ position:static; width:calc(100% + 48px); margin:14px -24px -24px; height:200px } .hero .art img.canh{ -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 30%); mask-image:linear-gradient(180deg, transparent 0, #000 30%) }
+    .hero{ display:block } .hero .copy{ width:100%; padding:20px 20px 10px } .hero .art{ min-height:0; height:215px } .hero .art img.canh{ -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 18%); mask-image:linear-gradient(180deg, transparent 0, #000 18%) }
     .topbar{ flex-wrap:wrap; position:static } .search{ order:2; flex-basis:100% } .quick{ gap:8px } .qcard{ padding:14px 6px } .qcard small{ display:none }
-    .heading h1{ font-size:26px } .row2{ grid-template-columns:1fr } .thgrid{ grid-template-columns:1fr } .gocbtn span{ display:none } .gocbtn{ padding:0 11px }
+    .heading h1{ font-size:26px } .row2{ grid-template-columns:1fr } .thgrid{ grid-template-columns:1fr } .avrow{ grid-template-columns:repeat(2,minmax(0,1fr)) } .gocbtn span{ display:none } .gocbtn{ padding:0 11px }
   }
   @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important } }
   @media print{ body > *{ display:none !important } body::after{ content:"Tài liệu của lớp học không được phép in."; display:block; padding:40px; font:16px sans-serif } }
@@ -721,8 +723,21 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     return '<img class="canh" src="img/scenes/' + ten + '-' + avatarNay + '.jpg" alt="' + (moTa || '') + '" draggable="false">';
   }
   function anhMat(av) { return 'img/scenes/mat-' + (av || avatarNay) + '.jpg'; }
-  var AVATARS = { boy: 'Bạn nam', girl: 'Bạn nữ' };
-  var avatarNay = 'boy';
+  /* 8 nhân vật: cặp gốc (00) + ba cặp trong Cute_3D_6_Models. Mỗi bạn có 4 cảnh (hoc/xong/trong/nop) và một khuôn mặt. */
+  var NHAN_VAT = [
+    { id: 'boy-00',  ten: 'Nam tóc xù',    phu: 'hoodie mint' },
+    { id: 'girl-00', ten: 'Nữ tóc dài',    phu: 'áo len đào' },
+    { id: 'boy-01',  ten: 'Nam kính tròn', phu: 'cardigan mint' },
+    { id: 'girl-01', ten: 'Nữ tóc bob',    phu: 'cardigan đào' },
+    { id: 'boy-02',  ten: 'Nam tóc xoăn',  phu: 'áo varsity' },
+    { id: 'girl-02', ten: 'Nữ đuôi ngựa',  phu: 'hoodie đào' },
+    { id: 'boy-03',  ten: 'Nam rẽ ngôi',   phu: 'áo ghi lê' },
+    { id: 'girl-03', ten: 'Nữ tóc tết',    phu: 'váy yếm đào' }
+  ];
+  var NV_ID = {}; NHAN_VAT.forEach(function (n) { NV_ID[n.id] = n; });
+  /* Giá trị cũ boy/girl (trước bộ 8) đọc thành cặp gốc. */
+  function chuanNhanVat(a) { a = String(a || ''); if (a === 'boy') return 'boy-00'; if (a === 'girl') return 'girl-00'; return NV_ID[a] ? a : ''; }
+  var avatarNay = 'boy-00';
   function skinHienTai() { var s = document.documentElement.dataset.skin; return THEMES[s] ? s : 'mint'; }
   function licSrc(name, skin) { return 'img/themes/' + (skin || skinHienTai()) + '/' + name + '.svg'; }
   function lic(name, size) { return '<img class="lic" src="' + licSrc(name) + '" width="' + size + '" height="' + size + '" alt="" draggable="false">'; }
@@ -746,7 +761,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ---------------- bốn giao diện + hai avatar ---------------- */
   function apSkin(skin, avatar) {
     skin = THEMES[skin] ? skin : 'mint';
-    if (avatar === 'boy' || avatar === 'girl') avatarNay = avatar;
+    var nv = chuanNhanVat(avatar); if (nv) avatarNay = nv;
     document.documentElement.dataset.skin = skin;
     capNhatLic(skin);
     var art = document.querySelector('.hero .art'); if (art) art.innerHTML = anhCanh('hoc', 'Bạn đang học bài');
@@ -761,8 +776,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     return s;
   }
   function avatarMacDinh() {
-    var a = (profile && profile.avatar) || '';
-    if (a !== 'boy' && a !== 'girl') a = (profile && profile.gender === 'nu') ? 'girl' : 'boy';
+    var a = chuanNhanVat(profile && profile.avatar);
+    if (!a) a = (profile && profile.gender === 'nu') ? 'girl-00' : 'boy-00';
     return a;
   }
   /* Lưu lên máy chủ: bản mới nhận cả avatar, máy chủ cũ (chưa chạy schema_v11) thì lưu mỗi màu. */
@@ -784,8 +799,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           + '<span class="sw" style="background:linear-gradient(135deg,' + t.b + ' 0 55%,' + t.c + ' 55% 100%);box-shadow:inset 0 0 0 4px ' + t.a + '"></span>'
           + '<span><b>' + t.ten + '</b><small>' + t.phu + '</small></span></button>';
       }).join('');
-      $('avRow').innerHTML = Object.keys(AVATARS).map(function (k) {
-        return '<button type="button" class="avcard" data-av="' + k + '" aria-pressed="false"><img data-mat="' + k + '" alt="" draggable="false">' + AVATARS[k] + '</button>';
+      $('avRow').innerHTML = NHAN_VAT.map(function (n) {
+        return '<button type="button" class="avcard" data-av="' + n.id + '" aria-pressed="false"><img data-mat="' + n.id + '" alt="" draggable="false">' + n.ten + '<small>' + n.phu + '</small></button>';
       }).join('');
     }
     [].forEach.call(g.querySelectorAll('button[data-th]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.th === nay)); });
@@ -888,7 +903,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (view === 'home') renderHome();
   });
   try {
-    var avLuu = localStorage.getItem('hoc-avatar'); if (avLuu) avatarNay = avLuu;
+    var avLuu = chuanNhanVat(localStorage.getItem('hoc-avatar')); if (avLuu) avatarNay = avLuu;
     var skinLuu = localStorage.getItem('hoc-skin'); if (skinLuu) apSkin(skinLuu, avatarNay);
   } catch (e) {}
 
@@ -1060,8 +1075,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var tuChonMau = false;   /* sinh viên đã tự bấm chọn màu ở bước khai hồ sơ chưa */
   document.querySelector('.gsel').addEventListener('change', function (e) {
     var v = e.target.value;
-    if (!tuChonMau) apSkin(v === 'nu' ? 'peach' : 'mint', v === 'nu' ? 'girl' : 'boy');
-    else apSkin(skinHienTai(), v === 'nu' ? 'girl' : 'boy');
+    if (!tuChonMau) apSkin(v === 'nu' ? 'peach' : 'mint', v === 'nu' ? 'girl-00' : 'boy-00');
+    else apSkin(skinHienTai(), v === 'nu' ? 'girl-00' : 'boy-00');
   });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('#thMini button[data-th]'); if (!b) return;
@@ -1304,8 +1319,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var ms = (s.materials || []).filter(function (m) { return (m.kind === 'pdf' || m.kind === 'answer'); }).sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
       return { s: s, ms: ms };
     }).filter(function (g) { return g.ms.length; });
-    if (!groups.length) { $('tasksBody').innerHTML = '<div class="pcard"><div class="pempty">' + lic('homework', 72) + '<span>Hiện chưa có bài tập nào.</span></div></div>'; return; }
-    $('tasksBody').innerHTML = '<div class="list">' + groups.map(function (g) {
+    if (!groups.length) { $('tasksBody').innerHTML = '<div class="pcard"><div class="canhbox">' + anhCanh('trong', 'Hiện chưa có bài tập nào') + '</div></div>'; return; }
+    /* Xong hết bài đang mở → cảnh "nộp bài thành công" lên đầu. */
+    var conLai = tatCa(function (m) { return moKhoa(m, now) && (m.kind === 'pdf' || m.kind === 'answer') && !xemXong(m); }).length;
+    var dauTrang = conLai ? '' : '<div class="pcard"><div class="canhbox">' + anhCanh('nop', 'Bạn đã xong hết bài tập đang mở') + '</div><p class="hint" style="text-align:center;color:var(--muted);margin:6px 0 0">Đã xong hết bài tập đang mở. Xem lại lúc nào cũng được.</p></div>';
+    $('tasksBody').innerHTML = '<div class="list">' + dauTrang + groups.map(function (g) {
       return '<div class="pcard"><h2><span class="ico">' + I.clipboard + '</span>' + esc(tenBuoi(g.s)) + '</h2>' + g.ms.map(function (m) {
         var k = KIND[m.kind] || KIND.link, locked = !moKhoa(m, now), v = views[m.id], x = { m: m, s: g.s };
         return '<div class="prow ' + (locked ? 'k-lock' : k.cls) + '"><span class="fi"><span class="ico">' + I[locked ? 'lock' : k.ic] + '</span></span><span class="grow"><strong>' + esc(m.title || k.name) + '</strong><small>' + k.name + (locked ? ' · ' + demNguoc(m.open_at) + ' (' + fmtWhen(m.open_at) + ')' : (v ? ' · ' + esc(tienDoChu(m)) : '')) + '</small></span>'
@@ -1340,7 +1358,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var all = tatCa(function (m) { return moKhoa(m, now); }), da = all.filter(function (x) { return daXem(x.m); }).length, xong = all.filter(function (x) { return xemXong(x.m); }).length;
     var pct = all.length ? Math.round(100 * da / all.length) : 0;
     var ngay = {}; Object.keys(views).forEach(function (k) { var d = String(views[k].last_at || '').slice(0, 10); if (d) ngay[d] = 1; });
-    $('progressBody').innerHTML = '<div class="list2"><div class="pcard"><h2><span class="ico">' + I.chart + '</span>Tổng quan</h2>'
+    $('progressBody').innerHTML = '<div class="list2"><div class="pcard"><h2><span class="ico">' + I.chart + '</span>Tổng quan</h2>' + (pct >= 100 && all.length ? '<div class="canhbox">' + anhCanh('xong', 'Đã mở hết tài liệu') + '</div>' : '')
       + '<div class="stat">' + lic('documents', 58) + '<div><strong>' + da + ' / ' + all.length + '</strong><small>tài liệu đã mở (' + pct + '%)</small></div></div>'
       + '<div class="stat">' + lic('achievement', 58) + '<div><strong>' + xong + '</strong><small>đã xem xong</small></div></div>'
       + '<div class="stat">' + lic('calendar', 58) + '<div><strong>' + Object.keys(ngay).length + '</strong><small>ngày có học</small></div></div>'

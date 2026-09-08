@@ -13,20 +13,36 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 ## Trạng thái hiện tại (2026-09-08, tối)
 
 Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 2 nhân vật, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
+- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` — cần secret `SUPABASE_SERVICE_ROLE_KEY` trong Cloudflare.
-- App máy tính bản **1.0.13** (logo mới; đã lên R2 lúc 19:03 ngày 08/9, run 16 thành công cả Windows lẫn Mac): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+- App máy tính bản **1.0.14** (icon = logo Giảng đường; đang dựng — 1.0.13 vẫn tải được): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
 M còn phải làm:
 1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
 2. Bên Supabase → SQL Editor (nếu chưa chạy): `schema_v8_kieu_quay.sql`, `schema_v9_hom_nay.sql` — t chưa thấy m xác nhận. Thiếu v9 thì Ghim / giờ bắt đầu / thông báo lớp / đã xem-tiếp tục không lưu được.
 3. `schema_v10_ho_so.sql` — **đã chạy**; `schema_v10b_ho_so_thieu_dong.sql` — **đã chạy**.
-4. `schema_v11_giao_dien.sql` (4 màu + nhân vật) và `schema_v12_anh_dai_dien.sql` (kho ảnh đại diện) — chưa chạy thì trang vẫn dùng được, chỉ là lựa chọn không lưu lên máy chủ và chưa tải ảnh lên được.
+4. `schema_v11_giao_dien.sql` (4 màu + nhân vật), `schema_v12_anh_dai_dien.sql` (kho ảnh đại diện), `schema_v13_nhan_vat.sql` (8 nhân vật) — chưa chạy thì trang vẫn dùng được, chỉ là lựa chọn không lưu lên máy chủ và chưa tải ảnh lên được.
 5. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
 6. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-09 (trưa) — 8 nhân vật 3D, hero hai cột, icon app = logo (1.0.14)
+
+**M yêu cầu:** chữ đang che mất nhân vật trong thẻ "Tiếp tục học" → thiết kế lại theo bộ `design-reference/Cute_3D_6_Models` (3 bảng, 6 nhân vật mới, mỗi bạn 4 cảnh); dùng đủ 4 cảnh trong giao diện; nhân vật đa dạng; đổi icon app sang logo.
+
+**Đã làm**
+- Cắt 8 nhân vật × 4 cảnh + 8 khuôn mặt (40 JPEG, ~1,4 MB, mỗi người chỉ tải 5 tệp) → `web/img/scenes/<hoc|xong|trong|nop|mat>-<boy|girl>-<00..03>.jpg`. Toạ độ cắt lấy từ `character_manifest.json`; cặp 00 là cặp gốc trong `03-Minh-hoa-hoc-tap.png`. Mặt các bạn nữ mới phải dời khung sang phải 70 px so với bạn nam (đứng lệch trong cảnh).
+- Hero: **hai cột grid** — chữ trái (1fr), ảnh phải (1,1fr) phủ trọn cột, cao 300 px, chỉ tan mép trái 16 % để liền khối; **không còn chữ nào đè lên nhân vật**. Màn hình hẹp: ảnh 215 px nằm dưới chữ.
+- Hộp "Góc của bạn": mục Nhân vật thành lưới 4×2 (8 bạn, tên + trang phục); chọn là hero + ảnh tròn đổi ngay. Giá trị cũ `boy`/`girl` tự hiểu thành cặp 00.
+- Bốn cảnh dùng ở: *đang học* → hero; *chưa có bài tập* → Bài tập trống (trang chủ + trang Bài tập); *hoàn thành mục tiêu* → Mục tiêu tuần 100 % và Tiến độ 100 %; *nộp bài thành công* → đầu trang Bài tập khi đã xong hết bài đang mở.
+- `schema_v13_nhan_vat.sql`: nới ràng buộc `avatar` cho 8 id (giữ boy/girl cũ), cập nhật `doi_giao_dien` hai tham số.
+- App **1.0.14**: `app/build/icon.png` = logo tròn trong suốt 512 px; tag `v1.0.14` → GitHub Actions dựng, chép lên R2; Windows tự cập nhật, Mac tải lại.
+
+**Đã test** (trang thử): đo `copy.right − art.left = 0`; đổi sang girl-02 → hero `hoc-girl-02.jpg`, ảnh tròn `mat-girl-02.jpg`; 40 tệp trả 200; không ảnh hỏng.
 
 ---
 
