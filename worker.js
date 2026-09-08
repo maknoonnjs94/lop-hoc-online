@@ -40,7 +40,9 @@ export default {
           thu = { status: t.status, so_dong: Array.isArray(b) ? b.length : -1 };
         } catch (e) { thu = { status: -1, so_dong: -1 }; }
       }
-      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, stream: streamSan(env), bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
+      /* Đã chạy file SQL nào rồi: hỏi thẳng máy chủ, khỏi đoán. */
+      const sql = k ? await kiemSchema(env) : null;
+      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, stream: streamSan(env), sql: sql, bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (request.method !== 'POST') return json({ ok: false, reason: 'chi_post' }, 405, request);
@@ -335,4 +337,30 @@ async function streamTaiLen(body, env, request) {
   const ten = String(body.name || 'video').slice(0, 120);
   const r = await cfStream(env, '/direct_upload', 'POST', { maxDurationSeconds: 21600, requireSignedURLs: true, allowedOrigins: [host], meta: { name: ten } });
   return json({ ok: true, uploadURL: r.uploadURL, uid: r.uid }, 200, request);
+}
+
+/* Kiểm xem các file schema_v*.sql đã chạy chưa, bằng cách thử đọc đúng cột / bảng tương ứng. */
+async function coCot(env, bang, cot) {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/' + bang + '?select=' + cot + '&limit=1', { headers: adminHeaders(env) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+async function kiemSchema(env) {
+  const [v9a, v9b, v9c, v10, v11, v12, v14] = await Promise.all([
+    coCot(env, 'sessions', 'pinned,starts_at'),
+    coCot(env, 'classes', 'notice'),
+    coCot(env, 'view_events', 'progress'),
+    coCot(env, 'profiles', 'gender,major,must_change_pw'),
+    coCot(env, 'profiles', 'avatar'),
+    coCot(env, 'profiles', 'avatar_path'),
+    coCot(env, 'cau_hinh_he_thong', 'khoa')
+  ]);
+  return {
+    v9_hom_nay: v9a && v9b && v9c,
+    v10_ho_so: v10,
+    v11_giao_dien: v11,
+    v12_anh_dai_dien: v12,
+    v14_video: v14
+  };
 }
