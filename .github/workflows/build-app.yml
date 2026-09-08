@@ -59,7 +59,7 @@ jobs:
           path: |
             app/dist/*.exe
             app/dist/*.dmg
-            app/dist/*.yml
+            app/dist/latest*.yml
             app/dist/*.blockmap
           if-no-files-found: error
 
@@ -76,5 +76,5 @@ jobs:
           files: |
             app/dist/*.exe
             app/dist/*.dmg
-            app/dist/*.yml
+            app/dist/latest*.yml
             app/dist/*.blockmap

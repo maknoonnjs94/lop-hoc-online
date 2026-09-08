@@ -349,6 +349,7 @@
   <div class="menu" id="avMenu" hidden role="menu">
     <div class="who"><b id="whoName"></b><span id="whoMail"></span></div>
     <button type="button" id="pwBtn" role="menuitem"><span class="ico" data-ico="key"></span>Đổi mật khẩu</button>
+    <button type="button" id="updBtn" role="menuitem" hidden><span class="ico" data-ico="refresh"></span><span id="updLbl">Kiểm tra cập nhật</span></button>
     <button type="button" id="outBtn" class="out" role="menuitem"><span class="ico" data-ico="out"></span>Đăng xuất</button>
   </div>
   <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Lớp học</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ, không chụp hay quay được. <a href="https://github.com/maknoonnjs94/lop-hoc-online/releases/latest" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
@@ -452,7 +453,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     cal:    '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>',
     stack:  '<svg viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/></svg>',
     inbox:  '<svg viewBox="0 0 24 24"><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1.5 2h3L15 13h5"/></svg>',
-    shield: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg>'
+    shield: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>'
   };
   [].forEach.call(document.querySelectorAll('.ico[data-ico]'), function (el) { el.innerHTML = I[el.dataset.ico] || ''; });
 
@@ -520,6 +522,25 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('appNoteX').addEventListener('click', function () { $('appNote').hidden = true; });
 
   $('outBtn').addEventListener('click', function () { sb.auth.signOut(); });
+
+  /* trong app: menu có "Kiểm tra cập nhật · bản x.y.z" — bấm là app hỏi GitHub ngay */
+  if (window.lopHocApp && typeof window.lopHocApp.checkUpdate === 'function') {
+    $('updBtn').hidden = false;
+    if (typeof window.lopHocApp.getVersion === 'function') {
+      window.lopHocApp.getVersion().then(function (v) { $('updLbl').textContent = 'Kiểm tra cập nhật · bản ' + v; }, function () {});
+    }
+    $('updBtn').addEventListener('click', async function () {
+      toggleMenu(false);
+      baoChup('Đang kiểm tra bản mới…', 'Hỏi GitHub xem có bản mới hơn không.', 'info');
+      var r = await window.lopHocApp.checkUpdate();
+      if (!r) return;
+      if (r.ok && r.moi) baoChup('Có bản ' + r.version, 'Đang tải ngầm. Xong sẽ hỏi khởi động lại để cập nhật — hoặc lần đóng app sẽ tự thay.', 'info');
+      else if (r.ok) baoChup('Đang dùng bản mới nhất', 'Bản ' + r.hienTai + ' là bản mới nhất.', 'info');
+      else if (r.reason === 'mac_tai_tay') baoChup('Mac chưa tự cập nhật được', 'Tải bản mới tại ' + APP_URL, 'info');
+      else if (r.reason === 'khong_ho_tro') baoChup('Bản này không tự cập nhật', 'Đang chạy bản chưa đóng gói.', 'info');
+      else baoChup('Chưa kiểm tra được', 'Kiểm tra mạng rồi thử lại. (' + (r.reason || '') + ')', 'info');
+    });
+  }
   $('pwBtn').addEventListener('click', async function () {
     toggleMenu(false);
     var p1 = prompt('Mật khẩu mới (ít nhất 6 ký tự):');

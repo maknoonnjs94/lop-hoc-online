@@ -82,6 +82,20 @@ function batTuCapNhat(win) {
   setTimeout(kiem, 8000);
   setInterval(kiem, 30 * 60 * 1000);
 }
+ipcMain.handle('lophoc:version', () => app.getVersion());
+/* bấm tay từ menu tài khoản trên trang: trả lời ngay là có bản mới hay không; có thì tải ngầm luôn */
+ipcMain.handle('lophoc:check-update', async () => {
+  const hienTai = app.getVersion();
+  if (!autoUpdater || !app.isPackaged) return { ok: false, reason: 'khong_ho_tro', hienTai };
+  if (process.platform !== 'win32') return { ok: false, reason: 'mac_tai_tay', hienTai };
+  try {
+    const r = await autoUpdater.checkForUpdates();
+    const v = r && r.updateInfo && r.updateInfo.version;
+    return { ok: true, hienTai, moi: !!(v && v !== hienTai), version: v || hienTai };
+  } catch (e) {
+    return { ok: false, reason: String((e && e.message) || e).slice(0, 120), hienTai };
+  }
+});
 
 /* Địa chỉ trang lớp học. Đổi ở đây nếu sau này có tên miền riêng. */
 const SITE_URL = 'https://lop-hoc-online.maknoonnjs94.workers.dev/';
