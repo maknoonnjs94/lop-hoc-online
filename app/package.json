@@ -1,7 +1,7 @@
 {
   "name": "lop-hoc",
   "productName": "LopHoc",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Ứng dụng Lớp học online — cửa sổ được hệ điều hành bảo vệ, hiện đen trong mọi ảnh chụp và bản quay màn hình",
   "main": "main.js",
   "author": "Phạm Anh Ngọc",

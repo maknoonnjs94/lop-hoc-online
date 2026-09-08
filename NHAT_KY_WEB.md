@@ -16,7 +16,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` (secret `SUPABASE_SERVICE_ROLE_KEY`, đã có) và `/api/stream/*` cho video (cần thêm `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN` — chưa có).
-- App máy tính bản **1.0.15** (địa chỉ trang mới giangduonghoahoc; icon logo Giảng đường; lên R2 lúc 23:46 ngày 08/9): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
 M còn phải làm:
 1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
@@ -28,6 +28,24 @@ M còn phải làm:
 7. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-09 (khuya, sau) — Khoá máy theo mã máy thật (app 1.0.16)
+
+**M hỏi:** cài bản app mới xong tài khoản SV bị đòi gỡ thiết bị, phiền; có phải gắn theo IP không?
+
+**Trả lời:** không dính IP (IP chỉ dùng cho vé xem video 4 giờ). Mã thiết bị là UUID ngẫu nhiên cất trong `localStorage`, mà `localStorage` gắn theo **tên miền** → lần đổi miền sang giangduonghoahoc đã làm mọi ràng buộc cũ thành "máy lạ". Cài lại app / xoá dữ liệu duyệt web cũng mất y hệt.
+
+**Đã làm (m chọn phương án mã máy thật)**
+- `app/main.js`: đọc mã máy — Windows `reg query HKLMSOFTWAREMicrosoftCryptography /v MachineGuid`, macOS `ioreg -rd1 -c IOPlatformExpertDevice` → `IOPlatformUUID`; không đọc được thì UUID cất ở `userData/may.txt`. Băm `sha256('giang-duong-hoa-hoc:' + goc)` lấy 32 ký tự → máy chủ không bao giờ giữ mã gốc. Kênh `lophoc:ma-may`.
+- `app/preload.js`: thêm `getMachineId()`.
+- `web/index.html`: `maThietBi()` thành async — trong app trả `app:<băm>`, trình duyệt vẫn dùng localStorage như cũ. Lời chặn nói rõ "cập nhật app hay cài lại app KHÔNG bị chặn".
+- `web/quan-tri.html`: cột Thiết bị phân biệt "đã gắn máy (app)" và bản trình duyệt, chú thích khi rê chuột.
+- `schema_v15_khoa_may.sql`: xoá sạch ràng buộc kiểu cũ **một lần** sau khi app 1.0.16 phát.
+- App lên **1.0.16**.
+
+**Đã test:** chạy đúng lệnh đọc MachineGuid trên máy m — ra 36 ký tự, băm còn 32, lặp lại y hệt. Cú pháp main.js/preload.js/hai trang đều OK.
 
 ---
 

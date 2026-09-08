@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('lopHocApp', {
   onRecorder: function (cb) { ipcRenderer.on('lophoc:recorder', function (e, names) { cb(names || []); }); },
   /* danh sách đang chạy ngay lúc hỏi (để trang kiểm ngay sau khi đăng nhập) */
   getRecorders: function () { return ipcRenderer.invoke('lophoc:recorders'); },
+  /* mã nhận diện chính chiếc máy này (đã băm) — dùng cho khoá một tài khoản một máy */
+  getMachineId: function () { return ipcRenderer.invoke('lophoc:ma-may'); },
   /* số phiên bản app, và bấm tay "Kiểm tra cập nhật" từ menu tài khoản trên trang */
   getVersion: function () { return ipcRenderer.invoke('lophoc:version'); },
   checkUpdate: function () { return ipcRenderer.invoke('lophoc:check-update'); }

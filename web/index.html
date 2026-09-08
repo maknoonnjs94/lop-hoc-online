@@ -993,7 +993,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- khoá một thiết bị ---------------- */
   var DEV_KEY = 'hoc-thiet-bi-v1';
-  function maThietBi() {
+  /* Trong app: mã của chính chiếc máy (bền qua cập nhật app, cài lại app, đổi tên miền).
+     Trên trình duyệt: mã ngẫu nhiên cất trong bộ nhớ của trình duyệt như trước. */
+  async function maThietBi() {
+    if (window.lopHocApp && typeof window.lopHocApp.getMachineId === 'function') {
+      try {
+        var mm = await window.lopHocApp.getMachineId();
+        if (mm) return 'app:' + mm;
+      } catch (e) {}
+    }
     var v = '';
     try { v = localStorage.getItem(DEV_KEY) || ''; } catch (e) { return ''; }
     if (v) return v;
@@ -1002,7 +1010,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     return v;
   }
   async function xinThietBi() {
-    var ma = maThietBi();
+    var ma = await maThietBi();
     if (!ma) return { ok: false, reason: 'khong_luu_duoc' };
     try {
       var r = await sb.rpc('claim_device', { p_device: ma, p_ua: String(navigator.userAgent || '').slice(0, 300) });
@@ -1028,7 +1036,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var chot = await xinThietBi();
     if (!chot.ok) {
       me = null;
-      if (chot.reason === 'other_device') alert('Tài khoản này đã gắn với một thiết bị khác' + (chot.gan_tu ? ' từ ' + ngayGio(chot.gan_tu) : '') + '.\n\nMỗi tài khoản chỉ học được trên một máy. Muốn đổi máy thì nhắn giảng viên gỡ thiết bị cũ.');
+      if (chot.reason === 'other_device') alert('Tài khoản này đã gắn với một máy khác' + (chot.gan_tu ? ' từ ' + ngayGio(chot.gan_tu) : '') + '.\n\nMỗi tài khoản chỉ học trên một máy. Nếu bạn vừa đổi máy hoặc cài lại Windows, nhắn giảng viên gỡ máy cũ — mất mười giây.\n\n(Cập nhật app hay cài lại app thì KHÔNG bị chặn.)');
       else if (chot.reason === 'tai_khoan_da_tat') alert('Tài khoản đang bị khoá. Liên hệ giảng viên.');
       else if (chot.reason === 'khong_luu_duoc') alert('Trình duyệt đang chặn lưu dữ liệu nên không nhận diện được máy.\n\nTắt chế độ ẩn danh (riêng tư) rồi vào lại.');
       else alert('Chưa kiểm tra được thiết bị: ' + (chot.reason || 'lỗi mạng') + '. Thử lại sau ít phút.');

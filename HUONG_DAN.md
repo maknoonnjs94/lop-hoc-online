@@ -170,6 +170,15 @@ Trang cũng đã tắt chuột phải và kéo ảnh trong cửa sổ xem, và P
 
 ---
 
+## Mỗi tài khoản một máy
+
+Sinh viên đăng nhập lần đầu, hệ thống ghi nhớ chiếc máy đó; máy khác đăng nhập cùng tài khoản sẽ bị chặn.
+
+- **Trong ứng dụng máy tính** (từ bản 1.0.16): nhớ theo *mã của chính chiếc máy*. Cập nhật app, cài lại app, đổi tên miền, xoá dữ liệu duyệt web — đều **không** làm mất, sinh viên không bị chặn oan.
+- **Trên trình duyệt**: nhớ theo bộ nhớ của trình duyệt. Xoá dữ liệu duyệt web hoặc dùng chế độ ẩn danh thì mất, sẽ bị chặn.
+- **Đổi máy thật / cài lại Windows**: vào Quản trị → tab **Sinh viên** → dòng của người đó → **Gỡ**. Xong là họ đăng nhập được ở máy mới.
+- Cột *Thiết bị* ghi rõ "đã gắn máy (app)" hay "đã gắn máy" (trình duyệt), rê chuột lên xem giờ gắn.
+
 ## Những điều không được làm
 
 - Không dán khoá `service_role` vào bất kỳ file nào đưa lên mạng.

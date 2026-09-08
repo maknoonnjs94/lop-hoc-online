@@ -1143,7 +1143,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
        và cho phép gỡ khi sinh viên đổi máy. */
     var dev = {};
     var rd = await sb.from('device_bindings')
-      .select('user_id, ua, first_seen, last_seen')
+      .select('user_id, device_id, ua, first_seen, last_seen')
       .in('user_id', roster.map(function (e) { return e.student; }));
     (rd.data || []).forEach(function (d) { dev[d.user_id] = d; });
 
@@ -1163,9 +1163,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           + '<td>' + (r !== 'student'
               ? '<span class="pill">không khoá</span>'
               : (dev[e.student]
-                  ? '<span class="pill on" title="Gắn từ ' + esc(ngay(dev[e.student].first_seen))
+                  ? '<span class="pill on" title="' + (String(dev[e.student].device_id || '').indexOf('app:') === 0 ? 'Gắn theo máy tính (ứng dụng) — cập nhật hay cài lại app không mất' : 'Gắn theo trình duyệt — xoá dữ liệu duyệt web là mất') + '\nGắn từ ' + esc(ngay(dev[e.student].first_seen))
                       + '\nVào gần nhất ' + esc(ngay(dev[e.student].last_seen))
-                      + '\n' + esc(String(dev[e.student].ua || '').slice(0, 120)) + '">đã gắn máy</span>'
+                      + '\n' + esc(String(dev[e.student].ua || '').slice(0, 120)) + '">' + (String(dev[e.student].device_id || '').indexOf('app:') === 0 ? 'đã gắn máy (app)' : 'đã gắn máy') + '</span>'
                       + ' <button class="btn sm" data-dev="' + e.student + '" title="Xoá thiết bị đang gắn để sinh viên đăng nhập được trên máy mới">Gỡ</button>'
                   : '<span class="pill">chưa gắn</span>'))
           + '</td>'

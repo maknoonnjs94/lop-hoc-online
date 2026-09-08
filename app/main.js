@@ -84,6 +84,51 @@ function batTuCapNhat(win) {
   setInterval(kiem, 30 * 60 * 1000);
 }
 ipcMain.handle('lophoc:version', () => app.getVersion());
+
+/* ---------------------------------------------------------------------
+   MÃ MÁY — để khoá "một tài khoản một máy" không bị mất khi cập nhật app,
+   cài lại app, đổi tên miền hay xoá dữ liệu duyệt web.
+   Nguồn: Windows lấy MachineGuid trong registry, macOS lấy IOPlatformUUID của phần cứng.
+   Không gửi nguyên mã máy đi: băm SHA-256 kèm một chuỗi riêng của app rồi lấy 32 ký tự đầu.
+   Máy nào không đọc được thì rơi về một mã ngẫu nhiên cất trong thư mục dữ liệu của app.
+   --------------------------------------------------------------------- */
+const crypto = require('crypto');
+const fs = require('fs');
+let maMayCache = null;
+function chayLenh(file, args) {
+  return new Promise(function (res) {
+    try {
+      execFile(file, args, { timeout: 4000, windowsHide: true }, function (e, out) { res(e ? '' : String(out || '')); });
+    } catch (e) { res(''); }
+  });
+}
+async function docMaMayGoc() {
+  if (process.platform === 'win32') {
+    const out = await chayLenh('reg', ['query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid']);
+    const m = out.match(/MachineGuid\s+REG_SZ\s+([0-9a-fA-F-]{30,})/);
+    if (m) return m[1].trim();
+  } else if (process.platform === 'darwin') {
+    const out = await chayLenh('/usr/sbin/ioreg', ['-rd1', '-c', 'IOPlatformExpertDevice']);
+    const m = out.match(/"IOPlatformUUID"\s*=\s*"([^"]+)"/);
+    if (m) return m[1].trim();
+  }
+  /* không đọc được: dùng một mã ngẫu nhiên, cất trong thư mục dữ liệu của app */
+  try {
+    const p = path.join(app.getPath('userData'), 'may.txt');
+    if (fs.existsSync(p)) { const v = fs.readFileSync(p, 'utf8').trim(); if (v) return v; }
+    const v = crypto.randomUUID();
+    fs.writeFileSync(p, v, 'utf8');
+    return v;
+  } catch (e) { return ''; }
+}
+async function maMay() {
+  if (maMayCache) return maMayCache;
+  const goc = await docMaMayGoc();
+  if (!goc) return '';
+  maMayCache = crypto.createHash('sha256').update('giang-duong-hoa-hoc:' + goc).digest('hex').slice(0, 32);
+  return maMayCache;
+}
+ipcMain.handle('lophoc:ma-may', () => maMay());
 /* bấm tay từ menu tài khoản trên trang: trả lời ngay là có bản mới hay không; có thì tải ngầm luôn */
 ipcMain.handle('lophoc:check-update', async () => {
   const hienTai = app.getVersion();
