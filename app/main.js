@@ -11,8 +11,50 @@
    Ngoài ra: không có DevTools, không in, không mở trang ngoài tên miền lớp, không cho trang
    xin chia sẻ màn hình, chỉ chạy một bản.
    ===================================================================== */
-const { app, BrowserWindow, Menu, session, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, session, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
+const { execFile } = require('child_process');
+
+/* ---------------------------------------------------------------------
+   DÒ PHẦN MỀM QUAY / CHỤP MÀN HÌNH ĐANG CHẠY
+   Hệ điều hành không báo cho app biết ai đang quay. Nhưng phần mềm quay là một tiến trình có tên.
+   Mỗi 4 giây liệt kê tiến trình; thấy tên quen là báo cho trang (trang ghi sự kiện + cảnh báo đỏ).
+   Bản quay vẫn đen dù có dò được hay không — đây là lớp "dọa" thêm, không phải lớp chặn.
+   --------------------------------------------------------------------- */
+const RECORDERS_WIN = [
+  'bcastdvr.exe', 'gamebar.exe',        /* Xbox Game Bar: mở lên (Win+G) hoặc đang ghi (Win+Alt+R) */
+  'screenclippinghost.exe',             /* Win+Shift+S */
+  'snippingtool.exe',                   /* Snipping Tool (quay hoặc chụp) */
+  'obs64.exe', 'obs32.exe', 'streamlabs obs.exe', 'xsplit.core.exe',
+  'cpthost.exe',                        /* Zoom đang chia sẻ màn hình */
+  'sharex.exe', 'bdcam.exe', 'camtasiastudio.exe', 'camtasia.exe', 'camrec.exe',
+  'screenrec.exe', 'action.exe', 'fbrecorder.exe', 'fraps.exe', 'licecap.exe', 'screentogif.exe',
+  'loom.exe', 'screenpresso.exe', 'apowerrec.exe', 'icecreamscreenrecorder.exe', 'democreator.exe'
+];
+const RECORDERS_MAC = [
+  'screencaptureui', 'screencapture',   /* Cmd+Shift+3/4/5 */
+  'quicktime player', 'obs', 'loom', 'cleanshot x', 'kap', 'screenflow', 'snagit', 'snagithelper',
+  'caphost'                             /* Zoom đang chia sẻ màn hình */
+];
+let dangQuay = new Set();
+function doPhanMemQuay(win) {
+  const isWin = process.platform === 'win32';
+  execFile(isWin ? 'tasklist' : 'ps', isWin ? ['/FO', 'CSV', '/NH'] : ['-Ao', 'comm='],
+    { windowsHide: true, timeout: 5000, maxBuffer: 4 * 1024 * 1024 }, (err, out) => {
+      if (err || !out || win.isDestroyed()) return;
+      const names = new Set();
+      String(out).split(/\r?\n/).forEach(line => {
+        let n = isWin ? (line.split('","')[0] || '').replace(/^"/, '') : line.split('/').pop();
+        n = n.trim().toLowerCase();
+        if (n) names.add(n);
+      });
+      const thay = (isWin ? RECORDERS_WIN : RECORDERS_MAC).filter(x => names.has(x));
+      const moi = thay.filter(x => !dangQuay.has(x));
+      dangQuay = new Set(thay);
+      if (moi.length) win.webContents.send('lophoc:recorder', moi);
+    });
+}
+ipcMain.handle('lophoc:recorders', () => Array.from(dangQuay));
 
 /* Địa chỉ trang lớp học. Đổi ở đây nếu sau này có tên miền riêng. */
 const SITE_URL = 'https://lop-hoc-online.maknoonnjs94.workers.dev/';
@@ -95,6 +137,10 @@ function taoCuaSo() {
   });
 
   win.loadURL(SITE_URL);
+
+  /* dò phần mềm quay mỗi 4 giây, dừng khi đóng cửa sổ */
+  const nhip = setInterval(() => doPhanMemQuay(win), 4000);
+  win.on('closed', () => clearInterval(nhip));
   return win;
 }
 
