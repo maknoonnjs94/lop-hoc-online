@@ -30,6 +30,19 @@ M còn phải làm:
 
 ---
 
+## 2026-09-09 (chiều muộn) — Hero tan vào thẻ trở lại, lật bố cục theo nhân vật
+
+**M yêu cầu:** khung khoảnh khắc ở dưới đẹp, nhưng hero hai cột nhìn "như hai mảnh rời rạc" — giữ kiểu ảnh tan vào thẻ của bản trước, hoặc làm mượt hơn.
+
+**Đã làm**
+- Quay lại kiểu ảnh phủ tuyệt đối 60 % thẻ, mép trong tan dài (mask 0 → 42 %) vào nền nên ảnh và chữ là một khối. Cột chữ 48 %, chỉ chớm 8 % thẻ vào vùng đã mờ.
+- Lỗi che mặt trước đây sửa bằng **bố cục lật theo nhân vật**: bạn nữ đứng bên phải khung ảnh → ảnh phải, chữ trái; bạn nam đứng bên trái khung → lớp `.trai`: ảnh trái, chữ phải (`object-position` và hướng mask đảo theo). Nhân vật luôn ở phía xa chữ.
+- Màn hình hẹp: cả hai kiểu đều xếp dọc, ảnh 215 px dưới chữ, tan từ trên.
+
+**Đã test** (trang thử 768 px, nữ-00 và nam-02): nhân vật trọn vẹn, chữ chồng đúng 50 px vào vùng mờ, đổi nhân vật trong "Góc của bạn" là bố cục lật ngay.
+
+---
+
 ## 2026-09-09 (chiều) — Khung "khoảnh khắc" cho chỗ trống và lúc hoàn thành
 
 **M yêu cầu:** ảnh ở "Bài tập cần làm" lọt thỏm bé tí, không cân — thiết kế lại chỗ đó cho ổn, không chỉ vá một chỗ.
