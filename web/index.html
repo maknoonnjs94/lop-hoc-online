@@ -178,6 +178,11 @@
   .avrow{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px }
   .avcard{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px; font-weight:700 }
   .avcard img{ width:72px; height:72px; object-fit:contain; pointer-events:none }
+  .avpho{ display:flex; gap:14px; align-items:flex-start; margin-bottom:22px }
+  .avatar.to{ width:78px; height:78px; font-size:22px }
+  .avpho .btns{ display:flex; gap:8px; flex-wrap:wrap }
+  .avpho p{ margin:8px 0 0; color:var(--muted); font-size:12.5px; line-height:1.5 }
+  label.btn{ cursor:pointer }
   .thmini{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:6px 0 14px }
   .thmini button{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border:1.5px solid var(--line-2); border-radius:14px; background:var(--surface); font:inherit; font-size:11.5px; font-weight:700; color:var(--ink) }
   .thmini button[aria-pressed="true"]{ border-color:var(--primary); background:var(--primary-soft) }
@@ -225,6 +230,7 @@
   .hero p{ color:var(--muted); margin-bottom:20px }
   .hero .art{ position:absolute; right:8px; bottom:8px; top:8px; width:40%; pointer-events:none; overflow:hidden }
   .hero .art img{ width:100%; height:100%; object-fit:contain; object-position:right center; display:block }
+  .hero .art svg{ width:100%; height:100%; display:block }
   .hero .quip{ position:relative; z-index:1; font-size:13px; color:var(--primary); font-weight:600; margin-top:14px }
   .today{ display:flex; flex-direction:column }
   .today .tm{ font-size:22px; color:var(--primary); font-weight:800; font-variant-numeric:tabular-nums }
@@ -578,7 +584,7 @@
       <li><b>Trang chủ</b>: thẻ "Tiếp tục học" đưa bạn về đúng chỗ đang dở. Bài mới có nhãn <b>MỚI</b>.</li>
       <li><b>Bài giảng</b>: chọn buổi ở cột trái, tài liệu ở cột phải. <kbd>↑</kbd><kbd>↓</kbd> đổi buổi.</li>
       <li><kbd>Ctrl</kbd>+<kbd>K</kbd> tìm bất cứ thứ gì, gõ không dấu cũng ra. Đang mở tài liệu: <kbd>←</kbd><kbd>→</kbd> chuyển bài.</li>
-      <li>Nút <b>Góc của bạn</b> ở thanh trên cùng đổi màu giao diện (4 mẫu) và nhân vật.</li>
+      <li>Nút <b>Góc của bạn</b> ở thanh trên cùng đổi màu giao diện (4 mẫu), nhân vật, và tải ảnh thật của bạn làm ảnh đại diện.</li>
       <li>Tài liệu mang dấu chìm tên bạn. Chụp màn hình, quay, in đều được ghi nhận và báo cho giảng viên.</li>
       <li>Mỗi tài khoản dùng trên một máy. Đổi máy thì nhắn giảng viên gỡ máy cũ. Không thao tác 5 phút, trang tự đăng xuất.</li>
     </ul>
@@ -592,6 +598,19 @@
     <p class="lead">Chọn màu và nhân vật cho góc học tập. Đổi lúc nào cũng được, không ảnh hưởng bài vở.</p>
     <h4>Màu giao diện</h4>
     <div class="thgrid" id="thGrid"></div>
+    <h4>Ảnh đại diện</h4>
+    <div class="avpho">
+      <span class="avatar to"><span id="avPreIni">?</span><img id="avPreImg" alt=""></span>
+      <div>
+        <div class="btns">
+          <label class="btn sm" for="avFile">Tải ảnh của bạn</label>
+          <input type="file" id="avFile" accept="image/png,image/jpeg,image/webp" hidden>
+          <button class="btn sm sec" type="button" id="avClear" hidden>Bỏ ảnh, dùng nhân vật vẽ</button>
+        </div>
+        <p>Ảnh được thu nhỏ còn 256×256 ngay trên máy bạn rồi mới gửi đi. Chỉ bạn và giảng viên nhìn thấy.</p>
+        <div class="msg" id="gocMsg"></div>
+      </div>
+    </div>
     <h4>Nhân vật</h4>
     <div class="avrow" id="avRow"></div>
     <button class="btn block" type="button" id="gocClose" style="margin-top:20px">Xong</button>
@@ -687,6 +706,61 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     lavender: { ten: 'Lavender Dream',  phu: 'Tím lavender · trăng sao', a: '#6c5c94', b: '#e0d8f0', c: '#f0d9cc' }
   };
   var THU_TU = ['mint', 'sky', 'peach', 'lavender'];
+  /* Tranh nhân vật ngồi học: vẽ tay bằng SVG, màu áo/điểm nhấn lấy từ biến của giao diện đang chọn,
+     nên một hình dùng chung cho cả bốn mẫu. Da và tóc để màu trung tính. */
+  function tranhNhanVat(gioi) {
+    var nu = gioi === 'girl';
+    var toc = nu ? '#4a3f52' : '#3b3547';
+    var s = '<svg viewBox="0 0 640 440" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">';
+    s += '<ellipse cx="322" cy="396" rx="208" ry="19" fill="var(--ink)" opacity=".08"/>';
+    s += '<circle cx="318" cy="206" r="174" fill="#ffffff" opacity=".5"/>';
+    /* cửa sổ sau lưng */
+    s += '<rect x="398" y="58" width="166" height="134" rx="32" fill="#ffffff" opacity=".75"/>';
+    s += '<rect x="410" y="70" width="142" height="110" rx="26" fill="var(--hero-b)"/>';
+    s += '<circle cx="482" cy="110" r="28" fill="var(--accent)" opacity=".35"/>';
+    s += '<rect x="390" y="186" width="182" height="12" rx="6" fill="#ffffff" opacity=".9"/>';
+    /* tóc dài phía sau (bạn nữ) */
+    if (nu) s += '<ellipse cx="232" cy="182" rx="68" ry="80" fill="' + toc + '"/>';
+    /* thân người */
+    s += '<path d="M170 306Q168 234 210 220H254Q296 234 294 306Z" fill="var(--primary)"/>';
+    s += '<path d="M212 220Q232 246 252 220Q244 214 232 214Q220 214 212 220Z" fill="#ffffff" opacity=".9"/>';
+    /* hai tay: một tay vẫy, một tay đặt lên bàn */
+    s += '<path d="M286 240Q322 226 330 186" fill="none" stroke="var(--primary)" stroke-width="26" stroke-linecap="round"/>';
+    s += '<circle cx="332" cy="176" r="16" fill="#ffe0c4"/>';
+    s += '<path d="M178 244Q170 278 196 296" fill="none" stroke="var(--primary)" stroke-width="26" stroke-linecap="round"/>';
+    /* đầu và khuôn mặt */
+    s += '<rect x="218" y="196" width="28" height="30" rx="12" fill="#efc4ab"/>';
+    s += '<ellipse cx="232" cy="166" rx="50" ry="54" fill="#ffe0c4"/>';
+    s += '<circle cx="216" cy="170" r="4.6" fill="#3f4652"/><circle cx="250" cy="170" r="4.6" fill="#3f4652"/>';
+    s += '<path d="M222 188Q232 197 242 188" fill="none" stroke="#3f4652" stroke-width="3.4" stroke-linecap="round"/>';
+    s += '<ellipse cx="203" cy="182" rx="8" ry="4.6" fill="#efb39c" opacity=".9"/><ellipse cx="263" cy="182" rx="8" ry="4.6" fill="#efb39c" opacity=".9"/>';
+    /* tóc trước trán */
+    if (nu) {
+      s += '<path d="M180 164Q178 104 232 96Q288 102 284 164Q272 130 246 124Q216 136 192 126Z" fill="' + toc + '"/>';
+      s += '<circle cx="284" cy="140" r="11" fill="var(--accent)"/>';
+    } else {
+      s += '<path d="M180 166Q176 106 232 98Q290 104 286 166Q276 128 250 122Q214 140 190 126Z" fill="' + toc + '"/>';
+    }
+    /* bàn học */
+    s += '<rect x="108" y="302" width="424" height="18" rx="9" fill="#ffffff"/>';
+    s += '<rect x="108" y="302" width="424" height="18" rx="9" fill="var(--primary)" opacity=".12"/>';
+    s += '<rect x="146" y="320" width="14" height="68" rx="7" fill="#ffffff" opacity=".9"/><rect x="480" y="320" width="14" height="68" rx="7" fill="#ffffff" opacity=".9"/>';
+    /* bàn tay đặt trên bàn */
+    s += '<circle cx="200" cy="298" r="15" fill="#ffe0c4"/>';
+    /* máy tính và cốc */
+    s += '<rect x="370" y="212" width="120" height="82" rx="10" fill="#ffffff"/>';
+    s += '<rect x="379" y="221" width="102" height="64" rx="6" fill="var(--primary)" opacity=".18"/>';
+    s += '<path d="M418 240l24 13-24 13z" fill="var(--primary)"/>';
+    s += '<rect x="356" y="292" width="148" height="10" rx="5" fill="#ffffff"/>';
+    s += '<rect x="292" y="270" width="32" height="32" rx="8" fill="#ffffff"/>';
+    s += '<path d="M324 278q13 8 0 16" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>';
+    s += '<path d="M300 262q6-8 0-16M312 262q6-8 0-16" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" opacity=".4"/>';
+    /* lấp lánh */
+    [[124, 128, 1], [566, 250, .85], [352, 78, .7]].forEach(function (p) {
+      s += '<path transform="translate(' + p[0] + ' ' + p[1] + ') scale(' + p[2] + ')" d="M0 -14l4.5 9.5 9.5 4.5-9.5 4.5-4.5 9.5-4.5-9.5-9.5-4.5 9.5-4.5z" fill="var(--accent)" opacity=".7"/>';
+    });
+    return s + '</svg>';
+  }
   var AVATARS = { boy: 'Bạn nam', girl: 'Bạn nữ' };
   var avatarNay = 'boy';
   function skinHienTai() { var s = document.documentElement.dataset.skin; return THEMES[s] ? s : 'mint'; }
@@ -715,8 +789,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (avatar === 'boy' || avatar === 'girl') avatarNay = avatar;
     document.documentElement.dataset.skin = skin;
     capNhatLic(skin);
-    var hr = document.querySelector('.hero .art img'); if (hr) hr.src = licSrc('hero-scene', skin);
-    var av = $('avImg'); if (av) av.src = licSrc('avatar-' + avatarNay, skin);
+    var art = document.querySelector('.hero .art'); if (art) art.innerHTML = tranhNhanVat(avatarNay);
+    datAnhTron();
     veChonGiaoDien();
     try { localStorage.setItem('hoc-skin', skin); localStorage.setItem('hoc-avatar', avatarNay); } catch (e) {}
   }
@@ -757,6 +831,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     [].forEach.call(g.querySelectorAll('button[data-th]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.th === nay)); });
     [].forEach.call($('avRow').querySelectorAll('button[data-av]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.av === avatarNay)); });
     [].forEach.call($('avRow').querySelectorAll('img.lic'), function (im) { im.src = licSrc(im.dataset.lic, nay); });
+    var pi = $('avPreIni'); if (pi) pi.textContent = $('avIni') ? $('avIni').textContent : '';
     var mini = $('thMini');
     if (mini) {
       if (!mini.children.length) {
@@ -768,7 +843,78 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       [].forEach.call(mini.querySelectorAll('button[data-th]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.th === nay)); });
     }
   }
-  function moGoc() { veChonGiaoDien(); $('gocBox').hidden = false; }
+  /* ẢNH ĐẠI DIỆN — ảnh thật của sinh viên, cắt vuông 256px ngay trên máy rồi mới gửi lên kho riêng. */
+  var anhURL = '';
+  function datAnhTron() {
+    var skin = skinHienTai();
+    ['avImg', 'avPreImg'].forEach(function (id) {
+      var im = $(id); if (!im) return;
+      im.src = anhURL || licSrc('avatar-' + avatarNay, skin);
+    });
+    var x = $('avClear'); if (x) x.hidden = !anhURL;
+  }
+  async function napAnhDaiDien() {
+    anhURL = '';
+    var p = (profile && profile.avatar_path) || '';
+    if (!p || !sb) { datAnhTron(); return; }
+    try {
+      var r = await sb.storage.from('avatars').createSignedUrl(p, 3600);
+      if (r.data && r.data.signedUrl) anhURL = r.data.signedUrl;
+    } catch (e) {}
+    datAnhTron();
+  }
+  /* Vẽ lại ảnh vào khung vuông 256×256: bỏ dữ liệu ẩn trong tệp gốc và giảm dung lượng. */
+  function vuong256(file) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onerror = function () { rej(new Error('Không đọc được tệp ảnh.')); };
+      fr.onload = function () {
+        var im = new Image();
+        im.onerror = function () { rej(new Error('Tệp này không phải ảnh đọc được.')); };
+        im.onload = function () {
+          var c = document.createElement('canvas'); c.width = 256; c.height = 256;
+          var g = c.getContext('2d'), cn = Math.min(im.width, im.height);
+          g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 256);
+          g.drawImage(im, (im.width - cn) / 2, (im.height - cn) / 2, cn, cn, 0, 0, 256, 256);
+          c.toBlob(function (b) { b ? res(b) : rej(new Error('Không xử lý được ảnh.')); }, 'image/jpeg', 0.86);
+        };
+        im.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+  $('avFile').addEventListener('change', async function () {
+    var file = this.files && this.files[0]; this.value = '';
+    if (!file || !me) return;
+    if (!/^image\//.test(file.type)) { msg($('gocMsg'), 'Chọn một tệp ảnh (PNG, JPG hoặc WEBP).'); return; }
+    if (file.size > 12 * 1024 * 1024) { msg($('gocMsg'), 'Ảnh quá lớn (trên 12 MB). Chọn ảnh nhỏ hơn.'); return; }
+    msg($('gocMsg'), 'Đang xử lý ảnh…', 'ok');
+    try {
+      var blob = await vuong256(file);
+      var path = me.id + '.jpg';
+      var up = await sb.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (up.error) {
+        var m = String(up.error.message || '');
+        msg($('gocMsg'), /not found|bucket/i.test(m) ? 'Máy chủ chưa mở kho ảnh đại diện. Nhắn giảng viên chạy schema_v12.' : ('Không tải lên được: ' + m));
+        return;
+      }
+      var rp = await sb.rpc('dat_anh_dai_dien', { p_path: path });
+      if (rp.error) { msg($('gocMsg'), 'Đã tải ảnh lên nhưng chưa ghi được vào hồ sơ: ' + rp.error.message); return; }
+      if (profile) profile.avatar_path = path;
+      await napAnhDaiDien();
+      msg($('gocMsg'), 'Xong. Ảnh của bạn đã hiện ở góc trên.', 'ok');
+    } catch (err) { msg($('gocMsg'), (err && err.message) || 'Không xử lý được ảnh.'); }
+  });
+  $('avClear').addEventListener('click', async function () {
+    if (!me) return;
+    msg($('gocMsg'), 'Đang bỏ ảnh…', 'ok');
+    try { await sb.storage.from('avatars').remove([me.id + '.jpg']); } catch (e) {}
+    try { await sb.rpc('dat_anh_dai_dien', { p_path: '' }); } catch (e) {}
+    if (profile) profile.avatar_path = '';
+    await napAnhDaiDien();
+    msg($('gocMsg'), 'Đã bỏ ảnh, quay lại nhân vật vẽ.', 'ok');
+  });
+  function moGoc() { veChonGiaoDien(); msg($('gocMsg'), ''); $('gocBox').hidden = false; }
   function dongGoc() { $('gocBox').hidden = true; }
   $('gocBtn').addEventListener('click', moGoc);
   $('gocClose').addEventListener('click', dongGoc);
@@ -916,6 +1062,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (laGV()) $('gvChips').hidden = false;
     show($('onbScreen'), false);
     show($('appScreen'), true);
+    napAnhDaiDien();
     batDauCanhGac();
     docMocLanTruoc();
     xinQuyenThongBao();
@@ -1090,7 +1237,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + '<p>' + (hero ? esc(tenBuoi(hero.s)) + ' · ' + (doDang ? esc(tienDoChu(hero.m)) : hk.name) : 'Giảng viên giao bài là hiện ở đây.') + '</p>'
       + (hero ? nutMo(hero, doDang ? 'Tiếp tục học' : 'Bắt đầu').replace('class="btn sm"', 'class="btn"') : '')
       + '<div class="quip">' + esc(QUIP[new Date().getDate() % QUIP.length]) + '</div></div>'
-      + '<div class="art"><img src="' + licSrc('hero-scene', skin) + '" alt=""></div></div>';
+      + '<div class="art">' + tranhNhanVat(avatarNay) + '</div></div>';
     /* Lịch hôm nay: buổi có giờ bắt đầu hôm nay, hoặc ngày dạy là hôm nay */
     var homNay = sessions.filter(function (s) { return (s.starts_at && cungNgay(s.starts_at, now)) || (s.held_on && cungNgay(s.held_on + 'T12:00:00', now)); })
       .sort(function (a, b) { return new Date(a.starts_at || 0) - new Date(b.starts_at || 0); })[0];

@@ -22,10 +22,26 @@ M còn phải làm:
 1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
 2. Bên Supabase → SQL Editor (nếu chưa chạy): `schema_v8_kieu_quay.sql`, `schema_v9_hom_nay.sql` — t chưa thấy m xác nhận. Thiếu v9 thì Ghim / giờ bắt đầu / thông báo lớp / đã xem-tiếp tục không lưu được.
 3. `schema_v10_ho_so.sql` — **đã chạy**; `schema_v10b_ho_so_thieu_dong.sql` — **đã chạy**.
-4. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
-5. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
+4. `schema_v11_giao_dien.sql` (4 màu + nhân vật) và `schema_v12_anh_dai_dien.sql` (kho ảnh đại diện) — chưa chạy thì trang vẫn dùng được, chỉ là lựa chọn không lưu lên máy chủ và chưa tải ảnh lên được.
+5. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
+6. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-09 (rạng sáng) — Nhân vật trong tranh lớn; sinh viên tự tải ảnh đại diện
+
+**M yêu cầu:** (1) tranh lớn phải có nhân vật nam/nữ như bản cũ nhưng ăn theo 4 giao diện mới; (2) vòng tròn nhỏ cho sinh viên tự tải ảnh của họ lên.
+
+**Đã làm**
+- `tranhNhanVat(gioi)` trong `web/index.html`: vẽ tay bằng SVG một bạn nam và một bạn nữ ngồi bàn học (cửa sổ sau lưng, máy tính, cốc nước, tay vẫy). Màu áo, màn hình, nơ tóc, lấp lánh lấy từ `var(--primary)` / `var(--accent)` / `var(--hero-b)` nên **một hình dùng cho cả bốn giao diện**; da và tóc để trung tính. Tranh chèn thẳng vào thẻ "Tiếp tục học" thay ảnh cảnh không người, đổi nhân vật là vẽ lại ngay.
+- Ảnh đại diện thật: mục mới trong hộp "Góc của bạn" — nút **Tải ảnh của bạn** và **Bỏ ảnh, dùng nhân vật vẽ**. Ảnh được vẽ lại vào khung vuông 256×256 bằng canvas **ngay trên máy sinh viên** (bỏ dữ liệu ẩn trong tệp gốc, giảm dung lượng) rồi mới gửi lên kho riêng `avatars` với tên đúng bằng id người dùng. Hiện ảnh qua link ký hạn 1 giờ; chưa có ảnh thì quay về hình nhân vật vẽ, không có thì về chữ tắt tên.
+- `schema_v12_anh_dai_dien.sql`: cột `avatar_path`, kho `avatars` riêng (không công khai, tối đa 512 KB, chỉ nhận ảnh), bốn luật truy cập (mỗi người chỉ đọc/ghi ảnh của mình, giảng viên đọc được cả lớp), hàm `dat_anh_dai_dien(p_path)` kiểm đúng tên tệp mới ghi.
+
+**Đã test** (trang thử, Supabase giả): tạo ảnh giả rồi thả vào ô chọn tệp → thu nhỏ, tải lên, hiện ở vòng tròn nhỏ và ô xem trước, nút "Bỏ ảnh" hiện ra; bấm bỏ → quay lại `avatar-girl.svg` đúng giao diện. Trang `_test_hero.html` dựng riêng để soi 8 biến thể (4 màu × 2 nhân vật): áo và điểm nhấn đổi màu đúng từng mẫu.
+
+**Chưa nối:** trang quản trị chưa hiện ảnh sinh viên trong danh sách lớp (luật đã cho phép giảng viên đọc, chỉ cần thêm phần hiển thị nếu m muốn).
 
 ---
 
