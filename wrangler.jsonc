@@ -6,6 +6,8 @@
   "name": "lop-hoc-online",
   "main": "./worker.js",
   "compatibility_date": "2025-06-01",
+  // giữ địa chỉ lop-hoc-online.maknoonnjs94.workers.dev: lần phát nào cũng bật lại đường này
+  "workers_dev": true,
   "keep_vars": true,
   "assets": {
     "directory": "./web",
