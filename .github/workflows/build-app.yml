@@ -84,6 +84,9 @@ jobs:
           ID=$(printf '%s' "$R2_ACCOUNT_ID" | tr -d '[:space:]' | grep -oE '[0-9a-f]{32}' | head -1 || true)
           if [ -z "$ID" ]; then echo "::error::R2_ACCOUNT_ID không đúng dạng (cần mã 32 ký tự hex)"; exit 1; fi
           EP="https://$ID.r2.cloudflarestorage.com"
+          # cắt khoảng trắng / xuống dòng lỡ dán kèm theo khoá (đã gặp thật: Access Key ID có ký tự xuống dòng ở đuôi)
+          export AWS_ACCESS_KEY_ID="$(printf "%s" "$AWS_ACCESS_KEY_ID" | tr -d "[:space:]")"
+          export AWS_SECRET_ACCESS_KEY="$(printf "%s" "$AWS_SECRET_ACCESS_KEY" | tr -d "[:space:]")"
           echo "aws: $(aws --version 2>&1)"
           echo "endpoint: $EP · kho: $R2_BUCKET · độ dài Access Key ID: ${#AWS_ACCESS_KEY_ID} · độ dài Secret: ${#AWS_SECRET_ACCESS_KEY}"
           if ! aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP" > r2out.txt 2> r2err.txt; then
