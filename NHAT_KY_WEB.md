@@ -16,7 +16,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - Trang học sinh viên: giao diện **Mint / Peach** theo giới tính, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` — cần secret `SUPABASE_SERVICE_ROLE_KEY` trong Cloudflare.
-- App máy tính bản **1.0.13** (logo mới; đang dựng trên GitHub Actions → R2): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+- App máy tính bản **1.0.13** (logo mới; đã lên R2 lúc 19:03 ngày 08/9, run 16 thành công cả Windows lẫn Mac): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
 M còn phải làm:
 1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
