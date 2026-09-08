@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- tải tệp lớn từng khúc, rớt mạng nối tiếp được -->
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js"></script>
 <style>
   /* ============ cùng hệ thiết kế với trang học: giấy lab, mực xanh đậm, teal dung dịch đồng, cam điểm cuối ============ */
   :root{
@@ -196,6 +198,10 @@
   .strow:hover{ border-color:var(--primary) } .strow.on{ border-color:var(--primary); box-shadow:inset 0 0 0 1px var(--primary) } .strow:disabled{ opacity:.55; cursor:default }
   .strow img,.strow .noanh{ width:72px; height:40px; border-radius:8px; object-fit:cover; background:var(--surface-2, #eee); flex:none }
   .strow b{ display:block; font-size:13.5px } .strow small{ color:var(--muted); font-size:12px }
+  .uptien{ margin:8px 0 4px } .uptien .bar{ height:10px; border-radius:99px; background:var(--surface-2, #eee); overflow:hidden }
+  .uptien .bar i{ display:block; height:100%; width:0; border-radius:99px; background:var(--primary); transition:width .3s }
+  .uptien .chu{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:5px }
+  .uptien .chu button{ border:0; background:none; color:var(--danger, #a72e48); font:inherit; font-size:12.5px; cursor:pointer; text-decoration:underline }
 </style>
 </head>
 <body>
@@ -383,7 +389,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var first = $('dlgBody').querySelector('input,select,textarea');
     if (first) setTimeout(function () { first.focus(); }, 50);
   }
-  function closeDlg() { $('dlg').hidden = true; dlgOnOk = null; }
+  function closeDlg() { if (typeof dangTai !== 'undefined' && dangTai) { try { dangTai.abort(); } catch (x) {} dangTai = null; } $('dlg').hidden = true; dlgOnOk = null; }
   $('dlgCancel').addEventListener('click', closeDlg);
   $('dlg').addEventListener('click', function (e) { if (e.target === this) closeDlg(); });
   $('dlgOk').addEventListener('click', async function () {
@@ -693,9 +699,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var body = '<label class="f">Tên hiển thị<input id="fTitle" placeholder="' + esc(k.name) + '"></label>';
     if (kind === 'video') {
       body += '<div class="f" style="margin-bottom:6px">Video trên Cloudflare Stream <small style="display:inline;font-weight:400;color:var(--muted)">— chỉ xem, không tải được, link tự hết hạn</small></div>'
-        + '<div class="stbar"><button type="button" class="btn sm" id="fStChon">Chọn video đã tải lên</button><label class="btn sm sec" for="fStFile" style="cursor:pointer">Tải video lên (≤ 200 MB)</label><input type="file" id="fStFile" accept="video/mp4,video/quicktime,video/*" hidden></div>'
+        + '<div class="stbar"><button type="button" class="btn sm" id="fStChon">Chọn video đã tải lên</button><label class="btn sm sec" for="fStFile" style="cursor:pointer">Tải video lên</label><input type="file" id="fStFile" accept="video/mp4,video/quicktime,video/*" hidden></div>'
         + '<div id="fStList" class="stlist"></div>'
-        + '<label class="f">Hoặc dán link ngoài<input id="fUrl" placeholder="https://www.youtube.com/watch?v=..."><small>YouTube, Drive, Vimeo… Link ngoài thì sinh viên vẫn có cách tải; video quan trọng nên đưa lên Stream. Tệp trên 200 MB: tải ở Cloudflare → Stream → Videos → Upload rồi bấm "Chọn video đã tải lên".</small></label>';
+        + '<label class="f">Hoặc dán link ngoài<input id="fUrl" placeholder="https://www.youtube.com/watch?v=..."><small>YouTube, Drive, Vimeo… Link ngoài thì sinh viên vẫn có cách tải; video quan trọng nên đưa lên Stream. Tệp lớn (tới 30 GB) tải thẳng ở đây được — rớt mạng thì bấm tải lại đúng tệp đó, nó chạy tiếp chỗ dở.</small></label>';
     } else if (kind === 'link') {
       body += '<label class="f">Đường dẫn<input id="fUrl" placeholder="https://…"><small>Dán nguyên link là được.</small></label>';
     } else if (kind === 'text') {
@@ -746,6 +752,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     } catch (e) { box.innerHTML = '<div class="msg show err">' + esc(LOI_STREAM[e.message] || e.message) + '</div>'; }
   }
   $('dlgBody').addEventListener('click', async function (e) {
+    if (e.target.closest('#fStHuy')) { if (dangTai) { try { dangTai.abort(); } catch (x) {} dangTai = null; } $('fStList').innerHTML = ''; msg($('dlgMsg'), 'Đã dừng. Chọn lại đúng tệp đó để chạy tiếp chỗ dở.'); return; }
     if (e.target.closest('#fStChon')) { veDanhSachStream(); return; }
     var r = e.target.closest('.strow'); if (!r) return;
     msg($('dlgMsg'), 'Đang khoá link video…', 'ok');
@@ -757,21 +764,62 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       msg($('dlgMsg'), 'Đã chọn "' + r.dataset.ten + '" và khoá link. Bấm Thêm để đưa vào buổi.', 'ok');
     } catch (err) { msg($('dlgMsg'), LOI_STREAM[err.message] || err.message); }
   });
-  $('dlgBody').addEventListener('change', async function (e) {
+  /* Tệp nhỏ: gửi một lần. Tệp lớn: cắt khúc bằng tus, rớt mạng chọn lại đúng tệp là chạy tiếp. */
+  var dangTai = null;
+  function veTienTrinh(daXong, tong) {
+    var box = $('fStList'); if (!box) return;
+    var pct = tong ? Math.min(100, Math.round(100 * daXong / tong)) : 0;
+    box.innerHTML = '<div class="uptien"><div class="bar"><i style="width:' + pct + '%"></i></div>'
+      + '<div class="chu"><span>Đang tải ' + Math.round(daXong / 1048576) + ' / ' + Math.round(tong / 1048576) + ' MB (' + pct + '%)</span>'
+      + '<button type="button" id="fStHuy">Dừng</button></div></div>';
+  }
+  async function taiVideoLen(file) {
+    var ten = file.name.replace(/\.[^.]+$/, '');
+    function xongTai(uid, loi) {
+      dangTai = null;
+      if (loi) { msg($('dlgMsg'), loi); $('fStList').innerHTML = ''; return; }
+      $('fUrl').value = 'stream:' + uid;
+      if ($('fTitle') && !val('fTitle')) $('fTitle').value = ten;
+      $('fStList').innerHTML = '';
+      msg($('dlgMsg'), 'Đã tải xong. Cloudflare cần vài phút xử lý — cứ bấm Thêm; sinh viên mở sớm sẽ thấy "đang xử lý".', 'ok');
+    }
+    /* dưới 190 MB: gửi thẳng một lần cho nhanh */
+    if (file.size <= 190 * 1024 * 1024) {
+      msg($('dlgMsg'), 'Đang xin chỗ tải lên…', 'ok');
+      try {
+        var d = await apiGoi('/api/stream/tai-len', { name: file.name });
+        msg($('dlgMsg'), 'Đang tải ' + Math.round(file.size / 1048576) + ' MB lên Cloudflare — đừng đóng hộp thoại…', 'ok');
+        var fd = new FormData(); fd.append('file', file);
+        var up = await fetch(d.uploadURL, { method: 'POST', body: fd });
+        if (!up.ok) throw new Error('Cloudflare từ chối tệp (HTTP ' + up.status + ').');
+        xongTai(d.uid);
+      } catch (err) { xongTai(null, LOI_STREAM[err.message] || err.message); }
+      return;
+    }
+    /* tệp lớn: cần thư viện tus */
+    if (!window.tus) { msg($('dlgMsg'), 'Chưa tải được bộ tải tệp lớn (mạng chặn cdn.jsdelivr.net). Cách khác: Cloudflare → Stream → Hosted videos → Upload, rồi bấm "Chọn video đã tải lên".'); return; }
+    msg($('dlgMsg'), 'Đang xin chỗ cho tệp ' + Math.round(file.size / 1048576) + ' MB…', 'ok');
+    var d;
+    try { d = await apiGoi('/api/stream/tai-len-lon', { name: file.name, size: file.size }); }
+    catch (err) { msg($('dlgMsg'), LOI_STREAM[err.message] || err.message); return; }
+    msg($('dlgMsg'), 'Đang tải lên. Rớt mạng thì nó tự thử lại; đóng hộp thoại là mất tiến trình.', 'ok');
+    veTienTrinh(0, file.size);
+    dangTai = new tus.Upload(file, {
+      uploadUrl: d.endpoint,
+      chunkSize: 50 * 1024 * 1024,
+      retryDelays: [0, 3000, 6000, 12000, 24000],
+      metadata: { name: file.name },
+      onProgress: function (daXong, tong) { veTienTrinh(daXong, tong); },
+      onSuccess: function () { xongTai(d.uid); },
+      onError: function (err) { xongTai(null, 'Tải lên hỏng: ' + (err && err.message || err) + ' — chọn lại đúng tệp đó để chạy tiếp chỗ dở.'); }
+    });
+    dangTai.start();
+  }
+  $('dlgBody').addEventListener('change', function (e) {
     var inp = e.target.closest('#fStFile'); if (!inp) return;
     var file = inp.files && inp.files[0]; inp.value = ''; if (!file) return;
-    if (file.size > 200 * 1024 * 1024) { msg($('dlgMsg'), 'Tệp ' + Math.round(file.size / 1048576) + ' MB, trên 200 MB: tải ở Cloudflare → Stream → Videos → Upload, rồi bấm "Chọn video đã tải lên".'); return; }
-    msg($('dlgMsg'), 'Đang xin chỗ tải lên…', 'ok');
-    try {
-      var d = await apiGoi('/api/stream/tai-len', { name: file.name });
-      msg($('dlgMsg'), 'Đang tải ' + Math.round(file.size / 1048576) + ' MB lên Cloudflare — đừng đóng hộp thoại…', 'ok');
-      var fd = new FormData(); fd.append('file', file);
-      var up = await fetch(d.uploadURL, { method: 'POST', body: fd });
-      if (!up.ok) throw new Error('Cloudflare từ chối tệp (HTTP ' + up.status + ').');
-      $('fUrl').value = 'stream:' + d.uid;
-      if ($('fTitle') && !val('fTitle')) $('fTitle').value = file.name.replace(/\.[^.]+$/, '');
-      msg($('dlgMsg'), 'Đã tải lên. Cloudflare cần vài phút xử lý — cứ bấm Thêm; sinh viên mở sớm sẽ thấy "đang xử lý".', 'ok');
-    } catch (err) { msg($('dlgMsg'), LOI_STREAM[err.message] || err.message); }
+    if (file.size > 30 * 1024 * 1024 * 1024) { msg($('dlgMsg'), 'Tệp trên 30 GB, Cloudflare không nhận. Cắt bớt hoặc xuất lại với chất lượng thấp hơn.'); return; }
+    taiVideoLen(file);
   });
 
   function editMaterial(id) {

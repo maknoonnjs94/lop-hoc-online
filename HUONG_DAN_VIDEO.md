@@ -74,18 +74,22 @@ Supabase → **SQL Editor** → dán `schema_v14_video.sql` → **Run**. File n�
 
 Có hai cách, chọn theo dung lượng.
 
-### B1. Video ≤ 200 MB: tải ngay trong trang quản trị
+### B1. Tải thẳng trong trang quản trị (mọi cỡ, tới 30 GB)
 
 1. Trang quản trị → chọn lớp → tab **Buổi học** → buổi cần thêm → **Thêm tài liệu** → **Video**.
-2. Bấm **Tải video lên (≤ 200 MB)** → chọn tệp .mp4.
-3. Chờ dòng "Đang tải … MB lên Cloudflare" chạy xong, thấy "Đã tải lên". Ô *Tên hiển thị* tự điền theo tên tệp, sửa tuỳ ý.
-4. Bấm **Thêm**. Xong.
+2. Bấm **Tải video lên** → chọn tệp .mp4.
+3. Tệp nhỏ (dưới ~190 MB) gửi một lần, xong hiện "Đã tải xong". Tệp lớn hiện **thanh tiến trình** kèm số MB và nút **Dừng**: nó cắt tệp thành từng khúc 50 MB, **rớt mạng thì tự thử lại**; nếu hỏng hẳn, chọn lại **đúng tệp đó** là chạy tiếp chỗ dở, không phải tải lại từ đầu.
+4. Ô *Tên hiển thị* tự điền theo tên tệp, sửa tuỳ ý. Bấm **Thêm**.
 
-Cloudflare cần vài phút xử lý (video 1 giờ ≈ 3–5 phút). Trong lúc đó sinh viên mở sẽ thấy "Video đang được xử lý, vài phút nữa mở lại nhé".
+Lưu ý: **đừng đóng hộp thoại** khi thanh tiến trình đang chạy — đóng là dừng tải. Cứ để đó, mở tab khác làm việc khác được.
 
-### B2. Video lớn (bài giảng cả buổi): tải ở Cloudflare rồi chọn
+Cloudflare cần vài phút xử lý sau khi tải xong (video 1 giờ ≈ 3–5 phút). Trong lúc đó sinh viên mở sẽ thấy "Video đang được xử lý, vài phút nữa mở lại nhé".
 
-1. **dash.cloudflare.com → Stream → Videos → Upload video** → kéo tệp .mp4 vào (tối đa 30 GB một tệp). Đặt tên rõ ràng, ví dụ `Buoi 5 - Chuan do axit bazo`.
+### B2. Cách dự phòng: tải ở Cloudflare rồi chọn
+
+Dùng khi mạng chặn thư viện tải tệp lớn, hoặc m muốn tải sẵn nhiều video một lượt.
+
+1. **dash.cloudflare.com → Images & Stream → Hosted videos → Upload video** → kéo tệp .mp4 vào. Đặt tên rõ ràng, ví dụ `Buoi 5 - Chuan do axit bazo`.
 2. Chờ cột trạng thái thành **Ready**.
 3. Trang quản trị → buổi học → **Thêm tài liệu → Video** → **Chọn video đã tải lên** → danh sách hiện ra → bấm đúng video.
 4. Trang tự **khoá link** video đó (chỉ mở bằng chữ ký, chỉ nhúng được từ trang lớp học) và điền tên. Bấm **Thêm**.
@@ -117,6 +121,8 @@ Vẫn được: dán vào ô *Hoặc dán link ngoài*. Nhưng YouTube "không c
 | Video "đang xử lý" quá 30 phút | Tệp lỗi hoặc định dạng lạ | Vào Stream → Videos xem trạng thái; xuất lại .mp4 (H.264) rồi tải lại |
 | Sinh viên đổi mạng (Wi-Fi → 4G) giữa chừng bị dừng | Token gắn IP cũ | Đóng video, mở lại là có token mới |
 | Danh sách video trống dù đã tải | Token chỉ có quyền Read, hoặc tải nhầm tài khoản | Kiểm A3 bước Permissions |
+| "Chưa tải được bộ tải tệp lớn" | Mạng chặn cdn.jsdelivr.net | Dùng cách B2 |
+| Đang tải tệp lớn thì mất điện / đóng nhầm | Tiến trình dừng | Mở lại hộp Thêm video, chọn **đúng tệp đó**, nó chạy tiếp chỗ dở |
 
 Muốn xem Worker đã nối chưa: mở `https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai` — có `"stream": true` là đủ hai secret.
 

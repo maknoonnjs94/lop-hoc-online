@@ -8,6 +8,7 @@
        POST /api/stream/danh-sach  giảng viên: danh sách video trên Stream
        POST /api/stream/chon       giảng viên: khoá link video (requireSignedURLs + allowedOrigins)
        POST /api/stream/tai-len    giảng viên: xin link tải video thẳng lên Stream (≤ 200 MB)
+       POST /api/stream/tai-len-lon giảng viên: xin chỗ tải video lớn (tới 30 GB) theo giao thức tus, rớt mạng nối tiếp được
    Stream cần thêm hai secret: CF_ACCOUNT_ID và CF_STREAM_TOKEN (API token quyền Stream:Edit). Khoá ký video
    được tạo một lần rồi cất trong bảng cau_hinh_he_thong của Supabase (chỉ service role đọc được).
    Khoá SUPABASE_SERVICE_ROLE_KEY là *secret* của Worker (dán trong Cloudflare → Settings → Variables and Secrets).
@@ -58,6 +59,7 @@ export default {
       if (url.pathname === '/api/stream/danh-sach') return await streamDanhSach(env, request);
       if (url.pathname === '/api/stream/chon') return await streamChon(body, env, request);
       if (url.pathname === '/api/stream/tai-len') return await streamTaiLen(body, env, request);
+      if (url.pathname === '/api/stream/tai-len-lon') return await streamTaiLenLon(body, env, request);
       return json({ ok: false, reason: 'khong_co_duong_nay' }, 404, request);
     } catch (e) {
       return json({ ok: false, reason: 'loi_may_chu', chi_tiet: String(e && e.message || e).slice(0, 200) }, 500, request);
@@ -363,4 +365,39 @@ async function kiemSchema(env) {
     v12_anh_dai_dien: v12,
     v14_video: v14
   };
+}
+
+/* POST /api/stream/tai-len-lon { name, size } → { endpoint, uid }
+   Cloudflare trả một địa chỉ tus dùng một lần; trình duyệt đẩy tệp lên từng khúc, đứt mạng thì nối tiếp
+   đúng chỗ dở. Khoá tài khoản không bao giờ rời Worker. */
+async function streamTaiLenLon(body, env, request) {
+  if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
+  const ten = String(body.name || 'video').slice(0, 120);
+  const size = Math.floor(Number(body.size) || 0);
+  if (!size || size > 30 * 1024 * 1024 * 1024) return json({ ok: false, reason: 'kich_thuoc_sai' }, 400, request);
+  const host = new URL(request.url).host;
+  const b64 = function (s) { return btoa(String.fromCharCode.apply(null, new TextEncoder().encode(s))); };
+  const meta = [
+    'name ' + b64(ten),
+    'requiresignedurls',
+    'allowedorigins ' + b64(host),
+    'maxdurationseconds ' + b64('21600')
+  ].join(',');
+  const r = await fetch(CF_API + env.CF_ACCOUNT_ID + '/stream?direct_user=true', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + env.CF_STREAM_TOKEN,
+      'Tus-Resumable': '1.0.0',
+      'Upload-Length': String(size),
+      'Upload-Metadata': meta
+    }
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    return json({ ok: false, reason: 'khong_xin_duoc_cho', chi_tiet: locLoi(t) }, 502, request);
+  }
+  const endpoint = r.headers.get('Location');
+  const uid = r.headers.get('stream-media-id');
+  if (!endpoint || !uid) return json({ ok: false, reason: 'cloudflare_thieu_dia_chi' }, 502, request);
+  return json({ ok: true, endpoint: endpoint, uid: uid }, 200, request);
 }

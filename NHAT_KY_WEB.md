@@ -31,6 +31,19 @@ M còn phải làm:
 
 ---
 
+## 2026-09-09 (đêm) — Tải video lớn tới 30 GB ngay trong trang quản trị
+
+**M hỏi:** video trên 200 MB thì sao (bài giảng cả buổi thường 0,5–2 GB).
+
+**Đã làm**
+- `worker.js`: `POST /api/stream/tai-len-lon` { name, size } → gọi Cloudflare `POST /stream?direct_user=true` kèm `Tus-Resumable`, `Upload-Length`, `Upload-Metadata` (name, requiresignedurls, allowedorigins = host trang, maxdurationseconds) → trả `endpoint` (địa chỉ tus dùng một lần) + `uid`. Khoá tài khoản không rời Worker.
+- `quan-tri.html`: nạp `tus-js-client@4.3.1` từ jsDelivr (cdnjs không có gói này). Tệp ≤ 190 MB vẫn gửi một lần; lớn hơn thì cắt khúc 50 MB, có thanh tiến trình + nút Dừng, `retryDelays` tự thử lại, chọn lại đúng tệp là nối tiếp chỗ dở. Đóng hộp thoại thì `closeDlg` huỷ tải.
+- `HUONG_DAN_VIDEO.md`: viết lại mục B (B1 tải thẳng mọi cỡ, B2 dự phòng qua Hosted videos), thêm hai dòng xử lý lỗi.
+
+**Chưa test với tệp thật** — cần m thử một video lớn rồi báo lại.
+
+---
+
 ## 2026-09-09 (tối muộn) — Đổi tên nhánh Cloudflare: địa chỉ trang thành giangduonghoahoc
 
 **Chuyện gì:** m thử đổi Subdomain của tài khoản Cloudflare thành `giangduonghoahoc`. Đổi tên nhánh là **dời toàn bộ Worker** sang tên mới và **thu hồi tên cũ ngay** → `lop-hoc-online.maknoonnjs94.workers.dev` chết (DNS báo không tồn tại ở mọi máy chủ phân giải), trong khi ô *Account details* vẫn hiện tên cũ do trang chưa làm mới. T đoán nhầm là "đường workers.dev bị tắt" — thực ra toggle vẫn bật.
