@@ -67,29 +67,41 @@ jobs:
       # Tên tệp cố định nên bản mới ghi đè bản cũ, kho luôn chỉ ~270 MB. Chưa có secrets thì bỏ qua, không hỏng job.
       - name: Chép lên Cloudflare R2
         shell: bash
+        continue-on-error: true          # R2 hỏng thì vẫn đưa lên GitHub Releases, không kéo cả job chết theo
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET || 'lop-hoc-app' }}
           AWS_DEFAULT_REGION: auto
           AWS_REQUEST_CHECKSUM_CALCULATION: when_required
           AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
         run: |
-          if [ -z "$R2_ACCOUNT_ID" ] || [ -z "$AWS_ACCESS_KEY_ID" ]; then
-            echo "Chưa có secrets R2 (R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY) — bỏ qua bước chép lên R2."
+          if [ -z "$R2_ACCOUNT_ID" ] || [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+            echo "::warning::Thiếu secret R2 (R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY) — bỏ qua bước chép lên R2."
             exit 0
           fi
-          # Chấp nhận cả khi secret dán nguyên dòng https://<mã>.r2.cloudflarestorage.com — chỉ lấy 32 ký tự mã
-          ID=$(printf '%s' "$R2_ACCOUNT_ID" | tr -d '[:space:]' | grep -oE '[0-9a-f]{32}' | head -1)
-          if [ -z "$ID" ]; then echo "R2_ACCOUNT_ID không đúng dạng (cần mã 32 ký tự hex)"; exit 1; fi
+          ID=$(printf '%s' "$R2_ACCOUNT_ID" | tr -d '[:space:]' | grep -oE '[0-9a-f]{32}' | head -1 || true)
+          if [ -z "$ID" ]; then echo "::error::R2_ACCOUNT_ID không đúng dạng (cần mã 32 ký tự hex)"; exit 1; fi
           EP="https://$ID.r2.cloudflarestorage.com"
+          echo "aws: $(aws --version 2>&1)"
+          echo "endpoint: $EP · kho: $R2_BUCKET · độ dài Access Key ID: ${#AWS_ACCESS_KEY_ID} · độ dài Secret: ${#AWS_SECRET_ACCESS_KEY}"
+          if ! aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP" 2> r2err.txt; then
+            echo "::error::Không vào được kho R2. Lỗi: $(tr -d '' < r2err.txt | tail -3)"
+            echo "Gợi ý: InvalidAccessKeyId / SignatureDoesNotMatch = sai Access Key ID hoặc Secret; NoSuchBucket = tên kho không phải '$R2_BUCKET' (đặt biến R2_BUCKET trong Settings → Secrets and variables → Actions → Variables); AccessDenied = token không có quyền Object Read & Write cho kho này."
+            exit 1
+          fi
           for f in dist/LopHoc-win.exe dist/LopHoc-win.exe.blockmap dist/LopHoc-mac.dmg dist/LopHoc-mac.dmg.blockmap; do
-            [ -f "$f" ] && aws s3 cp "$f" "s3://lop-hoc-app/$(basename "$f")" --endpoint-url "$EP" --content-type application/octet-stream --cache-control "public, max-age=300" && echo "đã chép $f"
+            if [ -f "$f" ]; then
+              aws s3 cp "$f" "s3://$R2_BUCKET/$(basename "$f")" --endpoint-url "$EP" --content-type application/octet-stream --cache-control "public, max-age=300" && echo "đã chép $f"
+            fi
           done
           for f in dist/latest.yml dist/latest-mac.yml; do
-            [ -f "$f" ] && aws s3 cp "$f" "s3://lop-hoc-app/$(basename "$f")" --endpoint-url "$EP" --content-type text/yaml --cache-control "no-cache" && echo "đã chép $f"
+            if [ -f "$f" ]; then
+              aws s3 cp "$f" "s3://$R2_BUCKET/$(basename "$f")" --endpoint-url "$EP" --content-type text/yaml --cache-control "no-cache" && echo "đã chép $f"
+            fi
           done
-          echo "Kho R2 hiện có:"; aws s3 ls s3://lop-hoc-app/ --endpoint-url "$EP"
+          echo "Kho R2 hiện có:"; aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP"
 
       # Bước này chịu được việc hai máy cùng đưa lên một Release: máy nào tới sau thì thêm tệp vào Release có sẵn.
       - name: Đưa lên Releases
