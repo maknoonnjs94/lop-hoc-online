@@ -157,6 +157,7 @@
           <button data-tab="ses" class="on">Buổi học</button>
           <button data-tab="stu">Sinh viên</button>
           <button data-tab="kho">Kho tệp</button>
+          <button data-tab="bao">Cảnh báo <span class="pill off" id="baoN" hidden style="margin-left:4px">0</span></button>
         </div>
         <div id="paneSes">
           <div class="bar">
@@ -178,6 +179,20 @@
           <div class="card" id="khoList"></div>
           <p class="hint" style="margin-top:10px">
             Kho gom tệp của mọi lớp. Mỗi tệp chỉ nằm một bản: “Dùng lại” gắn đúng tệp đó sang buổi khác mà không phải tải lên lần nữa.
+          </p>
+        </div>
+        <div id="paneBao" hidden>
+          <div class="bar">
+            <b style="font-size:16px">Cảnh báo chụp màn hình · in · lưu</b>
+            <span class="grow"></span>
+            <button class="btn sm" id="baoReload">↻ Tải lại</button>
+            <button class="btn sm danger" id="baoClear">Xoá tất cả</button>
+          </div>
+          <div class="card" id="baoList"></div>
+          <p class="hint" style="margin-top:10px">
+            Trang học ghi lại khi sinh viên bấm PrintScreen, Ctrl+P hoặc Ctrl+S, kèm tài liệu đang mở lúc đó.
+            Win+Shift+S, máy Mac và điện thoại thì trình duyệt không thấy được — dấu chìm tên trên tài liệu là lớp bảo vệ cho những trường hợp ấy.
+            Có sự kiện mới là báo ngay tại trang này, kể cả khi đang ở tab khác.
           </p>
         </div>
         <div id="paneStu" hidden>
@@ -389,9 +404,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('paneSes').hidden = tab !== 'ses';
     $('paneStu').hidden = tab !== 'stu';
     $('paneKho').hidden = tab !== 'kho';
+    $('paneBao').hidden = tab !== 'bao';
     refreshPane();
   });
   async function refreshPane() {
+    if (!baoRT) { baoRT = true; batRealtimeBao(); }         /* bật kênh báo tức thì sau lần đầu vào trang */
+    if (tab === 'bao') { await loadBao(); return; }          /* cảnh báo gom mọi lớp, không cần chọn lớp */
     var c = classes.filter(function (x) { return x.id === curClass; })[0];
     $('clsName').textContent = c ? c.name : '';
     ['addSesBtn', 'renameClsBtn', 'delClsBtn', 'addStuBtn'].forEach(function (id) { $(id).disabled = !c; });
@@ -778,6 +796,68 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('fCls').addEventListener('change', fillSes);
     fillSes();
   }
+
+  /* ---------------- cảnh báo chụp màn hình ---------------- */
+  var KIND_BAO = { printscreen: ['Chụp màn hình', 'off'], in: ['Bấm in', ''], luu: ['Bấm lưu trang', ''] };
+  var baoRT = false, baoMoi = 0;
+  function ngayGioBao(s) {
+    try {
+      var d = new Date(s), p = function (n) { return ('0' + n).slice(-2); };
+      return p(d.getHours()) + ':' + p(d.getMinutes()) + ' ' + p(d.getDate()) + '/' + p(d.getMonth() + 1);
+    } catch (e) { return ''; }
+  }
+  function tenTrinhDuyet(ua) {
+    ua = String(ua || '');
+    var tb = /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : '';
+    var td = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '';
+    return [td, tb].filter(Boolean).join(' · ') || ua.slice(0, 40);
+  }
+  async function loadBao() {
+    var box = $('baoList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('screenshot_events')
+      .select('id, user_id, kind, material_title, ua, at')
+      .order('at', { ascending: false }).limit(300);
+    if (r.error) {
+      box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message)
+        + (/screenshot_events/.test(r.error.message) ? '<br><small>Chưa chạy file <b>schema_v6_canh_bao_chup.sql</b> trong Supabase.</small>' : '') + '</div>';
+      return;
+    }
+    var list = r.data || [];
+    baoMoi = 0; $('baoN').hidden = true;
+    if (!list.length) { box.innerHTML = '<div class="empty">Chưa có sự kiện nào. Tốt.</div>'; return; }
+    var ids = {}; list.forEach(function (e) { ids[e.user_id] = true; });
+    var rp = await sb.from('profiles').select('id, full_name, email').in('id', Object.keys(ids));
+    var who = {}; (rp.data || []).forEach(function (x) { who[x.id] = x; });
+    box.innerHTML = '<table class="roster"><thead><tr><th>Lúc</th><th>Sinh viên</th><th>Việc</th><th>Đang mở</th><th>Máy</th></tr></thead><tbody>'
+      + list.map(function (e) {
+        var p = who[e.user_id] || {}, k = KIND_BAO[e.kind] || [e.kind, ''];
+        return '<tr><td style="white-space:nowrap">' + esc(ngayGioBao(e.at)) + '</td>'
+          + '<td>' + esc(p.full_name || '(chưa đặt tên)') + '<br><small style="color:var(--muted)">' + esc(p.email || '') + '</small></td>'
+          + '<td><span class="pill ' + k[1] + '">' + k[0] + '</span></td>'
+          + '<td>' + esc(e.material_title || '—') + '</td>'
+          + '<td><small style="color:var(--muted)">' + esc(tenTrinhDuyet(e.ua)) + '</small></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function batRealtimeBao() {
+    try {
+      sb.channel('canh-bao-chup')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'screenshot_events' }, function (payload) {
+          var e = payload['new'] || {};
+          baoMoi++;
+          $('baoN').textContent = baoMoi; $('baoN').hidden = false;
+          toast('⚠ Có sinh viên vừa ' + ((KIND_BAO[e.kind] || [e.kind])[0]).toLowerCase()
+            + (e.material_title ? ' khi đang mở "' + e.material_title + '"' : '') + '. Xem tab Cảnh báo.');
+          if (tab === 'bao') loadBao();
+        }).subscribe();
+    } catch (err) {}
+  }
+  $('baoReload').addEventListener('click', loadBao);
+  $('baoClear').addEventListener('click', async function () {
+    if (!confirm('Xoá toàn bộ danh sách cảnh báo? Không lấy lại được.')) return;
+    var r = await sb.from('screenshot_events').delete().gt('id', 0);
+    if (r.error) toast('Lỗi: ' + r.error.message); else { toast('Đã xoá.'); await loadBao(); }
+  });
 
   /* ---------------- sinh viên ---------------- */
   async function loadRoster() {
