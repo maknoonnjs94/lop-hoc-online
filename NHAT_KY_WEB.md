@@ -13,7 +13,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 ## Trạng thái hiện tại (2026-09-08, tối)
 
 Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học** (logo chờ tệp từ m). Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 2 nhân vật, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
+- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 2 nhân vật, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` — cần secret `SUPABASE_SERVICE_ROLE_KEY` trong Cloudflare.
 - App máy tính bản **1.0.13** (logo mới; đã lên R2 lúc 19:03 ngày 08/9, run 16 thành công cả Windows lẫn Mac): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
@@ -30,14 +30,14 @@ M còn phải làm:
 
 ---
 
-## 2026-09-09 (sáng) — Đổi tên "Giảng đường Hóa học", nhân vật chìm vào thẻ, chờ tệp logo
+## 2026-09-09 (sáng) — Đổi tên "Giảng đường Hóa học", logo, nhân vật chìm vào thẻ
 
 **M yêu cầu:** nhân vật phải là ảnh chìm, lớn hơn, liền khối với giao diện (không khung); đổi tên "Góc học tập" → **Giảng đường Hóa học**; gắn logo (ảnh tròn màu nước: bình tam giác, lá, phân tử, sách, câu "Hóa học khó, có Phạm Ngọc lo"), để to cho dễ xem.
 
 **Đã làm**
 - Tranh lớn: cắt lại cảnh học từ `04-Mau-giao-dien-Mint-Peach.png` (bạn nam mint, bạn nữ peach, có giấy nhớ, đèn bàn, chồng sách) → `web/img/scenes/hoc-*.jpg`. Ảnh phủ trọn 62 % cạnh phải thẻ, cao hết thẻ (thẻ nâng lên 300 px), mép trái tan dần bằng mask nên không còn khung; màn hình hẹp thì ảnh nằm dưới chữ, tan dần từ trên xuống.
 - Tên: `<title>`, cột trái (hai dòng "Giảng đường / Hóa học"), trang đăng nhập (logo 168 px ở giữa), nút "Vào giảng đường", trợ giúp, thông báo máy, cảnh báo bắt buộc app, trang tải app — không còn chữ "Góc học tập" (nút "Góc của bạn" giữ vì là tên tính năng).
-- Logo: mã đã trỏ `web/img/logo.png` ở cột trái (64 px, rail 52 px, điện thoại 46 px), trang đăng nhập (168 px), trang tải app (140 px), cắt tròn bằng CSS. **Chưa có tệp** — ảnh logo m chỉ gửi trong khung chat, không nằm trong `design-reference`; thiếu tệp thì trang tự lùi về icon lá / hình lớp học nên không vỡ. M chép tệp vào `design-reference` (tên có chữ "logo") là t thu nhỏ, làm favicon và cân lại.
+- Logo: m chép `design-reference/logo-giang-duong.png.png` (1254×1254, nền trắng, 1,7 MB). T cắt ô vuông 1130 px ở giữa, vẽ qua mặt nạ tròn → PNG nền ngoài vòng trong suốt: `web/img/logo.png` 400 px (295 KB) dùng ở cột trái (64 px, rail 52 px, điện thoại 46 px), trang đăng nhập (168 px), trang tải app (140 px); `web/img/favicon.png` 128 px thay favicon ô vuông xanh cũ. Thiếu tệp thì trang vẫn tự lùi về icon lá / hình lớp học. Bản 512 px làm icon app đã dựng sẵn ở thư mục tạm, **chưa** đưa vào app (đổi icon app cần phát bản 1.0.14, chờ m gật).
 
 **Đã test** (trang thử): hero nam/nữ đổi theo nhân vật, tan mép đúng; tiêu đề trang, cột trái, trang đăng nhập hiện tên mới; fallback khi thiếu logo chạy đúng.
 
