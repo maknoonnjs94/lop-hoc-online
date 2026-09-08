@@ -350,6 +350,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.textContent = text || '';
     box.className = text ? ('msg show ' + (kind || 'err')) : 'msg';
   }
+  /* 4520 giây → "1 g 15 p" */
+  function gioChu(giay) {
+    giay = Math.round(Number(giay) || 0);
+    if (!giay) return '0';
+    var g = Math.floor(giay / 3600), p = Math.round((giay % 3600) / 60);
+    if (g && p) return g + ' g ' + p + ' p';
+    if (g) return g + ' g';
+    return Math.max(1, p) + ' p';
+  }
   function fmtDate(d) {
     if (!d) return '';
     var p = String(d).slice(0, 10).split('-');
@@ -694,6 +703,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   function fileKind(k) { return k === 'pdf' || k === 'lecture'; }
 
+  /* Quỹ thời gian xem cho MỖI sinh viên. 0 = không giới hạn. */
+  function oChonQuy(phutHienTai) {
+    return '<label class="f">Giới hạn thời lượng xem<select id="fQuy">'
+      + [0, 30, 45, 60, 90, 120, 180, 240, 300].map(function (p) {
+          return '<option value="' + p + '"' + (p === (phutHienTai || 0) ? ' selected' : '') + '>' + (p ? p + ' phút' : 'Không giới hạn') + '</option>';
+        }).join('')
+      + '</select><small>Tính cho <b>từng sinh viên</b>. Video 30 phút mà đặt quỹ 60 phút thì xem được khoảng 2 lượt. Dùng hết quỹ: video rời khỏi danh sách của bạn đó và máy chủ ngừng cấp vé xem.</small></label>';
+  }
   function addMaterial(sesId, kind) {
     var k = KIND[kind] || KIND.link;
     var body = '<label class="f">Tên hiển thị<input id="fTitle" placeholder="' + esc(k.name) + '"></label>';
@@ -702,6 +719,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<div class="stbar"><button type="button" class="btn sm" id="fStChon">Chọn video đã tải lên</button><label class="btn sm sec" for="fStFile" style="cursor:pointer">Tải video lên</label><input type="file" id="fStFile" accept="video/mp4,video/quicktime,video/*" hidden></div>'
         + '<div id="fStList" class="stlist"></div>'
         + '<label class="f">Hoặc dán link ngoài<input id="fUrl" placeholder="https://www.youtube.com/watch?v=..."><small>YouTube, Drive, Vimeo… Link ngoài thì sinh viên vẫn có cách tải; video quan trọng nên đưa lên Stream. Tệp lớn (tới 30 GB) tải thẳng ở đây được — rớt mạng thì bấm tải lại đúng tệp đó, nó chạy tiếp chỗ dở.</small></label>';
+      body += oChonQuy(0);
     } else if (kind === 'link') {
       body += '<label class="f">Đường dẫn<input id="fUrl" placeholder="https://…"><small>Dán nguyên link là được.</small></label>';
     } else if (kind === 'text') {
@@ -837,6 +855,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       } else {
         body += '<label class="f">Đường dẫn<input id="fUrl" value="' + esc(c.url || '') + '"></label>';
       }
+      if (m.kind === 'video') body += oChonQuy(Math.round((Number(m.gioi_han_giay) || 0) / 60));
       body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local" value="' + toLocalInput(m.open_at) + '"></label>';
       dialog('Sửa ' + k.name, body, async function () { return saveMaterial(id, m._ses.id, m.kind); });
     });
@@ -847,6 +866,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var openAt = $('fOpen') ? fromLocalInput(val('fOpen')) : null;
     var fileEl = $('fFile'), file = fileEl && fileEl.files && fileEl.files[0];
     var url = $('fUrl') ? val('fUrl') : null;
+    var quyGiay = $('fQuy') ? (Number(val('fQuy')) || 0) * 60 : null;
     var textBody = $('fBody') ? $('fBody').value : null;
 
     if (!id && !file && !url && !textBody) { msg($('dlgMsg'), 'Chưa có nội dung: chọn tệp, dán link hoặc gõ chữ.'); return false; }
@@ -864,14 +884,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     var matId = id;
     if (id) {
-      var u = await sb.from('materials').update({ title: title, open_at: openAt }).eq('id', id);
+      var thay = { title: title, open_at: openAt };
+      if (quyGiay != null) thay.gioi_han_giay = quyGiay;
+      var u = await sb.from('materials').update(thay).eq('id', id);
       if (u.error) { msg($('dlgMsg'), u.error.message); return false; }
     } else {
       var ses = sessions.filter(function (x) { return x.id === sesId; })[0];
       var order = ((ses && ses.materials) || []).reduce(function (m, x) { return Math.max(m, x.order_no || 0); }, 0) + 1;
-      var ins = await sb.from('materials').insert({
-        session_id: sesId, kind: kind, title: title || (KIND[kind] || {}).name || '', open_at: openAt, order_no: order
-      }).select('id').single();
+      var dong = { session_id: sesId, kind: kind, title: title || (KIND[kind] || {}).name || '', open_at: openAt, order_no: order };
+      if (quyGiay != null) dong.gioi_han_giay = quyGiay;
+      var ins = await sb.from('materials').insert(dong).select('id').single();
       if (ins.error) { msg($('dlgMsg'), ins.error.message); return false; }
       matId = ins.data.id;
     }
@@ -1017,11 +1039,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function loadTheo() {
     var box = $('theoList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
-    var rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
+    var rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no, gioi_han_giay)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
     if (rs.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rs.error.message) + '</div>'; return; }
     var rr = await sb.from('enrollments').select('student, profiles(full_name, email, role)').eq('class_id', curClass);
     var sv = (rr.data || []).filter(function (e) { return !e.profiles || e.profiles.role === 'student'; });
-    var rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress').eq('class_id', curClass);
+    var rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress, tong_giay').eq('class_id', curClass);
     if (rv.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rv.error.message) + (/view_events/.test(rv.error.message) ? '<br><small>Chưa chạy file <b>schema_v9_hom_nay.sql</b> trong Supabase.</small>' : '') + '</div>'; return; }
     var xem = {}; (rv.data || []).forEach(function (v) { (xem[v.material_id] = xem[v.material_id] || {})[v.user_id] = v; });
     var ten = {}; sv.forEach(function (e) { ten[e.student] = (e.profiles && e.profiles.full_name) || (e.profiles && e.profiles.email) || e.student.slice(0, 8); });
@@ -1035,13 +1057,19 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       return '<details class="card ses" open><summary><span class="no">' + esc(s.no != null ? s.no : '•') + '</span>'
         + '<span class="t"><b>' + esc(s.title || 'Chưa đặt tên') + '</b><span>' + soMo + '/' + sv.length + ' sinh viên đã mở ít nhất một tài liệu</span></span>'
         + '<span class="pill ' + (soMo === sv.length ? 'on' : (soMo ? '' : 'off')) + '">' + Math.round(100 * soMo / sv.length) + '%</span></summary>'
-        + '<div class="mats">' + (mats.length ? '<table class="roster"><thead><tr><th>Tài liệu</th><th>Đã mở</th><th>Chưa mở</th></tr></thead><tbody>'
+        + '<div class="mats">' + (mats.length ? '<table class="roster"><thead><tr><th>Tài liệu</th><th>Đã mở</th><th>Lượt mở</th><th>Giờ xem</th><th>Chưa mở</th></tr></thead><tbody>'
           + mats.map(function (m) {
               var k = KIND[m.kind] || KIND.link, x = xem[m.id] || {};
               var da = sv.filter(function (e) { return x[e.student]; }), chua = sv.filter(function (e) { return !x[e.student]; });
               var chi = da.map(function (e) { var v = x[e.student], pr = v.progress || {}; var t = pr.done ? '✓' : (pr.page ? 'tr.' + pr.page + '/' + (pr.pages || '?') : (pr.seconds ? Math.round(pr.seconds / 60) + 'ph' : '')); return esc(ten[e.student]) + (t ? ' <small style="color:var(--muted)">' + t + '</small>' : ''); }).join(', ');
-              return '<tr><td><span class="ico ' + (k.cls || '') + '" style="color:var(--k)">' + k.ic + '</span> ' + esc(m.title || k.name) + (m.open_at && new Date(m.open_at) > new Date() ? ' <span class="pill off">khoá tới ' + esc(fmtWhen(m.open_at)) + '</span>' : '') + '</td>'
+              var tongMo = da.reduce(function (t, e) { return t + (Number(x[e.student].opens) || 0); }, 0);
+              var tongGiay = da.reduce(function (t, e) { return t + (Number(x[e.student].tong_giay) || 0); }, 0);
+              var quy = Number(m.gioi_han_giay) || 0;
+              var soHet = quy ? da.filter(function (e) { return (Number(x[e.student].tong_giay) || 0) >= quy; }).length : 0;
+              return '<tr><td><span class="ico ' + (k.cls || '') + '" style="color:var(--k)">' + k.ic + '</span> ' + esc(m.title || k.name) + (m.open_at && new Date(m.open_at) > new Date() ? ' <span class="pill off">khoá tới ' + esc(fmtWhen(m.open_at)) + '</span>' : '') + (quy ? ' <span class="pill" title="Quỹ thời gian xem cho mỗi sinh viên">quỹ ' + Math.round(quy / 60) + ' phút</span>' : '') + '</td>'
                 + '<td><b>' + da.length + '</b>/' + sv.length + (chi ? '<br><small>' + chi + '</small>' : '') + '</td>'
+                + '<td>' + (tongMo || '—') + '</td>'
+                + '<td>' + (tongGiay ? gioChu(tongGiay) : '—') + (soHet ? '<br><small style="color:var(--danger,#a72e48)">' + soHet + ' hết lượt</small>' : '') + '</td>'
                 + '<td>' + (chua.length ? '<small>' + chua.map(function (e) { return esc(ten[e.student]); }).join(', ') + '</small>' : '<span class="pill on">đủ</span>') + '</td></tr>';
             }).join('') + '</tbody></table>' : '<div class="empty" style="padding:14px">Buổi này chưa có tài liệu.</div>')
         + '</div></details>';

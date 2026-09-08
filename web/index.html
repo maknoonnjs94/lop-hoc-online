@@ -1175,6 +1175,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function xemXong(m) { var v = views[m.id]; return !!(v && v.progress && v.progress.done); }
   function tenBuoi(s) { return s.title || ('Buổi ' + (s.no != null ? s.no : '')); }
   function tatCa(loc) { var out = []; sessions.forEach(function (s) { (s.materials || []).forEach(function (m) { if (!loc || loc(m, s)) out.push({ m: m, s: s }); }); }); return out; }
+  /* ---- quỹ thời gian xem video (giảng viên đặt cho từng video) ---- */
+  function quyXem(m) { return Math.max(0, Number(m && m.gioi_han_giay) || 0); }
+  function daXem(m) { var v = views[m.id]; return Math.max(0, Number(v && v.tong_giay) || 0); }
+  function conLaiGiay(m) { var q = quyXem(m); return q ? Math.max(0, q - daXem(m)) : null; }
+  function hetLuot(m) { var q = quyXem(m); return q > 0 && daXem(m) >= q; }
+  function phutChu(giay) {
+    var p = Math.round(giay / 60);
+    if (p >= 60) { var g = Math.floor(p / 60), du = p % 60; return g + ' giờ' + (du ? ' ' + du + ' phút' : ''); }
+    return Math.max(1, p) + ' phút';
+  }
   function tenLop() { var c = classes.filter(function (x) { return x.id === curClass; })[0]; return c ? c.name : ''; }
 
   async function loadSessions() {
@@ -1195,7 +1205,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function taiLuotXem() {
     views = {};
     try {
-      var r = await sb.from('view_events').select('material_id, session_id, last_at, opens, progress').eq('user_id', me.id).eq('class_id', curClass);
+      var r = await sb.from('view_events').select('material_id, session_id, last_at, opens, progress, tong_giay').eq('user_id', me.id).eq('class_id', curClass);
       (r.data || []).forEach(function (v) { views[v.material_id] = v; });
     } catch (e) {}
   }
@@ -1312,17 +1322,23 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var now = Date.now();
     var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
     var open = mats.filter(function (m) { return moKhoa(m, now); }), later = mats.filter(function (m) { return !moKhoa(m, now); });
+    /* Video đã dùng hết quỹ thời gian xem thì rời khỏi danh sách của riêng sinh viên này. */
+    var daHet = open.filter(hetLuot);
+    open = open.filter(function (m) { return !hetLuot(m); });
     matList = open;
     function row(m, locked) {
       var k = KIND[m.kind] || KIND.link, seen = daXem(m), done = xemXong(m), moi = laMoi(m);
       var cls = locked ? 'k-lock locked' : k.cls + (done ? ' seen' : (seen ? ' part' : ''));
       var st = locked ? 'Mở ' + fmtWhen(m.open_at) : (done ? '<span class="st"><span class="ico">' + I.check + '</span>Đã xem xong · ' + k.name + '</span>' : (seen ? '<span class="st">' + esc(tienDoChu(m)) + ' · ' + k.name + '</span>' : k.name));
+      var cl = locked ? null : conLaiGiay(m);
+      if (cl != null) st += ' · <span class="st">còn ' + phutChu(cl) + ' xem</span>';
       return '<button type="button" class="mat ' + cls + '"' + (locked ? ' disabled' : '') + ' data-m="' + m.id + '" data-kind="' + esc(m.kind) + '" data-title="' + esc(m.title || k.name) + '">'
         + '<span class="mi ico">' + I[locked ? 'lock' : (done ? 'check' : k.ic)] + '</span>'
         + '<span class="mt"><b>' + esc(m.title || k.name) + (moi && !locked ? '<span class="pillnew">MỚI</span>' : '') + '</b><span>' + st + '</span></span>'
         + '<span class="mc ico">' + I.chev + '</span></button>';
     }
     var body = mats.length ? open.map(function (m) { return row(m, false); }).join('') + (later.length ? '<div class="mgroup">Mở sau</div>' + later.map(function (m) { return row(m, true); }).join('') : '')
+      + (daHet.length ? '<div class="mgroup">Đã dùng hết lượt xem</div><div class="empty" style="padding:14px 12px;text-align:left">' + daHet.map(function (m) { return esc(m.title || (KIND[m.kind] || KIND.link).name); }).join('<br>') + '<br><small>Bạn đã dùng hết quỹ thời gian xem giảng viên đặt cho video này. Cần xem thêm thì nhắn giảng viên.</small></div>' : '')
       : '<div class="empty">' + lic('documents', 72) + 'Buổi này chưa có tài liệu.</div>';
     var xem = open.filter(daXem).length;
     $('sesMain').innerHTML = (classNotice.trim() ? '<div class="today-strip"><div class="notice"><b>Thông báo</b>' + esc(classNotice.trim()) + '</div></div>' : '') + '<div class="card">'
@@ -1544,7 +1560,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var cu = views[materialId]; cu.progress = Object.assign({}, cu.progress || {}, pr); cu.last_at = new Date().toISOString();
     try { sb.from('view_events').update({ progress: cu.progress, last_at: cu.last_at }).eq('user_id', me.id).eq('material_id', materialId).then(function () {}, function () {}); } catch (e) {}
   }
-  function dungTheoDoi() { if (tienDo.timer) clearInterval(tienDo.timer); tienDo.timer = null; if (tienDo.save) { try { tienDo.save(); } catch (e) {} } tienDo.save = null; }
+  function dungTheoDoi() { if (tienDo.timer) clearInterval(tienDo.timer); tienDo.timer = null; if (tienDo.save) { try { tienDo.save(); } catch (e) {} } if (tienDo.dong) { try { tienDo.dong(); } catch (e) {} } tienDo.save = null; tienDo.dong = null; }
   function theoDoiPdf(stage, pages) {
     var id = curMat && curMat.id; if (!id) return;
     var body = $('vBody'), cv = function () { return stage.querySelectorAll('canvas'); };
@@ -1594,6 +1610,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     stream_chua_cau_hinh: 'Máy chủ chưa nối với kho video. Nhắn giảng viên.',
     chua_san_sang: 'Video đang được xử lý, vài phút nữa mở lại nhé.',
     chua_toi_gio: 'Chưa tới giờ mở video này.', chua_mo: 'Buổi học chưa mở.', khong_trong_lop: 'Bạn không ở trong lớp này.',
+    het_luot: 'Bạn đã dùng hết quỹ thời gian xem video này. Cần xem thêm thì nhắn giảng viên.',
     phien_het_han: 'Phiên đăng nhập hết hạn, tải lại trang.', chua_dang_nhap: 'Chưa đăng nhập.', khong_thay: 'Không thấy video này.'
   };
   var sdkSan = null;
@@ -1613,8 +1630,38 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var player; try { player = Stream(iframe); } catch (e) { return; }
       var v = views[id], pr = (v && v.progress) || {};
       if (pr.seconds > 15 && !pr.done) player.addEventListener('loadedmetadata', function () { try { player.currentTime = pr.seconds; } catch (e) {} });
-      var last = -1;
-      tienDo.save = function () { try { var t = Math.floor(player.currentTime || 0), dd = Math.floor(player.duration || 0); if (!dd || Math.abs(t - last) < 5) return; last = t; luuTienDo(id, { seconds: t, duration: dd, done: t / dd > 0.9 }); } catch (e) {} };
+      var last = -1, mocTruoc = -1, dồn = 0;
+      /* Cộng dồn thời lượng THỰC SỰ xem: chỉ tính phần chạy tiến tới, tua qua không tính. */
+      function gomThoiLuong(t) {
+        if (mocTruoc >= 0) { var d = t - mocTruoc; if (d > 0 && d <= 15) dồn += d; }
+        mocTruoc = t;
+      }
+      function guiThoiLuong(bat_buoc) {
+        var them = Math.floor(dồn);
+        if (them < (bat_buoc ? 1 : 20)) return;
+        dồn -= them;
+        try {
+          sb.rpc('ghi_gio_xem', { p_material: id, p_them: Math.min(60, them) }).then(function (r) {
+            var d = r && r.data;
+            if (!d || !d.ok) return;
+            if (views[id]) views[id].tong_giay = d.da_xem;
+            if (d.gioi_han && d.con_lai != null && d.con_lai <= 0) {
+              baoChup('Hết lượt xem video này', 'Bạn đã dùng hết quỹ thời gian giảng viên đặt cho video này. Video sẽ không mở lại được.', 'info');
+            }
+          }, function () {});
+        } catch (e) {}
+      }
+      tienDo.save = function () {
+        try {
+          var t = Math.floor(player.currentTime || 0), dd = Math.floor(player.duration || 0);
+          gomThoiLuong(t);
+          guiThoiLuong(false);
+          if (!dd || Math.abs(t - last) < 5) return;
+          last = t; luuTienDo(id, { seconds: t, duration: dd, done: t / dd > 0.9 });
+        } catch (e) {}
+      };
+      /* đóng cửa sổ xem thì gửi nốt phần lẻ */
+      tienDo.dong = function () { try { gomThoiLuong(Math.floor(player.currentTime || 0)); guiThoiLuong(true); } catch (e) {} };
       tienDo.timer = setInterval(tienDo.save, 10000);
     });
   }
@@ -1625,11 +1672,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     catch (e) {
       var loi = LOI_STREAM[e.reason] || ('Không mở được video: ' + esc(e.chi_tiet || e.message || e.reason || ''));
       if (e.reason === 'chua_san_sang' && e.pct) loi += ' (đã xử lý ' + e.pct + '%)';
+      if (e.reason === 'het_luot') { if (views[id]) views[id].tong_giay = 1e9; setTimeout(function () { renderView(); }, 50); }
       body.innerHTML = '<div class="vload">' + loi + '</div>'; return;
     }
     if (!curMat || curMat.id !== id) return;
     body.innerHTML = '<div class="vstage"><iframe allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="vhint">Video chỉ xem trong lớp: link tự hết hạn, gắn với máy đang xem, không tải về được.</p></div>';
     var fr = body.querySelector('iframe'); fr.src = d.embed + '?preload=metadata';
+    if (d.gioi_han && views[id]) views[id].tong_giay = Math.max(0, d.gioi_han - (d.con_lai || 0));
     watermark(body.querySelector('.vstage'));
     theoDoiStream(fr, id);
   }

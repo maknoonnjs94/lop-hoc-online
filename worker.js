@@ -303,7 +303,7 @@ async function streamToken(body, request, env) {
   if (nd.loi) return json({ ok: false, reason: nd.loi }, 401, request);
   const mid = String(body.material_id || '');
   if (!UUID.test(mid)) return json({ ok: false, reason: 'thieu_tai_lieu' }, 400, request);
-  const m = await restOne(env, '/materials?id=eq.' + mid + '&select=id,open_at,session_id,sessions(class_id,published)');
+  const m = await restOne(env, '/materials?id=eq.' + mid + '&select=id,open_at,gioi_han_giay,session_id,sessions(class_id,published)');
   if (!m) return json({ ok: false, reason: 'khong_thay' }, 404, request);
   const c = await restOne(env, '/material_contents?material_id=eq.' + mid + '&select=url');
   const u = String((c && c.url) || '');
@@ -317,12 +317,34 @@ async function streamToken(body, request, env) {
     const e = await restOne(env, '/enrollments?class_id=eq.' + s.class_id + '&student=eq.' + nd.id + '&select=student');
     if (!e) return json({ ok: false, reason: 'khong_trong_lop' }, 403, request);
   }
+
+  /* Quỹ thời gian xem: hết quỹ thì không cấp vé nữa. Giảng viên không bị trừ. */
+  const quy = Math.max(0, Number(m.gioi_han_giay) || 0);
+  let conLai = 0;
+  if (quy > 0 && !nd.staff) {
+    const ve = await restOne(env, '/view_events?user_id=eq.' + nd.id + '&material_id=eq.' + mid + '&select=tong_giay');
+    const daXem = Math.max(0, Number(ve && ve.tong_giay) || 0);
+    if (daXem >= quy) {
+      return json({ ok: false, reason: 'het_luot', da_xem: daXem, gioi_han: quy }, 403, request);
+    }
+    conLai = quy - daXem;
+    /* Phí mở: mỗi lần xin vé trừ sẵn 2 phút, để máy nào không gửi nhật ký xem cũng bị trừ dần. */
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/view_events?user_id=eq.' + nd.id + '&material_id=eq.' + mid, {
+        method: 'PATCH', headers: adminHeaders(env, { Prefer: 'return=minimal' }),
+        body: JSON.stringify({ tong_giay: Math.min(quy, daXem + 120) })
+      });
+    } catch (e) {}
+  }
   const v = await cfStream(env, '/' + uid);
   if (!v.readyToStream) return json({ ok: false, reason: 'chua_san_sang', pct: v.status && v.status.pctComplete }, 409, request);
   const host = new URL(v.playback.hls).host;
   const khoa = await layKhoaKy(env);
-  const token = await kyTokenStream(khoa, uid, 4 * 3600, luatIp(request.headers.get('CF-Connecting-IP') || ''));
-  return json({ ok: true, token: token, host: host, embed: 'https://' + host + '/' + token + '/iframe', duration: v.duration }, 200, request);
+  /* Vé chỉ sống đúng phần quỹ còn lại (thêm 10 phút dư), tối đa 4 giờ. */
+  const song = conLai > 0 ? Math.min(4 * 3600, conLai + 600) : 4 * 3600;
+  const token = await kyTokenStream(khoa, uid, song, luatIp(request.headers.get('CF-Connecting-IP') || ''));
+  return json({ ok: true, token: token, host: host, embed: 'https://' + host + '/' + token + '/iframe',
+    duration: v.duration, gioi_han: quy || undefined, con_lai: quy ? conLai : undefined }, 200, request);
 }
 
 /* POST /api/stream/danh-sach → { videos: [...] } (giảng viên) */

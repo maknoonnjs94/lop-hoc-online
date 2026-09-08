@@ -31,6 +31,22 @@ M còn phải làm:
 
 ---
 
+## 2026-09-09 (rạng sáng 10/9) — Quỹ thời lượng xem video + đếm lượt xem
+
+**M muốn:** đặt quỹ thời gian xem cho từng video (30/60/90/120 phút), hết quỹ thì video ẩn khỏi giao diện sinh viên; và có bộ đếm lượt xem để thống kê.
+
+**Đã làm**
+- `schema_v16_gioi_han_xem.sql`: `materials.gioi_han_giay` (0 = không giới hạn), `view_events.tong_giay` (cộng dồn), trigger `ve_chan_gian_lan` (sinh viên chỉ được cộng, mỗi lần tối đa +60 giây và +1 lượt; máy chủ/giảng viên miễn), RPC `ghi_gio_xem(p_material, p_them)` trả về quỹ còn lại.
+- `worker.js` trong `streamToken`: đọc `gioi_han_giay` + `tong_giay`; hết quỹ → `het_luot` (403), còn quỹ → trừ trước **120 giây phí mở** rồi ký vé sống đúng `con_lai + 10 phút` (tối đa 4 giờ). Giảng viên không bị trừ.
+- `web/index.html`: đếm thời lượng **thực sự xem** (chỉ cộng phần chạy tiến tới, delta ≤ 15 giây; tua không tính), gửi `ghi_gio_xem` mỗi 20 giây và khi đóng cửa sổ xem; hàng tài liệu hiện "còn N phút xem"; hết quỹ thì video rời danh sách, gom vào mục "Đã dùng hết lượt xem" có giải thích.
+- `web/quan-tri.html`: ô **Giới hạn thời lượng xem** khi thêm/sửa video (0/30/45/60/90/120/180/240/300 phút); tab Theo dõi thêm cột **Lượt mở** và **Giờ xem** (kèm số em đã hết lượt), nhãn "quỹ N phút" cạnh tên video.
+
+**Đã test** (trang thử): còn quỹ → hàng video hiện "còn 45 phút xem"; hết quỹ → video biến khỏi danh sách, hiện mục "Đã dùng hết lượt xem". Cú pháp worker + hai trang OK.
+
+**Cần m chạy:** `schema_v16_gioi_han_xem.sql`.
+
+---
+
 ## 2026-09-09 (khuya, sau) — Khoá máy theo mã máy thật (app 1.0.16)
 
 **M hỏi:** cài bản app mới xong tài khoản SV bị đòi gỡ thiết bị, phiền; có phải gắn theo IP không?

@@ -102,6 +102,35 @@ Vẫn được: dán vào ô *Hoặc dán link ngoài*. Nhưng YouTube "không c
 
 ---
 
+## Giới hạn thời lượng xem (chống chia sẻ, chống cày lại)
+
+Khi thêm hoặc sửa một video, ô **Giới hạn thời lượng xem** cho chọn: Không giới hạn, 30, 45, 60, 90, 120, 180, 240, 300 phút.
+
+Quỹ này tính cho **từng sinh viên**, cộng dồn số phút thực sự xem (tua qua không tính). Ví dụ video dài 30 phút:
+
+| Đặt quỹ | Sinh viên xem được | Dùng khi |
+|---|---|---|
+| Không giới hạn | thoải mái | bài giảng nền tảng, muốn các em xem đi xem lại |
+| 30 phút | đúng một lượt | bài chỉ cho xem một lần |
+| 60 phút | khoảng hai lượt | mặc định hợp lý cho bài giảng chính |
+| 90–120 phút | ba đến bốn lượt | bài khó, cần xem lại nhiều |
+
+**Chặn ở máy chủ, không phải ẩn ngoài giao diện**: video chỉ mở được bằng vé do máy chủ ký; hết quỹ thì máy chủ từ chối cấp vé, đồng thời video rời khỏi danh sách của riêng sinh viên đó (các bạn khác vẫn thấy bình thường).
+
+Vài điểm đã tính sẵn:
+- Tua đi tua lại không bị trừ oan — chỉ cộng phần chạy tiến tới.
+- Mỗi lần bấm mở video trừ sẵn 2 phút, để máy nào chặn nhật ký cũng bị trừ dần.
+- Vé chỉ sống bằng đúng quỹ còn lại (thêm 10 phút dư), tối đa 4 giờ — không thể mở một vé rồi xem cả ngày.
+- Sinh viên không tự hạ số phút đã xem được: máy chủ chỉ cho cộng thêm, mỗi lần tối đa 60 giây.
+
+Muốn cho một em xem thêm: vào **Theo dõi**, hoặc đơn giản là nâng quỹ của video đó lên (sửa video, chọn số phút lớn hơn) — quỹ mới áp dụng cho tất cả.
+
+## Xem ai đã xem bao nhiêu
+
+Quản trị → tab **Theo dõi**: mỗi buổi liệt kê từng tài liệu kèm **Đã mở** (bao nhiêu em, tên ai), **Lượt mở** (tổng số lần bấm mở), **Giờ xem** (tổng thời lượng cả lớp, và số em đã hết lượt), **Chưa mở** (tên những em chưa đụng tới).
+
+---
+
 ## Phần C — Kiểm tra bằng tài khoản sinh viên
 
 1. Đăng nhập tài khoản sinh viên trong lớp đó → Bài giảng → buổi → bấm video.
