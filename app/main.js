@@ -56,6 +56,33 @@ function doPhanMemQuay(win) {
 }
 ipcMain.handle('lophoc:recorders', () => Array.from(dangQuay));
 
+/* ---------------------------------------------------------------------
+   TỰ CẬP NHẬT (Windows). Lúc mở và mỗi 30 phút app hỏi GitHub Releases; có bản mới thì tải ngầm,
+   xong hỏi "Khởi động lại để cập nhật?" — không thì lần đóng app sẽ tự thay.
+   macOS: bản chưa ký số nên hệ điều hành không cho tự thay; Mac tải tay từ Releases
+   (khi nào ký số thì bỏ điều kiện win32 là chạy).
+   --------------------------------------------------------------------- */
+let autoUpdater = null;
+try { autoUpdater = require('electron-updater').autoUpdater; } catch (e) { autoUpdater = null; }
+function batTuCapNhat(win) {
+  if (!autoUpdater || process.platform !== 'win32' || !app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-downloaded', (info) => {
+    if (win.isDestroyed()) return;
+    dialog.showMessageBox(win, {
+      type: 'info', title: 'Có bản mới',
+      message: 'Đã tải xong bản ' + info.version + '.',
+      detail: 'Khởi động lại để cập nhật ngay, hoặc để sau — lần đóng app sẽ tự cập nhật.',
+      buttons: ['Cập nhật ngay', 'Để sau'], defaultId: 0, cancelId: 1
+    }).then(r => { if (r.response === 0) autoUpdater.quitAndInstall(); });
+  });
+  autoUpdater.on('error', () => {});                     /* mạng lỗi thì im lặng, lần sau thử lại */
+  const kiem = () => { try { autoUpdater.checkForUpdates().catch(() => {}); } catch (e) {} };
+  setTimeout(kiem, 8000);
+  setInterval(kiem, 30 * 60 * 1000);
+}
+
 /* Địa chỉ trang lớp học. Đổi ở đây nếu sau này có tên miền riêng. */
 const SITE_URL = 'https://lop-hoc-online.maknoonnjs94.workers.dev/';
 const APP_TAG = 'LopHocApp/' + app.getVersion();     /* trang web nhận ra mình đang chạy trong app nhờ chuỗi này */
@@ -154,7 +181,8 @@ app.whenReady().then(() => {
   }
 
   taoMenu();
-  taoCuaSo();
+  const win = taoCuaSo();
+  batTuCapNhat(win);
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) taoCuaSo(); });
 });
 

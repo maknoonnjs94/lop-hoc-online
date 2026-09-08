@@ -1,7 +1,7 @@
 {
   "name": "lop-hoc",
   "productName": "LopHoc",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Ứng dụng Lớp học online — cửa sổ được hệ điều hành bảo vệ, hiện đen trong mọi ảnh chụp và bản quay màn hình",
   "main": "main.js",
   "author": "Phạm Anh Ngọc",
@@ -12,6 +12,9 @@
     "build:win": "electron-builder --win nsis --x64 --publish never",
     "build:mac": "electron-builder --mac dmg --universal --publish never"
   },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
   "devDependencies": {
     "electron": "^36.0.0",
     "electron-builder": "^26.0.0"
@@ -19,7 +22,13 @@
   "build": {
     "appId": "vn.hus.lophoc",
     "productName": "LopHoc",
-    "artifactName": "LopHoc-${version}-${os}.${ext}",
+    "artifactName": "LopHoc-${os}.${ext}",
+    "publish": {
+      "provider": "github",
+      "owner": "maknoonnjs94",
+      "repo": "lop-hoc-online",
+      "releaseType": "release"
+    },
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "preload.js", "package.json"],
     "win": {
