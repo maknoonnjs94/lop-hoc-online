@@ -6,3 +6,6 @@ app/dist/
 app/node_modules/
 desktop.ini
 web/_test_*.html
+
+# tệp tạm chứa khoá, không bao giờ đưa lên kho
+khoa.txt

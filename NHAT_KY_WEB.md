@@ -31,6 +31,20 @@ M còn phải làm:
 
 ---
 
+## 2026-09-09 (khuya) — Nối xong Cloudflare Stream: bẫy Ctrl+V trong ô nhập khoá
+
+**Triệu chứng:** thêm video báo `khong_xin_duoc_cho`; dò ra `/api/trang-thai` cho thấy ngay cả lệnh CHỈ ĐỌC `GET /stream?per_page=1` cũng trả **HTTP 400** → lỗi không ở phần tus mà ở khoá.
+
+**Nguyên nhân:** cả `CF_ACCOUNT_ID` lẫn `CF_STREAM_TOKEN` chỉ dài **1 ký tự, mã 0x16** — đúng ký tự mà **Ctrl+V** chèn vào ô ẩn của `wrangler secret put` (cửa sổ đó không dán bằng phím tắt được, phải chuột phải). Bài học: đừng bao giờ dùng `secret put` tương tác nữa.
+
+**Cách làm chuẩn từ nay:** tạo tệp `khoa.txt` (JSON `{"TEN_KHOA": "giá trị"}`, đã cho vào .gitignore) đặt sẵn trong `Hoc_Online`, mở bằng Notepad để dán, rồi `npx.cmd wrangler secret bulk khoa.txt` — không hỏi gì, không có ô ẩn. Xong xoá tệp.
+
+**Công cụ dò còn lại:** `/api/trang-thai` báo `stream` (đủ hai secret chưa), `thu_stream` (Cloudflare trả mã gì cho lệnh chỉ đọc) và `sql` (đã chạy schema_v9/10/11/12/14 chưa). Phần in hình dạng khoá đã gỡ sau khi sửa xong.
+
+**Trạng thái:** Stream đã trả 200, `schema_v14_video.sql` đã chạy. Chờ m thử tải video thật.
+
+---
+
 ## 2026-09-09 (đêm) — Tải video lớn tới 30 GB ngay trong trang quản trị
 
 **M hỏi:** video trên 200 MB thì sao (bài giảng cả buổi thường 0,5–2 GB).
