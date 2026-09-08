@@ -99,7 +99,7 @@ ipcMain.handle('lophoc:check-update', async () => {
 });
 
 /* Địa chỉ trang lớp học. Đổi ở đây nếu sau này có tên miền riêng. */
-const SITE_URL = 'https://lop-hoc-online.maknoonnjs94.workers.dev/';
+const SITE_URL = 'https://lop-hoc-online.giangduonghoahoc.workers.dev/';
 const APP_TAG = 'LopHocApp/' + app.getVersion();     /* trang web nhận ra mình đang chạy trong app nhờ chuỗi này */
 
 app.setName('Lớp học');

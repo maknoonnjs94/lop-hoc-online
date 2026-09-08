@@ -667,7 +667,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var matList = [], matIdx = -1, tienDo = { timer: null, save: null };
   /* Ứng dụng máy tính gắn LopHocApp/ vào user agent. REQUIRE_APP = true → sinh viên bắt buộc dùng app. */
   var REQUIRE_APP = false;
-  var APP_URL = 'https://lop-hoc-online.maknoonnjs94.workers.dev/tai-app.html';
+  var APP_URL = 'https://lop-hoc-online.giangduonghoahoc.workers.dev/tai-app.html';
   var TRONG_APP = /LopHocApp\//.test(navigator.userAgent) || !!window.lopHocApp;
 
   var $ = function (id) { return document.getElementById(id); };
@@ -1572,7 +1572,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- video Cloudflare Stream ----------------
      Video không có link cố định. Mỗi lần mở, máy chủ kiểm quyền rồi ký một token sống 4 giờ, gắn với IP đang xem. */
-  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.maknoonnjs94.workers.dev' : '';
+  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.giangduonghoahoc.workers.dev' : '';
   async function goiApi(path, body) {
     var s = await sb.auth.getSession(); var tk = s.data.session && s.data.session.access_token;
     if (!tk) { var e0 = new Error('chua_dang_nhap'); e0.reason = 'chua_dang_nhap'; throw e0; }

@@ -118,7 +118,7 @@ Vẫn được: dán vào ô *Hoặc dán link ngoài*. Nhưng YouTube "không c
 | Sinh viên đổi mạng (Wi-Fi → 4G) giữa chừng bị dừng | Token gắn IP cũ | Đóng video, mở lại là có token mới |
 | Danh sách video trống dù đã tải | Token chỉ có quyền Read, hoặc tải nhầm tài khoản | Kiểm A3 bước Permissions |
 
-Muốn xem Worker đã nối chưa: mở `https://lop-hoc-online.maknoonnjs94.workers.dev/api/trang-thai` — có `"stream": true` là đủ hai secret.
+Muốn xem Worker đã nối chưa: mở `https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai` — có `"stream": true` là đủ hai secret.
 
 ## Những gì Stream KHÔNG chặn được
 

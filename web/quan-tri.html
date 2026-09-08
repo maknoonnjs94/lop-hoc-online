@@ -1168,7 +1168,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ---------------- tạo tài khoản ngay tại đây ----------------
      Trình duyệt không được cầm khoá quản trị Supabase, nên việc tạo tài khoản đi qua /api của Worker
      (worker.js); khoá nằm trong secret của Cloudflare. Worker kiểm tra người gọi phải là giảng viên. */
-  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.maknoonnjs94.workers.dev' : '';
+  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.giangduonghoahoc.workers.dev' : '';
   var LOI_API = {
     chua_cau_hinh: 'Máy chủ chưa có khoá quản trị. Vào Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets, thêm secret SUPABASE_SERVICE_ROLE_KEY (xem HUONG_DAN.md, mục Tạo tài khoản cho sinh viên).',
     chua_dang_nhap: 'Chưa đăng nhập.', phien_het_han: 'Phiên đăng nhập hết hạn, tải lại trang rồi thử lại.',

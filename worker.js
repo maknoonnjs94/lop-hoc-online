@@ -16,7 +16,7 @@
    ===================================================================== */
 const SUPABASE_URL = 'https://euyrrodppbpnkmificbs.supabase.co';
 const ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
-const ORIGINS = ['https://lop-hoc-online.maknoonnjs94.workers.dev', 'http://localhost:8765', 'http://127.0.0.1:8765'];
+const ORIGINS = ['https://lop-hoc-online.giangduonghoahoc.workers.dev', 'http://localhost:8765', 'http://127.0.0.1:8765'];
 
 export default {
   async fetch(request, env) {

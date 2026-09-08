@@ -1,6 +1,6 @@
 # Nhật ký làm việc — Lớp học online (web + app máy tính)
 
-**Trang học:** https://lop-hoc-online.maknoonnjs94.workers.dev/ (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
+**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
 **Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
 **Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
 **App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
@@ -16,7 +16,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` (secret `SUPABASE_SERVICE_ROLE_KEY`, đã có) và `/api/stream/*` cho video (cần thêm `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN` — chưa có).
-- App máy tính bản **1.0.14** (icon = logo Giảng đường; lên R2 lúc 22:25 ngày 08/9, cả Windows lẫn Mac): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+- App máy tính bản **1.0.15** (địa chỉ trang mới giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
 M còn phải làm:
 1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
@@ -28,6 +28,20 @@ M còn phải làm:
 7. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-09 (tối muộn) — Đổi tên nhánh Cloudflare: địa chỉ trang thành giangduonghoahoc
+
+**Chuyện gì:** m thử đổi Subdomain của tài khoản Cloudflare thành `giangduonghoahoc`. Đổi tên nhánh là **dời toàn bộ Worker** sang tên mới và **thu hồi tên cũ ngay** → `lop-hoc-online.maknoonnjs94.workers.dev` chết (DNS báo không tồn tại ở mọi máy chủ phân giải), trong khi ô *Account details* vẫn hiện tên cũ do trang chưa làm mới. T đoán nhầm là "đường workers.dev bị tắt" — thực ra toggle vẫn bật.
+
+**Cách nhận ra:** `nslookup` một tên bịa cùng nhánh (`zzz-khong-co.maknoonnjs94…`) cũng NXDOMAIN → hỏng cả nhánh chứ không riêng Worker; một workers.dev khác vẫn phân giải; R2 vẫn 200 → không phải lỗi mạng. Thử `lop-hoc-online.giangduonghoahoc.workers.dev` → 200.
+
+**Đã làm:** m chọn giữ tên mới (hợp với thương hiệu). Thay địa chỉ ở 7 chỗ: `app/main.js` (SITE_URL), `worker.js` (ORIGINS/CORS), `web/index.html` (APP_URL + API_BASE), `web/quan-tri.html` (API_BASE), `wrangler.jsonc`, `HUONG_DAN_VIDEO.md`, nhật ký. App lên **1.0.15**.
+
+**Lưu ý cho sau này:** app đang cài trên máy sinh viên trỏ địa chỉ cũ → mở lên báo không kết nối được, nhưng bộ tự cập nhật lấy bản mới từ **R2** (domain riêng, không đổi) nên sau một lần mở–đóng là tự lên 1.0.15 và vào được. Đừng đổi Subdomain nữa trừ khi chấp nhận phát app mới.
+
+**Nhân tiện:** hai khoá Stream m dán đã vào đủ — `/api/trang-thai` báo `stream: true` với `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 ---
 
