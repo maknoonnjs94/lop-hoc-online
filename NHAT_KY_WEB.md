@@ -30,6 +30,19 @@ M còn phải làm:
 
 ---
 
+## 2026-09-09 (chiều) — Khung "khoảnh khắc" cho chỗ trống và lúc hoàn thành
+
+**M yêu cầu:** ảnh ở "Bài tập cần làm" lọt thỏm bé tí, không cân — thiết kế lại chỗ đó cho ổn, không chỉ vá một chỗ.
+
+**Đã làm**
+- Một khung chung `khoanhKhac(cảnh, tiêu đề, lời, nút)`: lưới hai cột — ảnh phủ trọn cột trái (cao hết khung, bo góc), tiêu đề + lời + nút cột phải. Khung tự đo bề rộng của chính nó (container query): hẹp dưới 480 px thì xếp dọc, ảnh 180 px trên, chữ giữa. Ảnh nhỏ 260 px thả giữa thẻ đã bỏ.
+- Áp cho cả bốn chỗ: trang chủ "Bài tập cần làm" trống (*Thảnh thơi rồi!* + nút Xem bài giảng); trang Bài tập trống (*Chưa có bài tập nào*); trang Bài tập khi xong hết bài đang mở (*Xong hết rồi!* — cảnh nộp bài thành công); trang Tiến độ 100 % (*Mở hết tài liệu rồi!* — cảnh hoàn thành mục tiêu). Mục tiêu tuần 100 % thì ảnh trải hết bề rộng thẻ.
+- Trang thử có thêm `?het=1` (mọi tài liệu đã xem xong) để xem các trạng thái này.
+
+**Đã test** (trang thử `?g=nam&het=1`, 768 px): thẻ Bài tập cần làm rộng 621 px, ảnh chiếm 272 px; trang Bài tập và Tiến độ ảnh chiếm đúng nửa thẻ, chữ cân bên cạnh; nút "Xem bài giảng" chuyển trang.
+
+---
+
 ## 2026-09-09 (trưa) — 8 nhân vật 3D, hero hai cột, icon app = logo (1.0.14)
 
 **M yêu cầu:** chữ đang che mất nhân vật trong thẻ "Tiếp tục học" → thiết kế lại theo bộ `design-reference/Cute_3D_6_Models` (3 bảng, 6 nhân vật mới, mỗi bạn 4 cảnh); dùng đủ 4 cảnh trong giao diện; nhân vật đa dạng; đổi icon app sang logo.
