@@ -35,11 +35,13 @@ M còn phải làm:
 **M yêu cầu:** (1) tranh lớn phải có nhân vật nam/nữ như bản cũ nhưng ăn theo 4 giao diện mới; (2) vòng tròn nhỏ cho sinh viên tự tải ảnh của họ lên.
 
 **Đã làm**
-- `tranhNhanVat(gioi)` trong `web/index.html`: vẽ tay bằng SVG một bạn nam và một bạn nữ ngồi bàn học (cửa sổ sau lưng, máy tính, cốc nước, tay vẫy). Màu áo, màn hình, nơ tóc, lấp lánh lấy từ `var(--primary)` / `var(--accent)` / `var(--hero-b)` nên **một hình dùng cho cả bốn giao diện**; da và tóc để trung tính. Tranh chèn thẳng vào thẻ "Tiếp tục học" thay ảnh cảnh không người, đổi nhân vật là vẽ lại ngay.
+- Minh hoạ nhân vật: cắt từ `design-reference/03-Minh-hoa-hoc-tap.png` (bộ 3D ChatGPT dựng, 8 cảnh × 2 nhân vật) ra `web/img/scenes/`: `hoc-*` (đang học bài → tranh lớn thẻ "Tiếp tục học"), `xong-*` (hoàn thành mục tiêu → thẻ Mục tiêu tuần khi đạt 100%), `trong-*` (chưa có bài tập mới → chỗ trống của Bài tập cần làm), `nop-*` (nộp bài thành công, để dành), `mat-*` (khuôn mặt → ảnh đại diện tròn mặc định). Tổng ~300 KB JPEG.
+- Lần đầu t vẽ tay bằng SVG vì tưởng chỉ có bộ vector; m nhắc thì thay bằng đúng bộ 3D này, hàm `tranhNhanVat` đã bỏ.
+- **Giới hạn của bộ tranh:** chỉ có 2 bảng màu — bạn nam áo xanh mint, bạn nữ áo hồng đào. Nên chọn giao diện Sky hay Lavender thì khung ảnh vẫn giữ màu gốc của nhân vật. Muốn khớp hẳn thì cần ChatGPT dựng thêm 2 bảng màu nữa, đặt tên `hoc-<mẫu>-<boy|girl>.jpg` là t nối vào được.
 - Ảnh đại diện thật: mục mới trong hộp "Góc của bạn" — nút **Tải ảnh của bạn** và **Bỏ ảnh, dùng nhân vật vẽ**. Ảnh được vẽ lại vào khung vuông 256×256 bằng canvas **ngay trên máy sinh viên** (bỏ dữ liệu ẩn trong tệp gốc, giảm dung lượng) rồi mới gửi lên kho riêng `avatars` với tên đúng bằng id người dùng. Hiện ảnh qua link ký hạn 1 giờ; chưa có ảnh thì quay về hình nhân vật vẽ, không có thì về chữ tắt tên.
 - `schema_v12_anh_dai_dien.sql`: cột `avatar_path`, kho `avatars` riêng (không công khai, tối đa 512 KB, chỉ nhận ảnh), bốn luật truy cập (mỗi người chỉ đọc/ghi ảnh của mình, giảng viên đọc được cả lớp), hàm `dat_anh_dai_dien(p_path)` kiểm đúng tên tệp mới ghi.
 
-**Đã test** (trang thử, Supabase giả): tạo ảnh giả rồi thả vào ô chọn tệp → thu nhỏ, tải lên, hiện ở vòng tròn nhỏ và ô xem trước, nút "Bỏ ảnh" hiện ra; bấm bỏ → quay lại `avatar-girl.svg` đúng giao diện. Trang `_test_hero.html` dựng riêng để soi 8 biến thể (4 màu × 2 nhân vật): áo và điểm nhấn đổi màu đúng từng mẫu.
+**Đã test** (trang thử, Supabase giả): tạo ảnh giả rồi thả vào ô chọn tệp → thu nhỏ, tải lên, hiện ở vòng tròn nhỏ và ô xem trước, nút "Bỏ ảnh" hiện ra; bấm bỏ → quay lại `avatar-girl.svg` đúng giao diện. Đổi nhân vật trong hộp "Góc của bạn" → tranh lớn và ảnh tròn đổi ngay sang bản kia, mọi tệp trả 200, không ảnh hỏng.
 
 **Chưa nối:** trang quản trị chưa hiện ảnh sinh viên trong danh sách lớp (luật đã cho phép giảng viên đọc, chỉ cần thêm phần hiển thị nếu m muốn).
 

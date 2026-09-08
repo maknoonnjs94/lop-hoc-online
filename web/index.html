@@ -177,7 +177,7 @@
   .thcard b{ display:block; font-size:15px; line-height:1.3 } .thcard small{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px }
   .avrow{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px }
   .avcard{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px; font-weight:700 }
-  .avcard img{ width:72px; height:72px; object-fit:contain; pointer-events:none }
+  .avcard img{ width:72px; height:72px; border-radius:50%; object-fit:cover; pointer-events:none }
   .avpho{ display:flex; gap:14px; align-items:flex-start; margin-bottom:22px }
   .avatar.to{ width:78px; height:78px; font-size:22px }
   .avpho .btns{ display:flex; gap:8px; flex-wrap:wrap }
@@ -224,13 +224,16 @@
   .pcard h2 .ico{ font-size:22px; color:var(--primary) }
   .pcard h2 .more{ margin-left:auto; font-size:13px; font-weight:600; color:var(--primary); display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0 }
   .hero{ min-height:275px; overflow:hidden; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; align-items:center }
-  .hero .copy{ position:relative; z-index:1; width:58% }
+  .hero .copy{ position:relative; z-index:1; width:54% }
   .eyebrow{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); padding:7px 12px; border-radius:999px; font-size:11px; letter-spacing:1px; color:var(--primary); font-weight:800; text-transform:uppercase }
   .hero h2{ font-size:clamp(23px,2.3vw,32px); margin:14px 0 6px; letter-spacing:-.02em; display:block; text-wrap:balance }
   .hero p{ color:var(--muted); margin-bottom:20px }
-  .hero .art{ position:absolute; right:8px; bottom:8px; top:8px; width:40%; pointer-events:none; overflow:hidden }
-  .hero .art img{ width:100%; height:100%; object-fit:contain; object-position:right center; display:block }
-  .hero .art svg{ width:100%; height:100%; display:block }
+  .hero .art{ position:absolute; right:16px; bottom:16px; top:16px; width:44%; pointer-events:none; display:flex; align-items:center; justify-content:flex-end }
+  /* Minh hoạ "khoảnh khắc học tập": ảnh giữ nguyên tỉ lệ, bo góc, đổi theo nhân vật đã chọn. */
+  .canh{ display:block; width:100%; height:auto; max-width:260px; margin:0 auto; border-radius:16px; box-shadow:0 6px 18px rgba(20,30,40,.09) }
+  .canhbox{ padding:10px 0 6px }
+  .hero .art img.canh{ max-width:none; max-height:100%; border-radius:18px }
+  .weekly .canh{ max-width:220px; margin:-2px auto 12px }
   .hero .quip{ position:relative; z-index:1; font-size:13px; color:var(--primary); font-weight:600; margin-top:14px }
   .today{ display:flex; flex-direction:column }
   .today .tm{ font-size:22px; color:var(--primary); font-weight:800; font-variant-numeric:tabular-nums }
@@ -706,61 +709,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     lavender: { ten: 'Lavender Dream',  phu: 'Tím lavender · trăng sao', a: '#6c5c94', b: '#e0d8f0', c: '#f0d9cc' }
   };
   var THU_TU = ['mint', 'sky', 'peach', 'lavender'];
-  /* Tranh nhân vật ngồi học: vẽ tay bằng SVG, màu áo/điểm nhấn lấy từ biến của giao diện đang chọn,
-     nên một hình dùng chung cho cả bốn mẫu. Da và tóc để màu trung tính. */
-  function tranhNhanVat(gioi) {
-    var nu = gioi === 'girl';
-    var toc = nu ? '#4a3f52' : '#3b3547';
-    var s = '<svg viewBox="0 0 640 440" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">';
-    s += '<ellipse cx="322" cy="396" rx="208" ry="19" fill="var(--ink)" opacity=".08"/>';
-    s += '<circle cx="318" cy="206" r="174" fill="#ffffff" opacity=".5"/>';
-    /* cửa sổ sau lưng */
-    s += '<rect x="398" y="58" width="166" height="134" rx="32" fill="#ffffff" opacity=".75"/>';
-    s += '<rect x="410" y="70" width="142" height="110" rx="26" fill="var(--hero-b)"/>';
-    s += '<circle cx="482" cy="110" r="28" fill="var(--accent)" opacity=".35"/>';
-    s += '<rect x="390" y="186" width="182" height="12" rx="6" fill="#ffffff" opacity=".9"/>';
-    /* tóc dài phía sau (bạn nữ) */
-    if (nu) s += '<ellipse cx="232" cy="182" rx="68" ry="80" fill="' + toc + '"/>';
-    /* thân người */
-    s += '<path d="M170 306Q168 234 210 220H254Q296 234 294 306Z" fill="var(--primary)"/>';
-    s += '<path d="M212 220Q232 246 252 220Q244 214 232 214Q220 214 212 220Z" fill="#ffffff" opacity=".9"/>';
-    /* hai tay: một tay vẫy, một tay đặt lên bàn */
-    s += '<path d="M286 240Q322 226 330 186" fill="none" stroke="var(--primary)" stroke-width="26" stroke-linecap="round"/>';
-    s += '<circle cx="332" cy="176" r="16" fill="#ffe0c4"/>';
-    s += '<path d="M178 244Q170 278 196 296" fill="none" stroke="var(--primary)" stroke-width="26" stroke-linecap="round"/>';
-    /* đầu và khuôn mặt */
-    s += '<rect x="218" y="196" width="28" height="30" rx="12" fill="#efc4ab"/>';
-    s += '<ellipse cx="232" cy="166" rx="50" ry="54" fill="#ffe0c4"/>';
-    s += '<circle cx="216" cy="170" r="4.6" fill="#3f4652"/><circle cx="250" cy="170" r="4.6" fill="#3f4652"/>';
-    s += '<path d="M222 188Q232 197 242 188" fill="none" stroke="#3f4652" stroke-width="3.4" stroke-linecap="round"/>';
-    s += '<ellipse cx="203" cy="182" rx="8" ry="4.6" fill="#efb39c" opacity=".9"/><ellipse cx="263" cy="182" rx="8" ry="4.6" fill="#efb39c" opacity=".9"/>';
-    /* tóc trước trán */
-    if (nu) {
-      s += '<path d="M180 164Q178 104 232 96Q288 102 284 164Q272 130 246 124Q216 136 192 126Z" fill="' + toc + '"/>';
-      s += '<circle cx="284" cy="140" r="11" fill="var(--accent)"/>';
-    } else {
-      s += '<path d="M180 166Q176 106 232 98Q290 104 286 166Q276 128 250 122Q214 140 190 126Z" fill="' + toc + '"/>';
-    }
-    /* bàn học */
-    s += '<rect x="108" y="302" width="424" height="18" rx="9" fill="#ffffff"/>';
-    s += '<rect x="108" y="302" width="424" height="18" rx="9" fill="var(--primary)" opacity=".12"/>';
-    s += '<rect x="146" y="320" width="14" height="68" rx="7" fill="#ffffff" opacity=".9"/><rect x="480" y="320" width="14" height="68" rx="7" fill="#ffffff" opacity=".9"/>';
-    /* bàn tay đặt trên bàn */
-    s += '<circle cx="200" cy="298" r="15" fill="#ffe0c4"/>';
-    /* máy tính và cốc */
-    s += '<rect x="370" y="212" width="120" height="82" rx="10" fill="#ffffff"/>';
-    s += '<rect x="379" y="221" width="102" height="64" rx="6" fill="var(--primary)" opacity=".18"/>';
-    s += '<path d="M418 240l24 13-24 13z" fill="var(--primary)"/>';
-    s += '<rect x="356" y="292" width="148" height="10" rx="5" fill="#ffffff"/>';
-    s += '<rect x="292" y="270" width="32" height="32" rx="8" fill="#ffffff"/>';
-    s += '<path d="M324 278q13 8 0 16" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>';
-    s += '<path d="M300 262q6-8 0-16M312 262q6-8 0-16" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" opacity=".4"/>';
-    /* lấp lánh */
-    [[124, 128, 1], [566, 250, .85], [352, 78, .7]].forEach(function (p) {
-      s += '<path transform="translate(' + p[0] + ' ' + p[1] + ') scale(' + p[2] + ')" d="M0 -14l4.5 9.5 9.5 4.5-9.5 4.5-4.5 9.5-4.5-9.5-9.5-4.5 9.5-4.5z" fill="var(--accent)" opacity=".7"/>';
-    });
-    return s + '</svg>';
+  /* Minh hoạ 3D cắt từ bộ thiết kế: hoc / xong / trong / nop, mỗi cảnh có bản bạn nam và bạn nữ. */
+  function anhCanh(ten, moTa) {
+    return '<img class="canh" src="img/scenes/' + ten + '-' + avatarNay + '.jpg" alt="' + (moTa || '') + '" draggable="false">';
   }
+  function anhMat(av) { return 'img/scenes/mat-' + (av || avatarNay) + '.jpg'; }
   var AVATARS = { boy: 'Bạn nam', girl: 'Bạn nữ' };
   var avatarNay = 'boy';
   function skinHienTai() { var s = document.documentElement.dataset.skin; return THEMES[s] ? s : 'mint'; }
@@ -789,7 +742,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (avatar === 'boy' || avatar === 'girl') avatarNay = avatar;
     document.documentElement.dataset.skin = skin;
     capNhatLic(skin);
-    var art = document.querySelector('.hero .art'); if (art) art.innerHTML = tranhNhanVat(avatarNay);
+    var art = document.querySelector('.hero .art'); if (art) art.innerHTML = anhCanh('hoc', 'Bạn đang học bài');
     datAnhTron();
     veChonGiaoDien();
     try { localStorage.setItem('hoc-skin', skin); localStorage.setItem('hoc-avatar', avatarNay); } catch (e) {}
@@ -825,12 +778,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           + '<span><b>' + t.ten + '</b><small>' + t.phu + '</small></span></button>';
       }).join('');
       $('avRow').innerHTML = Object.keys(AVATARS).map(function (k) {
-        return '<button type="button" class="avcard" data-av="' + k + '" aria-pressed="false"><img class="lic" data-lic="avatar-' + k + '" alt="" draggable="false">' + AVATARS[k] + '</button>';
+        return '<button type="button" class="avcard" data-av="' + k + '" aria-pressed="false"><img data-mat="' + k + '" alt="" draggable="false">' + AVATARS[k] + '</button>';
       }).join('');
     }
     [].forEach.call(g.querySelectorAll('button[data-th]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.th === nay)); });
     [].forEach.call($('avRow').querySelectorAll('button[data-av]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.av === avatarNay)); });
-    [].forEach.call($('avRow').querySelectorAll('img.lic'), function (im) { im.src = licSrc(im.dataset.lic, nay); });
+    [].forEach.call($('avRow').querySelectorAll('img[data-mat]'), function (im) { im.src = anhMat(im.dataset.mat); });
     var pi = $('avPreIni'); if (pi) pi.textContent = $('avIni') ? $('avIni').textContent : '';
     var mini = $('thMini');
     if (mini) {
@@ -846,10 +799,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ẢNH ĐẠI DIỆN — ảnh thật của sinh viên, cắt vuông 256px ngay trên máy rồi mới gửi lên kho riêng. */
   var anhURL = '';
   function datAnhTron() {
-    var skin = skinHienTai();
     ['avImg', 'avPreImg'].forEach(function (id) {
       var im = $(id); if (!im) return;
-      im.src = anhURL || licSrc('avatar-' + avatarNay, skin);
+      im.src = anhURL || anhMat();
     });
     var x = $('avClear'); if (x) x.hidden = !anhURL;
   }
@@ -1237,7 +1189,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + '<p>' + (hero ? esc(tenBuoi(hero.s)) + ' · ' + (doDang ? esc(tienDoChu(hero.m)) : hk.name) : 'Giảng viên giao bài là hiện ở đây.') + '</p>'
       + (hero ? nutMo(hero, doDang ? 'Tiếp tục học' : 'Bắt đầu').replace('class="btn sm"', 'class="btn"') : '')
       + '<div class="quip">' + esc(QUIP[new Date().getDate() % QUIP.length]) + '</div></div>'
-      + '<div class="art">' + tranhNhanVat(avatarNay) + '</div></div>';
+      + '<div class="art">' + anhCanh('hoc', 'Bạn đang học bài') + '</div></div>';
     /* Lịch hôm nay: buổi có giờ bắt đầu hôm nay, hoặc ngày dạy là hôm nay */
     var homNay = sessions.filter(function (s) { return (s.starts_at && cungNgay(s.starts_at, now)) || (s.held_on && cungNgay(s.held_on + 'T12:00:00', now)); })
       .sort(function (a, b) { return new Date(a.starts_at || 0) - new Date(b.starts_at || 0); })[0];
@@ -1264,7 +1216,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     /* bài tập cần làm */
     var tasks = chuaXong.slice().sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); }).slice(0, 5);
     html += '<div class="pcard tasks"><h2><span class="ico">' + I.clipboard + '</span>Bài tập cần làm<button type="button" class="more" data-goview="tasks">Xem tất cả <span class="ico">' + I.arrow + '</span></button></h2>';
-    if (!tasks.length) html += '<div class="pempty">' + lic('achievement', 72) + '<span>Hiện chưa có bài tập mới. Hãy quay lại sau nhé!</span></div>';
+    if (!tasks.length) html += '<div class="canhbox">' + anhCanh('trong', 'Hiện chưa có bài tập mới, hãy quay lại sau nhé') + '</div>';
     else html += tasks.map(function (x) {
       var k = KIND[x.m.kind] || KIND.link, v = views[x.m.id];
       return '<div class="prow ' + k.cls + '"><span class="fi"><span class="ico">' + I[k.ic] + '</span></span><span class="grow"><strong>' + esc(x.m.title || k.name) + '</strong><small>' + esc(tenBuoi(x.s)) + ' · ' + k.name + '</small></span>'
@@ -1277,7 +1229,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var nhan = 'bài tuần này';
     if (!tuan.length) { var s0 = sessions.filter(function (s) { return s.id === curSes; })[0]; tuan = s0 ? (s0.materials || []).filter(function (m) { return moKhoa(m, now); }).map(function (m) { return { m: m, s: s0 }; }) : []; nhan = 'bài của buổi đang học'; }
     var done = tuan.filter(function (x) { return daXem(x.m); }).length, tot = tuan.length, pct = tot ? Math.round(100 * done / tot) : 0;
-    html += '<div class="pcard weekly"><h2><span class="ico">' + I.star + '</span>Mục tiêu tuần</h2>' + lic(pct >= 100 && tot ? 'achievement' : 'progress', 76)
+    html += '<div class="pcard weekly"><h2><span class="ico">' + I.star + '</span>Mục tiêu tuần</h2>' + (pct >= 100 && tot ? anhCanh('xong', 'Hoàn thành mục tiêu') : lic('progress', 76))
       + '<span class="num">' + done + ' / ' + tot + '</span><span class="sub">' + nhan + ' đã mở</span>'
       + '<div class="meter"><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + pct + '%</span></div>'
       + '<div class="gentle"><span class="ico">' + I.sprout + '</span>' + (pct >= 100 && tot ? 'Xong hết rồi. Nghỉ một chút cũng xứng đáng.' : 'Kiên trì mỗi ngày để chinh phục mục tiêu nhé!') + '</div></div>';
