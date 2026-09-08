@@ -1,0 +1,134 @@
+# Nhật ký làm việc — Lớp học online (web + app máy tính)
+
+**Trang học:** https://lop-hoc-online.maknoonnjs94.workers.dev/ (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
+**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
+**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
+**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
+**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
+
+Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
+
+---
+
+## Trạng thái hiện tại (2026-09-08, tối)
+
+Đang chạy trên web:
+- Trang học sinh viên: giao diện **Mint / Peach** theo giới tính, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
+- Trang quản trị: Buổi học / Sinh viên (cột Hồ sơ, gỡ thiết bị, bắt đổi mật khẩu) / Kho tệp / Theo dõi / Cảnh báo.
+- App máy tính bản **1.0.12**: vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+
+M còn phải làm (bên Supabase → SQL Editor, chạy theo thứ tự nếu chưa chạy):
+1. `schema_v8_kieu_quay.sql`, `schema_v9_hom_nay.sql` — t chưa thấy m xác nhận đã chạy. Thiếu v9 thì Ghim / giờ bắt đầu / thông báo lớp / đã xem-tiếp tục không lưu được.
+2. `schema_v10_ho_so.sql` — **đã chạy** (m gửi ảnh kết quả 3 dòng).
+3. `schema_v10b_ho_so_thieu_dong.sql` — tạo dòng hồ sơ còn thiếu; câu cuối cho biết `sv.thu@example.com` đang ở trạng thái nào.
+4. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
+5. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
+
+Chưa rõ / đang chờ m: "tài khoản sv.thu@example.com chưa thấy" — web đã phát bản mới (t kiểm trực tiếp), nên hoặc app/Chrome còn giữ trang cũ (app phải tắt hẳn bằng ✕ rồi mở lại; Chrome Ctrl+F5), hoặc chính hồ sơ ấy chưa có dòng / đã đánh dấu khai xong. Câu SQL cuối trong v10b trả lời việc này.
+
+---
+
+## 2026-09-08 (tối) — Mint / Peach, khai hồ sơ lần đầu, bộ icon minh hoạ
+
+**M yêu cầu:** đưa bản thiết kế ChatGPT vẽ (thư mục `design-reference/`) vào trang học; sinh viên đăng nhập lần đầu phải đổi mật khẩu rồi khai họ tên, ngành, giới tính, năm sinh; giao diện chọn theo giới tính. Sau đó m thêm `design-reference/LearningIcons_48` và bảo dùng cho đẹp hơn.
+
+**Đã làm**
+- `web/index.html` viết lại toàn bộ phần giao diện, **giữ nguyên** toàn bộ logic cũ (đăng nhập, khoá thiết bị, canh gác, Hôm nay, xem tài liệu, realtime, Ctrl+K):
+  - Skin đặt ở `<html data-skin="mint|peach">`, mọi màu đi qua token CSS nên đổi skin là cả trang đổi. Màu lấy đúng `design_tokens.json` (Mint `#137c85` / Peach `#7650af`).
+  - Bố cục theo `layout.json`: cột trái 224 px (Trang chủ / Bài giảng / Bài tập / Lịch học / Tiến độ + robot nhắc nhở), thanh trên (tìm → Ctrl+K, chuông, hai chấm đổi skin, avatar), trang chủ = Tiếp tục học (ảnh nhân vật) · Lịch hôm nay · 3 ô nhanh · Bài tập cần làm · Mục tiêu tuần. Thu gọn ở 1199 / 899 / 639 px.
+  - Luồng lần đầu (chỉ sinh viên): `must_change_pw` → form mật khẩu mới (`auth.updateUser` rồi `rpc('da_doi_mat_khau')`); `onboarded_at` trống → form họ tên / giới tính (chọn tới đâu đổi màu xem trước) / năm sinh / mã SV / ngành (`rpc('hoan_tat_ho_so')`). Nam → Mint, nữ → Peach, "khác" → Mint và tự đổi; nút đổi skin lưu bằng `rpc('doi_giao_dien')`.
+  - Ảnh: cắt từ `04-Mau-giao-dien-Mint-Peach.png` và `StudentHome.png` thành `web/img/hero-mint.png` (cậu bé bên laptop), `hero-peach.png` (cô gái áo hồng); nền `backdrop-*.svg` chép nguyên.
+- `web/quan-tri.html`: cột **Hồ sơ** (giới tính · ngành · năm sinh · MSSV, nhãn *chưa khai hồ sơ* / *chưa đổi mật khẩu*), nút **Bắt đổi mật khẩu**; nếu máy chủ chưa chạy v10 thì tự lùi về bộ cột cũ.
+- `schema_v10_ho_so.sql`: cột `gender, birth_year, major, theme, onboarded_at, must_change_pw` + 3 hàm `hoan_tat_ho_so`, `da_doi_mat_khau`, `doi_giao_dien` (security definer, chỉ sửa dòng của chính mình). Giảng viên/admin được đặt sẵn đã xong.
+- `schema_v10b_ho_so_thieu_dong.sql`: tài khoản chưa có dòng `profiles` vẫn khai được (hàm chuyển sang insert … on conflict), tạo dòng thiếu cho mọi tài khoản đang có, câu kiểm tra một email. Trang cũng sửa: không có dòng hồ sơ → coi như sinh viên mới.
+- Bộ icon `LearningIcons_48`: chép 48 SVG (200 KB, bỏ 3,6 MB PNG) vào `web/img/icons/<skin>/<tên>.svg`. Trong trang dùng `lic(name, size)` tạo `<img class="lic">`, `capNhatLic(skin)` đổi tệp khi đổi skin. Đặt ở: 3 ô nhanh (homework / video-lesson / documents), Lịch hôm nay (calendar, có buổi → live-class), Mục tiêu tuần (progress, đủ 100 % → achievement), thống kê Tiến độ, mọi trạng thái trống, mascot cột trái (`help.svg` thay ảnh cắt `bot-*.png`, đã xoá), đăng nhập (classroom), khai hồ sơ (settings / profile), trợ giúp (help), trang tải app (download). Thanh điều hướng và hàng tài liệu vẫn dùng bộ nét mảnh vì bộ minh hoạ chỉ đẹp từ 48 px (theo `CLAUDE_ASSET_GUIDE.md`).
+
+**Đã test:** trang thử `web/_test_index.html` (Supabase giả, sinh bằng script trong scratchpad, đã gitignore) ở 1440 / 1000 px, ba cảnh: nữ (Peach), nam (Mint), lần đầu (`?onb=1`); kiểm cú pháp JS bằng node; kiểm trang thật sau khi phát: có mã khai hồ sơ, tệp icon trả 200.
+
+**Chưa nối / chưa biết:** m báo `sv.thu@example.com` chưa thấy luồng mới — xem mục Trạng thái.
+
+---
+
+## 2026-09-08 (chiều) — Trang chủ "Hôm nay", chuông, Ctrl+K, làm lại quản trị
+
+**M chọn** làm cả 4 đề xuất (1 2 3 4) với điều kiện: giờ giấc phải sửa dễ, không cứng nhắc vì bài giảng đẩy lên không theo lịch cố định.
+
+**Đã làm**
+- Buổi học có thêm `pinned` (Ghim = "đang học", luôn lên đầu), `starts_at` (giờ bắt đầu, **tuỳ chọn**), lớp có `notice` (thông báo tự do). Không có giờ thì xếp theo lúc đẩy bài mới nhất. → `schema_v9_hom_nay.sql`, cùng bảng `view_events` (đã xem / tiến độ đọc trang, giây video) và bật realtime cho `materials`, `sessions`, `classes`.
+- Trang học: "Hôm nay" (buổi ghim + thông báo + bài mới), nhãn **MỚI** theo mốc lần vào trước, "Tiếp tục" đúng trang PDF / giây video (YouTube IFrame API), chuông 🔔 liệt kê bài mới, thông báo tức thì khi giảng viên vừa giao (realtime + Notification máy), nhắc 30 phút trước giờ học, **Ctrl+K** tìm buổi / tài liệu gõ không dấu.
+- Quản trị: nút Ghim, ô giờ bắt đầu, hộp "✎ Lớp & thông báo", tab **Theo dõi** (ai xem gì lúc nào), làm lại toàn bộ giao diện theo hệ thiết kế của trang học (Be Vietnam Pro, icon một nét), chip thanh đầu không xuống dòng.
+- `web/_headers`: HTML `no-cache, must-revalidate` — sửa xong mở lại là thấy, không cần Ctrl+F5.
+- Snipping Tool / Game Bar / QuickTime **chỉ mở** thì nhắc nhẹ, không tính vi phạm (m lo sinh viên khiếu nại); phần mềm quay thật sự (OBS, Bandicam…) mới tính.
+
+---
+
+## 2026-09-08 — App máy tính (Electron) và phát hành qua Cloudflare R2, bản 1.0.1 → 1.0.12
+
+**Lý do:** trình duyệt không chặn được quay màn hình; m muốn chặn triệt để trên Windows lẫn macOS.
+
+**Đã làm** (`app/`)
+- `main.js`: `setContentProtection(true)` → cửa sổ **hiện đen** trong mọi ảnh chụp / bản quay (Windows `WDA_EXCLUDEFROMCAPTURE`, macOS `NSWindowSharingNone`); chỉ một cửa sổ; ẩn menu; chặn Ctrl+P/S/U, F12, DevTools; user agent gắn `LopHocApp/<bản>` để trang biết đang ở trong app; dò tiến trình quay (`tasklist` / `ps`) mỗi vài giây và báo cho trang qua `preload.js` (`window.lopHocApp`).
+- Tự cập nhật bằng `electron-updater` (chỉ Windows; Mac chưa ký nên tải tay), kho `latest.yml` + `.exe` trên R2. Menu tài khoản có "Kiểm tra cập nhật · bản x.y.z".
+- Dựng bằng GitHub Actions (`.github/workflows/build-app.yml`): matrix Windows + macOS, `--publish never`, đưa lên Releases bằng bước riêng, **chép lên R2** bằng aws cli (mạng Việt Nam vào GitHub chập chờn nên sinh viên tải từ R2).
+- Trang `/tai-app` với link cố định `…r2.dev/LopHoc-win.exe`, `…/LopHoc-mac.dmg`.
+
+**M đã làm bên ngoài:** bật R2, tạo bucket (đổi tên thành `giang-duong-hoa-hoc-app`), bật Public URL, tạo API token, dán vào GitHub Secrets. Khoá chỉ m thấy — t không nhận, không chụp.
+
+**Lỗi đã gặp và sửa (mỗi lần một bản 1.0.x):** hai job cùng tạo Release (đua) → `--publish never`; ký tự CR lọt vào YAML từ script vá viết bằng heredoc → workflow chạy mà không có job, sửa bằng `lf()`; `${#VAR}` trong template literal; bucket sai tên; Access Key ID dán kèm Enter ("Invalid header value"); hai khoá dán tráo chỗ (64/32) → workflow tự cắt khoảng trắng, tự đảo, báo rõ độ dài; GitHub API bị giới hạn 60 lần/giờ → đọc trạng thái run bằng cách cào trang HTML. Bản **1.0.12** lên R2 thành công.
+
+**Giới hạn nói rõ với m:** trình duyệt không thấy được Win+Shift+S / chụp bằng điện thoại; chỉ app mới làm cửa sổ đen; quay bằng điện thoại thì chịu, còn dấu chìm tên.
+
+---
+
+## 2026-09-08 — Bảo mật cho sinh viên: khoá thiết bị, canh gác chụp, tự đăng xuất, giao diện laptop
+
+**M yêu cầu:** tài liệu / PDF chặn tải, video chỉ xem, **mỗi tài khoản một thiết bị**, cảnh báo khi bấm Print Screen và "phải doạ nó mới sợ", 5 phút không thao tác thì đăng xuất, giao diện đẹp hơn cho laptop.
+
+**Đã làm**
+- `schema_v5_khoa_thiet_bi.sql`: bảng `device_bindings`, hàm `claim_device` (máy đầu tiên được gắn, máy khác bị từ chối ở **máy chủ**), `reset_device` cho giảng viên; quản trị có cột Thiết bị + nút Gỡ. Giảng viên miễn.
+- `schema_v6/v7/v8`: bảng `screenshot_events` + tab **Cảnh báo** ở quản trị (realtime), các kiểu: printscreen, win_snip, quay, nghi_chup, in, luu.
+- Trang học: PrintScreen (keyup) → xoá clipboard + cảnh báo đỏ + ghi sự kiện; Win+Shift+S và mất tiêu điểm khi đang mở tài liệu → che mờ + cảnh báo; Ctrl+P / Ctrl+S chặn; **3 lần** thì đóng phiên, đăng nhập lại thấy lý do; dấu chìm tên + email + giờ phủ khắp tài liệu; chuột phải / kéo thả tắt; PDF vẽ bằng pdf.js lên canvas (không có link tải); video nhúng YouTube / Drive / Vimeo.
+- Idle 5 phút: hộp đếm ngược 30 giây, hết thì đăng xuất.
+- Giao diện hai cột cho laptop (buổi bên trái, tài liệu bên phải), icon SVG một nét, Be Vietnam Pro.
+
+**Lỗi đã gặp:** m thử PrtSc lần 1 trượt lần 2 được và không thấy cảnh báo → cảnh báo bị `display` của class đè lên `hidden` → thêm `[hidden]{display:none!important}` và làm cảnh báo nổi to; Snipping Tool mở đã bị tính vi phạm → tách hai mức (xem mục chiều).
+
+---
+
+## 2026-09-08 (sáng) — "Giao cho lớp", đợt 62–63 của Sổ, vụ mất 12 câu
+
+- Sổ Bài Tập bản web có nút **📤 Giao cho lớp** ở cột trái (nhóm Xuất): đẩy phiếu / đáp án lên buổi học không qua tải file. M chọn "**Chỉ bản đọc trên web, bỏ PDF**" cho bước tiếp (chưa làm: cần `web/sheet.css` + đổi `doSend` trong `shim_supabase.js` lưu HTML `#sheet` vào `material_contents.body`).
+- Luật mỗi tài khoản một khoá học (`schema_v4_mot_khoa.sql`), báo rõ khi thêm sinh viên trùng khoá.
+- Ghi lên kho theo hàng đợi 4 lệnh, tự thử lại, báo khi ghi hỏng.
+- Vụ web thiếu 12 câu (13/50, 15/50) trong khi artifact có 160: t đã cãi sai hai lần vì ba "nguồn" đều là `read_db`. Nguyên nhân: sổ trộn `localStorage` vào bản máy chủ nên màn hình đủ mà máy chủ thiếu. Sửa ở đợt 63 (đẩy câu chỉ nằm trên máy lên máy chủ, nút ⇪), gửi m bản sao lưu 160 câu để nạp vào web. Chi tiết ở nhật ký của Sổ.
+
+---
+
+## 2026-09-07 — Dựng hệ thống lớp học online
+
+- Supabase: `schema.sql` (profiles, classes, enrollments, sessions, materials, material_contents, kho tệp `tailieu`), `schema_v2.sql`, `schema_v3_so.sql` (kho của Sổ trên Supabase); RLS chặn ở máy chủ; `tao_du_lieu_thu.sql`, `kiem_tra_quyen.sql`.
+- `web/index.html` (sinh viên), `web/quan-tri.html` (giảng viên), `web/so-bai-tap.html` (Sổ Bài Tập bản web, sinh từ mã nguồn bằng `build_web_so.js` + `shim_supabase.js` giả `window.claude`).
+- Đưa lên Cloudflare Workers, chỉ đăng thư mục `web/`.
+- `HUONG_DAN.md`: dựng từ đầu và vận hành hằng ngày.
+
+---
+
+## Việc còn dang dở / đề xuất (chưa làm)
+
+- Bản đọc trên web thay PDF khi "Giao cho lớp" (m đã chọn) — `web/sheet.css` + `doSend`.
+- Kiểm tra lại thiết bị định kỳ 2 phút một lần trong lúc học (hiện chỉ kiểm khi đăng nhập).
+- Nút sao lưu toàn bộ dữ liệu lớp ở quản trị.
+- Video: Cloudflare Stream với link ký (cần m bật Stream, đưa `STREAM_KEY_ID` / `STREAM_JWK` vào Worker secrets).
+- Tạo tài khoản sinh viên hàng loạt từ quản trị (Edge Function).
+- Ký số app (Windows / Mac) để Mac cũng tự cập nhật; tên miền riêng.
+- Sau khi test xong: `REQUIRE_APP = true`.
+
+## Ghi chú kỹ thuật (để làm tiếp cho nhanh)
+
+- Vá file lớn bằng script node có `once(find, replace)`; **luôn** `lf()` cả find lẫn replace (script viết qua heredoc trên Windows mang CRLF, CR lọt vào YAML là workflow chết lặng); không dùng `${` trong template literal của script vá.
+- Kiểm YAML workflow bằng js-yaml trước khi đẩy; đếm CR bằng node, `grep -c '\r'` trong Git Bash này không tin được.
+- Xem thử trang không cần đăng nhập: `web/_test_index.html` (Supabase giả). Máy chủ tĩnh cho pane trình duyệt: `.claude/launch.json` cấu hình "web" chạy `.claude/serve_web.js` cổng 8765; mở `file://` kèm `?query` làm tab pane tự đóng, zoom trong pane hay lỗi → dùng `resize_window` 1440×900 rồi chụp.
+- `read_db` của artifact chỉ thấy phần trên máy chủ; sổ trộn `localStorage` nên màn hình có thể đủ mà máy chủ thiếu — đừng lấy `read_db` làm bằng chứng cãi m.
+- Chỉ khoá `sb_publishable_…` được nằm trong mã. Khoá R2, `service_role`: m tự dán, t không nhận.
+- App: `SITE_URL` trong `app/main.js`; đổi phần vỏ mới cần tăng `version` trong `app/package.json`, gắn tag `v1.0.x` và đẩy → workflow dựng + chép lên R2; đổi trang web thì không cần bản app mới.
+- Bảng SQL đã chạy theo thứ tự: schema → v2 → v3_so → v4_mot_khoa → v5_khoa_thiet_bi → v6 → v7 → (v8, v9 chưa xác nhận) → v10 ✔ → v10b (mới gửi).

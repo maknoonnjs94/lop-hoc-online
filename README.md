@@ -15,6 +15,7 @@ Hệ thống dạy online riêng: giáo viên đẩy tài liệu, sinh viên đ�
 - `kiem_tra_quyen.sql` — xem và đổi quyền tài khoản.
 - `shim_supabase.js` — cầu nối để Sổ Bài Tập chạy ngoài khung Artifact.
 - `HUONG_DAN.md` — hướng dẫn dựng và vận hành.
+- `NHAT_KY_WEB.md` — nhật ký làm việc từng phiên: đã làm gì, m còn phải chạy SQL nào, việc dang dở, ghi chú kỹ thuật.
 
 ## Nguyên tắc
 - Quyền đọc chặn ở máy chủ bằng Row Level Security, không phải ẩn trên giao diện.
