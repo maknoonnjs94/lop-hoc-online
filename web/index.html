@@ -332,7 +332,7 @@
     <button class="linkish" id="forgotBtn" type="button">Quên mật khẩu</button>
   </form>
   <p class="fine"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg></span>
-    <span>Mỗi tài khoản chỉ dùng trên một thiết bị. Mọi tài liệu mang dấu chìm tên người xem, và trang tự đăng xuất sau 5 phút không thao tác.</span></p>
+    <span>Mỗi tài khoản chỉ dùng trên một thiết bị. Mọi tài liệu mang dấu chìm tên người xem, và trang tự đăng xuất sau 5 phút không thao tác. <a href="tai-app.html">Tải ứng dụng cho máy tính</a>.</span></p>
 </main>
 
 <!-- ================= TRANG HỌC ================= -->
@@ -352,7 +352,7 @@
     <button type="button" id="updBtn" role="menuitem" hidden><span class="ico" data-ico="refresh"></span><span id="updLbl">Kiểm tra cập nhật</span></button>
     <button type="button" id="outBtn" class="out" role="menuitem"><span class="ico" data-ico="out"></span>Đăng xuất</button>
   </div>
-  <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Lớp học</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ, không chụp hay quay được. <a href="https://github.com/maknoonnjs94/lop-hoc-online/releases/latest" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
+  <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Lớp học</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ, không chụp hay quay được. <a href="tai-app.html" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
   <div class="wrap">
     <div class="classbar" id="classBar"></div>
     <div class="layout">
@@ -409,7 +409,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
      bảo vệ nên không chụp, không quay được. REQUIRE_APP = true → sinh viên bắt buộc dùng app, web chỉ còn
      cho giảng viên. Để false trong lúc chưa phát app cho sinh viên. */
   var REQUIRE_APP = false;
-  var APP_URL = 'https://github.com/maknoonnjs94/lop-hoc-online/releases/latest';
+  var APP_URL = 'https://lop-hoc-online.maknoonnjs94.workers.dev/tai-app.html';
   var TRONG_APP = /LopHocApp\//.test(navigator.userAgent) || !!window.lopHocApp;
 
   var $ = function (id) { return document.getElementById(id); };

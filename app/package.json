@@ -1,7 +1,7 @@
 {
   "name": "lop-hoc",
   "productName": "LopHoc",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Ứng dụng Lớp học online — cửa sổ được hệ điều hành bảo vệ, hiện đen trong mọi ảnh chụp và bản quay màn hình",
   "main": "main.js",
   "author": "Phạm Anh Ngọc",
@@ -24,10 +24,9 @@
     "productName": "LopHoc",
     "artifactName": "LopHoc-${os}.${ext}",
     "publish": {
-      "provider": "github",
-      "owner": "maknoonnjs94",
-      "repo": "lop-hoc-online",
-      "releaseType": "release"
+      "provider": "generic",
+      "url": "https://pub-71167ada316449cd94a3685600d7ad69.r2.dev",
+      "channel": "latest"
     },
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "preload.js", "package.json"],

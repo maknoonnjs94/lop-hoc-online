@@ -57,7 +57,8 @@ function doPhanMemQuay(win) {
 ipcMain.handle('lophoc:recorders', () => Array.from(dangQuay));
 
 /* ---------------------------------------------------------------------
-   TỰ CẬP NHẬT (Windows). Lúc mở và mỗi 30 phút app hỏi GitHub Releases; có bản mới thì tải ngầm,
+   TỰ CẬP NHẬT (Windows). Lúc mở và mỗi 30 phút app hỏi kho R2 (latest.yml, cấu hình "publish" trong
+   package.json — GitHub chập chờn ở Việt Nam nên không hỏi GitHub nữa); có bản mới thì tải ngầm,
    xong hỏi "Khởi động lại để cập nhật?" — không thì lần đóng app sẽ tự thay.
    macOS: bản chưa ký số nên hệ điều hành không cho tự thay; Mac tải tay từ Releases
    (khi nào ký số thì bỏ điều kiện win32 là chạy).
