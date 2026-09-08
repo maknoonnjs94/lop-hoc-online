@@ -43,7 +43,18 @@ export default {
       }
       /* Đã chạy file SQL nào rồi: hỏi thẳng máy chủ, khỏi đoán. */
       const sql = k ? await kiemSchema(env) : null;
-      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, stream: streamSan(env), sql: sql, bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
+      /* Thử một lệnh CHỈ ĐỌC lên Stream để biết gói và khoá có dùng được không */
+      let thuStream = null;
+      if (streamSan(env)) {
+        try {
+          const rs = await fetch(CF_API + env.CF_ACCOUNT_ID + '/stream?per_page=1', { headers: { Authorization: 'Bearer ' + env.CF_STREAM_TOKEN } });
+          const tx = await rs.text();
+          let loi = '';
+          try { const d = JSON.parse(tx); if (d.success === false) loi = ((d.errors || [])[0] || {}).message || ''; } catch (e) { loi = tx.slice(0, 160); }
+          thuStream = { status: rs.status, loi: loi || undefined };
+        } catch (e) { thuStream = { status: -1, loi: String(e && e.message || e) }; }
+      }
+      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, stream: streamSan(env), thu_stream: thuStream, sql: sql, bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (request.method !== 'POST') return json({ ok: false, reason: 'chi_post' }, 405, request);
@@ -395,9 +406,13 @@ async function streamTaiLenLon(body, env, request) {
   });
   if (!r.ok) {
     const t = await r.text();
-    /* Cloudflare hay trả lỗi dạng chữ trơn cho đường tus, nên ghi cả mã HTTP lẫn đầu thân trả lời */
-    const chiTiet = 'HTTP ' + r.status + (t ? ' — ' + (locLoi(t) || t.slice(0, 200)) : '');
-    return json({ ok: false, reason: 'khong_xin_duoc_cho', chi_tiet: chiTiet }, 502, request);
+    /* Đường tus hay trả lỗi rỗng, thông tin nằm ở các đầu mục — ghi hết lại để dò */
+    const dauMuc = [];
+    r.headers.forEach(function (v, k2) { if (/^(tus-|upload-|stream-|cf-|content-type)/i.test(k2)) dauMuc.push(k2 + '=' + v); });
+    const chiTiet = 'HTTP ' + r.status
+      + (t ? ' — ' + (locLoi(t) || t.slice(0, 200)) : ' (không có thân trả lời)')
+      + (dauMuc.length ? ' [' + dauMuc.join('; ') + ']' : '');
+    return json({ ok: false, reason: 'khong_xin_duoc_cho', chi_tiet: chiTiet, da_gui: { size: size, meta: meta.replace(/[A-Za-z0-9+/=]{20,}/g, '…') } }, 502, request);
   }
   const endpoint = r.headers.get('Location');
   const uid = r.headers.get('stream-media-id');
