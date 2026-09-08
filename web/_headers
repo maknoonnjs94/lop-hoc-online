@@ -1,0 +1,11 @@
+# Trang HTML đổi liên tục: trình duyệt phải hỏi lại máy chủ mỗi lần mở (có ETag nên vẫn nhanh: chưa đổi thì 304).
+/*.html
+  Cache-Control: no-cache, must-revalidate
+/
+  Cache-Control: no-cache, must-revalidate
+/tai-app
+  Cache-Control: no-cache, must-revalidate
+/quan-tri
+  Cache-Control: no-cache, must-revalidate
+/so-bai-tap
+  Cache-Control: no-cache, must-revalidate
