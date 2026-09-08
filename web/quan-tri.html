@@ -157,13 +157,14 @@
           <button data-tab="ses" class="on">Buổi học</button>
           <button data-tab="stu">Sinh viên</button>
           <button data-tab="kho">Kho tệp</button>
+          <button data-tab="theo">Theo dõi</button>
           <button data-tab="bao">Cảnh báo <span class="pill off" id="baoN" hidden style="margin-left:4px">0</span></button>
         </div>
         <div id="paneSes">
           <div class="bar">
             <b id="clsName" style="font-size:16px"></b>
             <span class="grow"></span>
-            <button class="btn sm" id="renameClsBtn">✎ Đổi tên</button>
+            <button class="btn sm" id="renameClsBtn">✎ Lớp &amp; thông báo</button>
             <button class="btn sm danger" id="delClsBtn">Xoá lớp</button>
             <button class="btn primary" id="addSesBtn">＋ Buổi mới</button>
           </div>
@@ -179,6 +180,18 @@
           <div class="card" id="khoList"></div>
           <p class="hint" style="margin-top:10px">
             Kho gom tệp của mọi lớp. Mỗi tệp chỉ nằm một bản: “Dùng lại” gắn đúng tệp đó sang buổi khác mà không phải tải lên lần nữa.
+          </p>
+        </div>
+        <div id="paneTheo" hidden>
+          <div class="bar">
+            <b style="font-size:16px">Ai đã xem gì</b>
+            <span class="grow"></span>
+            <button class="btn sm" id="theoReload">↻ Tải lại</button>
+          </div>
+          <div id="theoList"></div>
+          <p class="hint" style="margin-top:10px">
+            Mỗi tài liệu: bao nhiêu sinh viên trong lớp đã mở, ai chưa mở. PDF ghi trang đang đọc, video ghi phút đang xem.
+            Chỉ tính buổi đã mở cho sinh viên.
           </p>
         </div>
         <div id="paneBao" hidden>
@@ -340,7 +353,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- lớp ---------------- */
   async function loadClasses() {
-    var r = await sb.from('classes').select('id, name, subject, archived').order('name');
+    var r = await sb.from('classes').select('*').order('name');
     if (r.error) { toast('Không tải được lớp: ' + r.error.message); return; }
     classes = r.data || [];
     if (!classes.some(function (c) { return c.id === curClass; })) curClass = classes[0] ? classes[0].id : null;
@@ -373,9 +386,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var c = classes.filter(function (x) { return x.id === curClass; })[0]; if (!c) return;
     dialog('Đổi tên lớp',
       '<label class="f">Tên lớp<input id="fName" value="' + esc(c.name) + '"></label>'
-      + '<label class="f">Môn<input id="fSubj" value="' + esc(c.subject || '') + '"></label>',
+      + '<label class="f">Môn<input id="fSubj" value="' + esc(c.subject || '') + '"></label>'
+      + '<label class="f">Thông báo cho sinh viên<textarea id="fNotice" placeholder="Hiện trên đầu trang học của mọi sinh viên trong lớp. Để trống là không hiện.">' + esc(c.notice || '') + '</textarea>'
+      + '<small>Viết tự do: lịch thay đổi, nhắc nộp bài, link họp… Sinh viên đang mở app nhận ngay.</small></label>',
       async function () {
-        var r = await sb.from('classes').update({ name: val('fName'), subject: val('fSubj') }).eq('id', c.id);
+        var r = await sb.from('classes').update({ name: val('fName'), subject: val('fSubj'), notice: val('fNotice') }).eq('id', c.id);
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
         toast('Đã lưu.');
         await loadClasses();
@@ -405,6 +420,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('paneStu').hidden = tab !== 'stu';
     $('paneKho').hidden = tab !== 'kho';
     $('paneBao').hidden = tab !== 'bao';
+    $('paneTheo').hidden = tab !== 'theo';
     refreshPane();
   });
   async function refreshPane() {
@@ -431,6 +447,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     }
     if (tab === 'ses') await loadSessions();
     else if (tab === 'stu') await loadRoster();
+    else if (tab === 'theo') await loadTheo();
     else await loadKho();
   }
 
@@ -439,7 +456,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var box = $('sesList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     var r = await sb.from('sessions')
-      .select('id, no, title, held_on, note, published, materials(id, kind, title, open_at, order_no)')
+      .select('*, materials(id, kind, title, open_at, order_no, created_at)')
       .eq('class_id', curClass).order('no', { ascending: false });
     if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
     sessions = r.data || [];
@@ -471,11 +488,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<summary><span class="no">' + esc(s.no != null ? s.no : '•') + '</span>'
         + '<span class="t"><b>' + esc(s.title || 'Chưa đặt tên') + '</b><span>'
         + (s.held_on ? fmtDate(s.held_on) + ' · ' : '') + mats.length + ' tài liệu</span></span>'
+        + (s.pinned ? '<span class="pill on" title="Sinh viên mở app là thấy buổi này trước">📌 Đang học</span> ' : '')
         + '<span class="pill ' + (s.published ? 'on' : 'off') + '">' + (s.published ? 'Đã mở' : 'Nháp') + '</span>'
         + '</summary>'
         + '<div class="mats">'
         + '<div class="bar" style="margin:4px 0 8px">'
         + '  <button class="btn sm" data-a="pub" data-s="' + s.id + '">' + (s.published ? '🙈 Chuyển về nháp' : '👁 Mở cho sinh viên') + '</button>'
+        + '  <button class="btn sm" data-a="pin" data-s="' + s.id + '" title="Buổi được ghim hiện lên đầu trang học. Không ghim thì app lấy buổi vừa có bài mới nhất.">' + (s.pinned ? '📌 Bỏ ghim' : '📌 Ghim làm buổi đang học') + '</button>'
         + '  <button class="btn sm" data-a="edit-ses" data-s="' + s.id + '">✎ Sửa buổi</button>'
         + '  <button class="btn sm danger" data-a="del-ses" data-s="' + s.id + '">Xoá buổi</button>'
         + '</div>'
@@ -508,14 +527,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     dialog('Buổi mới',
       '<label class="f">Buổi số<input id="fNo" type="number" value="' + next + '"></label>'
       + '<label class="f">Tên buổi<input id="fTitle" placeholder="Nồng độ và pha dung dịch"></label>'
-      + '<label class="f">Ngày dạy<input id="fDate" type="date" value="' + today + '"></label>'
+      + '<label class="f">Ngày dạy (tuỳ chọn)<input id="fDate" type="date" value="' + today + '"></label>'
+      + '<label class="f">Giờ bắt đầu (tuỳ chọn — có thì app nhắc sinh viên trước 30 phút)<input id="fStart" type="datetime-local"></label>'
       + '<label class="f">Ghi chú cho sinh viên<textarea id="fNote" placeholder="Xem video trước, làm phiếu bài tập rồi mang tới lớp."></textarea></label>'
       + '<label class="f"><input type="checkbox" id="fPub" checked style="width:auto;display:inline;margin-right:6px">Mở cho sinh viên xem ngay'
       + '<small>Chưa tick thì buổi ở dạng nháp, sinh viên không thấy gì.</small></label>',
       async function () {
         var r = await sb.from('sessions').insert({
           class_id: curClass, no: Number(val('fNo')) || null, title: val('fTitle'),
-          held_on: val('fDate') || null, note: val('fNote'), published: $('fPub').checked
+          held_on: val('fDate') || null, note: val('fNote'), published: $('fPub').checked,
+          starts_at: val('fStart') ? new Date(val('fStart')).toISOString() : null
         }).select('id').single();
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
         justOpenSes = r.data.id;                 /* mở sẵn buổi vừa tạo */
@@ -533,6 +554,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var r = await sb.from('sessions').update({ published: !s.published }).eq('id', s.id);
       if (r.error) toast('Lỗi: ' + r.error.message);
       else { toast(!s.published ? 'Đã mở cho sinh viên.' : 'Đã chuyển về nháp.'); await loadSessions(); }
+    } else if (a === 'pin') {
+      var sp = sessions.filter(function (x) { return x.id === b.dataset.s; })[0];
+      if (!sp.pinned) { await sb.from('sessions').update({ pinned: false }).eq('class_id', curClass).eq('pinned', true); }
+      var rp = await sb.from('sessions').update({ pinned: !sp.pinned }).eq('id', sp.id);
+      if (rp.error) toast('Lỗi: ' + rp.error.message + (/pinned/.test(rp.error.message) ? ' — chưa chạy schema_v9_hom_nay.sql?' : ''));
+      else { toast(!sp.pinned ? 'Đã ghim. Sinh viên mở app là thấy buổi này trước.' : 'Đã bỏ ghim.'); await loadSessions(); }
     } else if (a === 'edit-ses') editSession(b.dataset.s);
     else if (a === 'del-ses') delSession(b.dataset.s);
     else if (a === 'add-mat') addMaterial(b.dataset.s, b.dataset.k);
@@ -546,12 +573,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     dialog('Sửa buổi',
       '<label class="f">Buổi số<input id="fNo" type="number" value="' + (s.no != null ? s.no : '') + '"></label>'
       + '<label class="f">Tên buổi<input id="fTitle" value="' + esc(s.title || '') + '"></label>'
-      + '<label class="f">Ngày dạy<input id="fDate" type="date" value="' + (s.held_on || '') + '"></label>'
+      + '<label class="f">Ngày dạy (tuỳ chọn)<input id="fDate" type="date" value="' + (s.held_on || '') + '"></label>'
+      + '<label class="f">Giờ bắt đầu (tuỳ chọn)<input id="fStart" type="datetime-local" value="' + (s.starts_at ? gioLocal(s.starts_at) : '') + '"></label>'
       + '<label class="f">Ghi chú<textarea id="fNote">' + esc(s.note || '') + '</textarea></label>',
       async function () {
         var r = await sb.from('sessions').update({
           no: Number(val('fNo')) || null, title: val('fTitle'),
-          held_on: val('fDate') || null, note: val('fNote')
+          held_on: val('fDate') || null, note: val('fNote'),
+          starts_at: val('fStart') ? new Date(val('fStart')).toISOString() : null
         }).eq('id', id);
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
         toast('Đã lưu.');
@@ -796,6 +825,47 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('fCls').addEventListener('change', fillSes);
     fillSes();
   }
+
+  function gioLocal(iso) {                     /* ISO → giá trị cho ô datetime-local theo giờ máy */
+    var d = new Date(iso), p = function (n) { return ('0' + n).slice(-2); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  /* ---------------- theo dõi: ai đã xem gì ---------------- */
+  async function loadTheo() {
+    var box = $('theoList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
+    if (rs.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rs.error.message) + '</div>'; return; }
+    var rr = await sb.from('enrollments').select('student, profiles(full_name, email, role)').eq('class_id', curClass);
+    var sv = (rr.data || []).filter(function (e) { return !e.profiles || e.profiles.role === 'student'; });
+    var rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress').eq('class_id', curClass);
+    if (rv.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rv.error.message) + (/view_events/.test(rv.error.message) ? '<br><small>Chưa chạy file <b>schema_v9_hom_nay.sql</b> trong Supabase.</small>' : '') + '</div>'; return; }
+    var xem = {}; (rv.data || []).forEach(function (v) { (xem[v.material_id] = xem[v.material_id] || {})[v.user_id] = v; });
+    var ten = {}; sv.forEach(function (e) { ten[e.student] = (e.profiles && e.profiles.full_name) || (e.profiles && e.profiles.email) || e.student.slice(0, 8); });
+    var list = rs.data || [];
+    if (!list.length) { box.innerHTML = '<div class="empty">Chưa có buổi nào mở cho sinh viên.</div>'; return; }
+    if (!sv.length) { box.innerHTML = '<div class="empty">Lớp chưa có sinh viên.</div>'; return; }
+    box.innerHTML = list.map(function (s) {
+      var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+      var daMo = {}; mats.forEach(function (m) { Object.keys(xem[m.id] || {}).forEach(function (u) { daMo[u] = true; }); });
+      var soMo = sv.filter(function (e) { return daMo[e.student]; }).length;
+      return '<details class="card ses" open><summary><span class="no">' + esc(s.no != null ? s.no : '•') + '</span>'
+        + '<span class="t"><b>' + esc(s.title || 'Chưa đặt tên') + '</b><span>' + soMo + '/' + sv.length + ' sinh viên đã mở ít nhất một tài liệu</span></span>'
+        + '<span class="pill ' + (soMo === sv.length ? 'on' : (soMo ? '' : 'off')) + '">' + Math.round(100 * soMo / sv.length) + '%</span></summary>'
+        + '<div class="mats">' + (mats.length ? '<table class="roster"><thead><tr><th>Tài liệu</th><th>Đã mở</th><th>Chưa mở</th></tr></thead><tbody>'
+          + mats.map(function (m) {
+              var k = KIND[m.kind] || KIND.link, x = xem[m.id] || {};
+              var da = sv.filter(function (e) { return x[e.student]; }), chua = sv.filter(function (e) { return !x[e.student]; });
+              var chi = da.map(function (e) { var v = x[e.student], pr = v.progress || {}; var t = pr.done ? '✓' : (pr.page ? 'tr.' + pr.page + '/' + (pr.pages || '?') : (pr.seconds ? Math.round(pr.seconds / 60) + 'ph' : '')); return esc(ten[e.student]) + (t ? ' <small style="color:var(--muted)">' + t + '</small>' : ''); }).join(', ');
+              return '<tr><td>' + k.ic + ' ' + esc(m.title || k.name) + (m.open_at && new Date(m.open_at) > new Date() ? ' <span class="pill off">khoá tới ' + esc(fmtWhen(m.open_at)) + '</span>' : '') + '</td>'
+                + '<td><b>' + da.length + '</b>/' + sv.length + (chi ? '<br><small>' + chi + '</small>' : '') + '</td>'
+                + '<td>' + (chua.length ? '<small>' + chua.map(function (e) { return esc(ten[e.student]); }).join(', ') + '</small>' : '<span class="pill on">đủ</span>') + '</td></tr>';
+            }).join('') + '</tbody></table>' : '<div class="empty" style="padding:14px">Buổi này chưa có tài liệu.</div>')
+        + '</div></details>';
+    }).join('');
+  }
+  $('theoReload').addEventListener('click', loadTheo);
 
   /* ---------------- cảnh báo chụp màn hình ---------------- */
   var KIND_BAO = { printscreen: ['Chụp màn hình', 'off'], win_snip: ['Win+Shift+S', 'off'], quay: ['Phần mềm quay màn hình', 'off'], nghi_chup: ['Nghi chụp (mất tiêu điểm / mở công cụ chụp)', ''], in: ['Bấm in', ''], luu: ['Bấm lưu trang', ''] };
