@@ -18,6 +18,8 @@ export default {
     if (!url.pathname.startsWith('/api/')) {
       return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
     }
+    /* GET /api/trang-thai: Worker đã thấy khoá chưa — chỉ trả có/không và TÊN các biến, không bao giờ trả giá trị */
+    if (url.pathname === '/api/trang-thai') return json({ ok: true, co_khoa: !!env.SUPABASE_SERVICE_ROLE_KEY, bien: Object.keys(env).filter(function (k) { return k !== 'ASSETS'; }) }, 200, request);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (request.method !== 'POST') return json({ ok: false, reason: 'chi_post' }, 405, request);
     if (!env.SUPABASE_SERVICE_ROLE_KEY) return json({ ok: false, reason: 'chua_cau_hinh' }, 503, request);
