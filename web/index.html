@@ -1570,6 +1570,62 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     });
   }
 
+  /* ---------------- video Cloudflare Stream ----------------
+     Video không có link cố định. Mỗi lần mở, máy chủ kiểm quyền rồi ký một token sống 4 giờ, gắn với IP đang xem. */
+  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.maknoonnjs94.workers.dev' : '';
+  async function goiApi(path, body) {
+    var s = await sb.auth.getSession(); var tk = s.data.session && s.data.session.access_token;
+    if (!tk) { var e0 = new Error('chua_dang_nhap'); e0.reason = 'chua_dang_nhap'; throw e0; }
+    var r = await fetch(API_BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tk }, body: JSON.stringify(body || {}) });
+    var d = null; try { d = await r.json(); } catch (e) { d = null; }
+    if (!d) { var e1 = new Error('Máy chủ không trả lời (' + r.status + ').'); e1.reason = 'may_chu'; throw e1; }
+    if (!d.ok) { var e2 = new Error(d.reason || 'loi'); e2.reason = d.reason; e2.chi_tiet = d.chi_tiet; e2.pct = d.pct; throw e2; }
+    return d;
+  }
+  var LOI_STREAM = {
+    stream_chua_cau_hinh: 'Máy chủ chưa nối với kho video. Nhắn giảng viên.',
+    chua_san_sang: 'Video đang được xử lý, vài phút nữa mở lại nhé.',
+    chua_toi_gio: 'Chưa tới giờ mở video này.', chua_mo: 'Buổi học chưa mở.', khong_trong_lop: 'Bạn không ở trong lớp này.',
+    phien_het_han: 'Phiên đăng nhập hết hạn, tải lại trang.', chua_dang_nhap: 'Chưa đăng nhập.', khong_thay: 'Không thấy video này.'
+  };
+  var sdkSan = null;
+  function napStreamSdk() {
+    if (sdkSan) return sdkSan;
+    sdkSan = new Promise(function (res) {
+      if (window.Stream) return res(window.Stream);
+      var sc = document.createElement('script'); sc.src = 'https://embed.cloudflarestream.com/embed/sdk.latest.js';
+      sc.onload = function () { res(window.Stream || null); }; sc.onerror = function () { res(null); }; document.head.appendChild(sc);
+      setTimeout(function () { res(window.Stream || null); }, 8000);
+    });
+    return sdkSan;
+  }
+  function theoDoiStream(iframe, id) {
+    napStreamSdk().then(function (Stream) {
+      if (!Stream || !iframe.isConnected || !curMat || curMat.id !== id) return;
+      var player; try { player = Stream(iframe); } catch (e) { return; }
+      var v = views[id], pr = (v && v.progress) || {};
+      if (pr.seconds > 15 && !pr.done) player.addEventListener('loadedmetadata', function () { try { player.currentTime = pr.seconds; } catch (e) {} });
+      var last = -1;
+      tienDo.save = function () { try { var t = Math.floor(player.currentTime || 0), dd = Math.floor(player.duration || 0); if (!dd || Math.abs(t - last) < 5) return; last = t; luuTienDo(id, { seconds: t, duration: dd, done: t / dd > 0.9 }); } catch (e) {} };
+      tienDo.timer = setInterval(tienDo.save, 10000);
+    });
+  }
+  async function moStream(id, body) {
+    body.innerHTML = '<div class="vload">Đang xin phép xem video…</div>';
+    var d;
+    try { d = await goiApi('/api/stream/token', { material_id: id }); }
+    catch (e) {
+      var loi = LOI_STREAM[e.reason] || ('Không mở được video: ' + esc(e.chi_tiet || e.message || e.reason || ''));
+      if (e.reason === 'chua_san_sang' && e.pct) loi += ' (đã xử lý ' + e.pct + '%)';
+      body.innerHTML = '<div class="vload">' + loi + '</div>'; return;
+    }
+    if (!curMat || curMat.id !== id) return;
+    body.innerHTML = '<div class="vstage"><iframe allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="vhint">Video chỉ xem trong lớp: link tự hết hạn, gắn với máy đang xem, không tải về được.</p></div>';
+    var fr = body.querySelector('iframe'); fr.src = d.embed + '?preload=metadata';
+    watermark(body.querySelector('.vstage'));
+    theoDoiStream(fr, id);
+  }
+
   /* ---------------- dấu chìm ---------------- */
   var wmTimer = null;
   function wmText() { var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }; return (profile.full_name ? profile.full_name + ' · ' : '') + (me.email || '') + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ' ' + p(d.getDate()) + '/' + p(d.getMonth() + 1); }
@@ -1615,6 +1671,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       body.innerHTML = '<div class="vstage vpaper"><div class="vtext"></div></div>';
       body.querySelector('.vtext').textContent = c.body || '(trống)'; watermark(body.querySelector('.vstage')); return;
     }
+    if (c.url && c.url.indexOf('stream:') === 0) { await moStream(id, body); return; }
     if (kind === 'video' || (c.url && /youtube|youtu\.be|vimeo|drive\.google|bunnycdn|b-cdn\.net|cloudflarestream|videodelivery/.test(c.url))) {
       body.innerHTML = '<div class="vstage"><iframe allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
       var yt = /youtube|youtu\.be/.test(c.url || '');

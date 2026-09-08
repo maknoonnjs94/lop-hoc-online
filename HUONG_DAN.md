@@ -154,6 +154,8 @@ Trước giờ đó sinh viên thấy dòng "Đáp án và lời giải · Mở 
 
 ## Video: chọn nơi đặt
 
+> **Đã có cách chặn tải:** đưa video lên Cloudflare Stream với link ký — làm theo `HUONG_DAN_VIDEO.md` (từng bước). Bảng dưới là so sánh các lựa chọn.
+
 Không có cách nào chặn tải tuyệt đối. Cái gì phát ra màn hình thì quay màn hình được. Ba mức thực tế:
 
 | Cách | Chi phí | Mức chặn |

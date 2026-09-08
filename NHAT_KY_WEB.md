@@ -15,7 +15,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 Đang chạy trên web:
 - Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` — cần secret `SUPABASE_SERVICE_ROLE_KEY` trong Cloudflare.
+- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` (secret `SUPABASE_SERVICE_ROLE_KEY`, đã có) và `/api/stream/*` cho video (cần thêm `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN` — chưa có).
 - App máy tính bản **1.0.14** (icon = logo Giảng đường; lên R2 lúc 22:25 ngày 08/9, cả Windows lẫn Mac): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
 M còn phải làm:
@@ -24,9 +24,24 @@ M còn phải làm:
 3. `schema_v10_ho_so.sql` — **đã chạy**; `schema_v10b_ho_so_thieu_dong.sql` — **đã chạy**.
 4. `schema_v11_giao_dien.sql` (4 màu + nhân vật), `schema_v12_anh_dai_dien.sql` (kho ảnh đại diện), `schema_v13_nhan_vat.sql` (8 nhân vật) — chưa chạy thì trang vẫn dùng được, chỉ là lựa chọn không lưu lên máy chủ và chưa tải ảnh lên được.
 5. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
-6. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
+6. **Video**: làm theo `HUONG_DAN_VIDEO.md` phần A (bật Stream, Account ID, API token, 2 lệnh `wrangler secret put`, chạy `schema_v14_video.sql`).
+7. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-09 (tối) — Video bài giảng qua Cloudflare Stream (link ký, không tải được)
+
+**M yêu cầu:** ưu tiên video; hướng dẫn thật kỹ vì chưa làm bao giờ.
+
+**Đã làm**
+- `worker.js`: mô-đun Stream. `POST /api/stream/token` (mọi tài khoản active): kiểm tài liệu → buổi đã mở, tới giờ, sinh viên có trong lớp (giảng viên bỏ qua) → lấy chi tiết video (phải `readyToStream`) → ký JWT RS256 bằng khoá ký của Stream, sống 4 giờ, `accessRules` gắn IP (v4 /32, v6 /64) → trả `embed` = `https://customer-….cloudflarestream.com/<token>/iframe`. Khoá ký tạo **một lần** qua `POST /stream/keys` rồi cất vào bảng `cau_hinh_he_thong` của Supabase (không luật RLS → chỉ service role đọc), nhớ thêm trong bộ nhớ Worker. Giảng viên: `/api/stream/danh-sach`, `/api/stream/chon` (bật `requireSignedURLs` + `allowedOrigins` = host trang), `/api/stream/tai-len` (direct upload ≤ 200 MB). Cần hai secret mới **CF_ACCOUNT_ID**, **CF_STREAM_TOKEN** (API token quyền Account · Stream · Edit); `/api/trang-thai` báo `stream: true/false`.
+- `quan-tri.html`: hộp Thêm → Video có "Chọn video đã tải lên" (danh sách từ Stream, thumbnail, thời lượng, đang xử lý %, đã/chưa khoá link) và "Tải video lên (≤ 200 MB)" gửi tệp thẳng lên Cloudflare; chọn xong ô link thành `stream:<uid>`; vẫn dán được link YouTube.
+- `index.html`: `material_contents.url` bắt đầu `stream:` → `moStream()` xin token qua `goiApi`, nhúng iframe, dấu chìm, nhớ chỗ xem bằng Stream SDK (`embed.cloudflarestream.com/embed/sdk.latest.js`); thông báo tiếng Việt cho từng lý do (chưa nối kho, đang xử lý %, chưa tới giờ, không trong lớp…).
+- `schema_v14_video.sql`: bảng `cau_hinh_he_thong` (RLS bật, không luật). `HUONG_DAN_VIDEO.md`: từng bước bật Stream, lấy Account ID, tạo token, `wrangler secret put`, tải video hai cách, kiểm tra, bảng xử lý lỗi, chi phí.
+
+**Đã test:** ký/xác minh token trong Node bằng WebCrypto (header/payload/kid/exp đúng, luatIp v4/v6 đúng); `wrangler deploy --dry-run` bundle 18 KiB; trang thử `?st=1` mở đúng nhánh Stream và hiện lỗi thân thiện. **Chưa** test với Stream thật — chờ m bật Stream và dán 2 secret.
 
 ---
 

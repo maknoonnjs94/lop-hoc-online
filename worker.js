@@ -4,6 +4,12 @@
    - /api/*: vài việc cần quyền quản trị Supabase mà trình duyệt KHÔNG được phép làm:
        POST /api/tao-tai-khoan     tạo tài khoản sinh viên + ghi danh vào lớp, trả mật khẩu tạm
        POST /api/cap-lai-mat-khau  đặt mật khẩu tạm mới cho một sinh viên
+       POST /api/stream/token      sinh viên xin link xem video (Cloudflare Stream, ký RS256, hết hạn, gắn IP)
+       POST /api/stream/danh-sach  giảng viên: danh sách video trên Stream
+       POST /api/stream/chon       giảng viên: khoá link video (requireSignedURLs + allowedOrigins)
+       POST /api/stream/tai-len    giảng viên: xin link tải video thẳng lên Stream (≤ 200 MB)
+   Stream cần thêm hai secret: CF_ACCOUNT_ID và CF_STREAM_TOKEN (API token quyền Stream:Edit). Khoá ký video
+   được tạo một lần rồi cất trong bảng cau_hinh_he_thong của Supabase (chỉ service role đọc được).
    Khoá SUPABASE_SERVICE_ROLE_KEY là *secret* của Worker (dán trong Cloudflare → Settings → Variables and Secrets).
    Nó không nằm trong mã, không nằm trong trình duyệt, không nằm trong kho GitHub.
    Ai gọi /api/* phải gửi access token Supabase của mình; Worker kiểm tra hồ sơ phải là giảng viên/quản trị.
@@ -34,7 +40,7 @@ export default {
           thu = { status: t.status, so_dong: Array.isArray(b) ? b.length : -1 };
         } catch (e) { thu = { status: -1, so_dong: -1 }; }
       }
-      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
+      return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, stream: streamSan(env), bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
     if (request.method !== 'POST') return json({ ok: false, reason: 'chi_post' }, 405, request);
@@ -42,10 +48,14 @@ export default {
     try {
       let body = {};
       try { body = await request.json(); } catch (e) { body = {}; }
+      if (url.pathname === '/api/stream/token') return await streamToken(body, request, env);
       const ai = await nguoiGoi(request, env);
       if (ai.loi) return json({ ok: false, reason: ai.loi, chi_tiet: ai.email ? (ai.email + (ai.vai_tro ? ' — vai trò máy chủ thấy: ' + ai.vai_tro : '')) : undefined }, 401, request);
       if (url.pathname === '/api/tao-tai-khoan') return await taoTaiKhoan(body, ai, env, request);
       if (url.pathname === '/api/cap-lai-mat-khau') return await capLaiMatKhau(body, ai, env, request);
+      if (url.pathname === '/api/stream/danh-sach') return await streamDanhSach(env, request);
+      if (url.pathname === '/api/stream/chon') return await streamChon(body, env, request);
+      if (url.pathname === '/api/stream/tai-len') return await streamTaiLen(body, env, request);
       return json({ ok: false, reason: 'khong_co_duong_nay' }, 404, request);
     } catch (e) {
       return json({ ok: false, reason: 'loi_may_chu', chi_tiet: String(e && e.message || e).slice(0, 200) }, 500, request);
@@ -179,4 +189,150 @@ async function capLaiMatKhau(body, ai, env, request) {
     method: 'PATCH', headers: adminHeaders(env, { Prefer: 'return=minimal' }), body: JSON.stringify({ must_change_pw: true })
   });
   return json({ ok: true, password: mk, full_name: rows[0].full_name || '' }, 200, request);
+}
+
+/* =====================================================================
+   VIDEO — Cloudflare Stream
+   Video nằm trên Stream, bật requireSignedURLs nên không có link cố định. Mỗi lần sinh viên mở, Worker kiểm
+   quyền (đúng lớp, buổi đã mở, tới giờ) rồi ký một token RS256 sống 4 giờ, gắn với IP đang xem.
+   ===================================================================== */
+const CF_API = 'https://api.cloudflare.com/client/v4/accounts/';
+let khoaKyCache = null;
+function streamSan(env) { return !!(env.CF_STREAM_TOKEN && env.CF_ACCOUNT_ID); }
+async function cfStream(env, path, method, body) {
+  const r = await fetch(CF_API + env.CF_ACCOUNT_ID + '/stream' + path, {
+    method: method || 'GET',
+    headers: { Authorization: 'Bearer ' + env.CF_STREAM_TOKEN, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const d = await r.json().catch(function () { return {}; });
+  if (!r.ok || d.success === false) {
+    const e = (d.errors && d.errors[0]) || {};
+    throw new Error('Cloudflare Stream: ' + (e.message || ('HTTP ' + r.status)) + (e.code ? ' (mã ' + e.code + ')' : ''));
+  }
+  return d.result;
+}
+async function restOne(env, path) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1' + path, { headers: adminHeaders(env) });
+  if (!r.ok) return null;
+  const rows = await r.json();
+  return rows[0] || null;
+}
+/* cấu hình hệ thống nằm trong Supabase, bảng cau_hinh_he_thong (schema_v14_video.sql) */
+async function docCauHinh(env, khoa) { const r = await restOne(env, '/cau_hinh_he_thong?khoa=eq.' + encodeURIComponent(khoa) + '&select=gia_tri'); return r ? r.gia_tri : null; }
+async function ghiCauHinh(env, khoa, giaTri) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/cau_hinh_he_thong?on_conflict=khoa', {
+    method: 'POST', headers: adminHeaders(env, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
+    body: JSON.stringify({ khoa: khoa, gia_tri: giaTri, updated_at: new Date().toISOString() })
+  });
+  if (!r.ok) throw new Error('Chưa lưu được cấu hình (' + r.status + '). Đã chạy schema_v14_video.sql chưa?');
+}
+/* Khoá ký: tạo một lần bằng API Stream, cất vào Supabase; các lần sau đọc lại (và nhớ trong bộ nhớ Worker). */
+async function layKhoaKy(env) {
+  if (khoaKyCache) return khoaKyCache;
+  let k = await docCauHinh(env, 'stream_key');
+  if (!k || !k.id || !k.jwk) {
+    const res = await cfStream(env, '/keys', 'POST', {});
+    k = { id: res.id, jwk: res.jwk, created: res.created };
+    await ghiCauHinh(env, 'stream_key', k);
+  }
+  khoaKyCache = k;
+  return k;
+}
+function b64url(buf) {
+  const s = typeof buf === 'string' ? buf : String.fromCharCode.apply(null, new Uint8Array(buf));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlUtf8(obj) { return b64url(new TextEncoder().encode(JSON.stringify(obj))); }
+async function kyTokenStream(khoa, uid, ttl, ipRule) {
+  const jwk = JSON.parse(atob(khoa.jwk));
+  delete jwk.key_ops; delete jwk.use; jwk.alg = 'RS256';
+  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', kid: khoa.id };
+  const payload = { sub: uid, kid: khoa.id, nbf: now - 60, exp: now + ttl };
+  if (ipRule) payload.accessRules = [{ type: 'ip.src', ip: [ipRule], action: 'allow' }, { type: 'any', action: 'block' }];
+  const data = b64urlUtf8(header) + '.' + b64urlUtf8(payload);
+  const sig = await crypto.subtle.sign({ name: 'RSASSA-PKCS1-v1_5' }, key, new TextEncoder().encode(data));
+  return data + '.' + b64url(sig);
+}
+/* IPv4 → /32; IPv6 → /64 (cùng mạng thì đổi đuôi vẫn xem được) */
+function luatIp(ip) {
+  if (!ip) return '';
+  if (ip.indexOf(':') < 0) return ip + '/32';
+  let parts = ip.split('::');
+  let head = parts[0] ? parts[0].split(':') : [];
+  let tail = parts[1] ? parts[1].split(':') : [];
+  while (head.length + tail.length < 8) head.push('0');
+  const full = head.concat(tail).slice(0, 8);
+  return full.slice(0, 4).join(':') + '::/64';
+}
+/* Ai đang xem? Bất kỳ tài khoản còn active; staff = giảng viên/quản trị. */
+async function nguoiDung(request, env) {
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return { loi: 'chua_dang_nhap' };
+  const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + token } });
+  if (!r.ok) return { loi: 'phien_het_han' };
+  const u = await r.json();
+  if (!u || !u.id) return { loi: 'phien_het_han' };
+  const ho = await restOne(env, '/profiles?id=eq.' + u.id + '&select=role,active') || {};
+  if (ho.active === false) return { loi: 'tai_khoan_da_tat' };
+  return { id: u.id, email: u.email, staff: ho.role === 'teacher' || ho.role === 'admin' };
+}
+
+/* POST /api/stream/token  { material_id } → { token, embed, host, duration } */
+async function streamToken(body, request, env) {
+  if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
+  const nd = await nguoiDung(request, env);
+  if (nd.loi) return json({ ok: false, reason: nd.loi }, 401, request);
+  const mid = String(body.material_id || '');
+  if (!UUID.test(mid)) return json({ ok: false, reason: 'thieu_tai_lieu' }, 400, request);
+  const m = await restOne(env, '/materials?id=eq.' + mid + '&select=id,open_at,session_id,sessions(class_id,published)');
+  if (!m) return json({ ok: false, reason: 'khong_thay' }, 404, request);
+  const c = await restOne(env, '/material_contents?material_id=eq.' + mid + '&select=url');
+  const u = String((c && c.url) || '');
+  if (u.indexOf('stream:') !== 0) return json({ ok: false, reason: 'khong_phai_stream' }, 400, request);
+  const uid = u.slice(7).trim();
+  if (!/^[0-9a-f]{32}$/i.test(uid)) return json({ ok: false, reason: 'uid_sai' }, 400, request);
+  if (!nd.staff) {
+    const s = m.sessions || {};
+    if (!s.published) return json({ ok: false, reason: 'chua_mo' }, 403, request);
+    if (m.open_at && new Date(m.open_at).getTime() > Date.now()) return json({ ok: false, reason: 'chua_toi_gio' }, 403, request);
+    const e = await restOne(env, '/enrollments?class_id=eq.' + s.class_id + '&student=eq.' + nd.id + '&select=student');
+    if (!e) return json({ ok: false, reason: 'khong_trong_lop' }, 403, request);
+  }
+  const v = await cfStream(env, '/' + uid);
+  if (!v.readyToStream) return json({ ok: false, reason: 'chua_san_sang', pct: v.status && v.status.pctComplete }, 409, request);
+  const host = new URL(v.playback.hls).host;
+  const khoa = await layKhoaKy(env);
+  const token = await kyTokenStream(khoa, uid, 4 * 3600, luatIp(request.headers.get('CF-Connecting-IP') || ''));
+  return json({ ok: true, token: token, host: host, embed: 'https://' + host + '/' + token + '/iframe', duration: v.duration }, 200, request);
+}
+
+/* POST /api/stream/danh-sach → { videos: [...] } (giảng viên) */
+async function streamDanhSach(env, request) {
+  if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
+  const list = await cfStream(env, '?per_page=200');
+  const videos = (list || []).map(function (v) {
+    return { uid: v.uid, ten: (v.meta && v.meta.name) || v.filename || v.uid, giay: Math.round(v.duration || 0), anh: v.thumbnail || '',
+      san_sang: !!v.readyToStream, pct: v.status && v.status.pctComplete, ky: !!v.requireSignedURLs, ngay: v.created, kich_thuoc: v.size || 0 };
+  }).sort(function (a, b) { return String(b.ngay).localeCompare(String(a.ngay)); });
+  return json({ ok: true, videos: videos }, 200, request);
+}
+/* POST /api/stream/chon { uid } → khoá link: chỉ mở bằng token, chỉ nhúng được từ trang này */
+async function streamChon(body, env, request) {
+  if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
+  const uid = String(body.uid || '');
+  if (!/^[0-9a-f]{32}$/i.test(uid)) return json({ ok: false, reason: 'uid_sai' }, 400, request);
+  const host = new URL(request.url).host;
+  const v = await cfStream(env, '/' + uid, 'POST', { requireSignedURLs: true, allowedOrigins: [host] });
+  return json({ ok: true, uid: v.uid, ten: (v.meta && v.meta.name) || v.filename || v.uid, san_sang: !!v.readyToStream }, 200, request);
+}
+/* POST /api/stream/tai-len { name } → { uploadURL, uid } — trình duyệt gửi tệp thẳng lên Cloudflare (≤ 200 MB) */
+async function streamTaiLen(body, env, request) {
+  if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
+  const host = new URL(request.url).host;
+  const ten = String(body.name || 'video').slice(0, 120);
+  const r = await cfStream(env, '/direct_upload', 'POST', { maxDurationSeconds: 21600, requireSignedURLs: true, allowedOrigins: [host], meta: { name: ten } });
+  return json({ ok: true, uploadURL: r.uploadURL, uid: r.uid }, 200, request);
 }
