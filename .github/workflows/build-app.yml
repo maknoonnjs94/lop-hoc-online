@@ -33,17 +33,23 @@ jobs:
       - name: Cài thư viện
         run: npm install --no-audit --no-fund
 
-      - name: Dựng và đưa lên Releases (Windows .exe + latest.yml)
+      # Dựng thôi, KHÔNG để electron-builder tự đưa lên (hai máy cùng tạo Release một lúc là hỏng).
+      # Có cấu hình "publish" trong package.json nên latest.yml vẫn được sinh ra — app cần file đó để tự cập nhật.
+      - name: Dựng bản Windows (.exe + latest.yml)
         if: runner.os == 'Windows'
-        run: npx electron-builder --win nsis --x64 --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win nsis --x64 --publish never
 
-      - name: Dựng và đưa lên Releases (macOS .dmg, không ký)
+      - name: Kiểm latest.yml (thiếu là app không tự cập nhật được)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Get-ChildItem dist
+          if (-not (Test-Path dist/latest.yml)) { throw "Không thấy dist/latest.yml" }
+
+      - name: Dựng bản macOS (.dmg, không ký)
         if: runner.os == 'macOS'
-        run: npx electron-builder --mac dmg --universal --publish always
+        run: npx electron-builder --mac dmg --universal --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       - name: Giữ lại tệp cài
@@ -54,4 +60,21 @@ jobs:
             app/dist/*.exe
             app/dist/*.dmg
             app/dist/*.yml
+            app/dist/*.blockmap
           if-no-files-found: error
+
+      # Bước này chịu được việc hai máy cùng đưa lên một Release: máy nào tới sau thì thêm tệp vào Release có sẵn.
+      - name: Đưa lên Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Ứng dụng Lớp học ${{ github.ref_name }}
+          body: |
+            Bản cài ứng dụng Lớp học cho máy tính.
+            - Windows: tải LopHoc-win.exe, chạy, nếu SmartScreen hỏi thì bấm "More info" → "Run anyway". Từ bản này app tự cập nhật.
+            - macOS: tải LopHoc-mac.dmg, kéo vào Applications, lần đầu mở bằng chuột phải → Open. Mac chưa tự cập nhật (bản chưa ký số).
+          files: |
+            app/dist/*.exe
+            app/dist/*.dmg
+            app/dist/*.yml
+            app/dist/*.blockmap
