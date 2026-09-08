@@ -87,7 +87,7 @@ jobs:
           echo "aws: $(aws --version 2>&1)"
           echo "endpoint: $EP · kho: $R2_BUCKET · độ dài Access Key ID: ${#AWS_ACCESS_KEY_ID} · độ dài Secret: ${#AWS_SECRET_ACCESS_KEY}"
           if ! aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP" 2> r2err.txt; then
-            echo "::error::Không vào được kho R2. Lỗi: $(tr -d '' < r2err.txt | tail -3)"
+            echo "::error::Không vào được kho R2. Lỗi: $(tail -3 r2err.txt)"
             echo "Gợi ý: InvalidAccessKeyId / SignatureDoesNotMatch = sai Access Key ID hoặc Secret; NoSuchBucket = tên kho không phải '$R2_BUCKET' (đặt biến R2_BUCKET trong Settings → Secrets and variables → Actions → Variables); AccessDenied = token không có quyền Object Read & Write cho kho này."
             exit 1
           fi
