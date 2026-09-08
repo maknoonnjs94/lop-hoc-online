@@ -735,6 +735,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function giayThanhChu(s) { s = Math.round(s || 0); var m = Math.floor(s / 60), g = s % 60; return m + ':' + (g < 10 ? '0' : '') + g; }
   var LOI_STREAM = {
     stream_chua_cau_hinh: 'Máy chủ chưa nối Cloudflare Stream — làm theo HUONG_DAN_VIDEO.md (hai secret CF_ACCOUNT_ID, CF_STREAM_TOKEN).',
+    khong_xin_duoc_cho: 'Cloudflare không cấp chỗ tải tệp lớn.', kich_thuoc_sai: 'Kích thước tệp không hợp lệ.', cloudflare_thieu_dia_chi: 'Cloudflare không trả địa chỉ tải.',
     uid_sai: 'Mã video không đúng.'
   };
   async function veDanhSachStream() {
@@ -749,7 +750,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           + (v.anh ? '<img src="' + v.anh + '" alt="">' : '<span class="noanh"></span>')
           + '<span><b>' + esc(v.ten) + '</b><small>' + (v.san_sang ? giayThanhChu(v.giay) : 'đang xử lý ' + (v.pct || 0) + '%') + (v.ky ? ' · đã khoá link' : ' · chưa khoá link') + (v.kich_thuoc ? ' · ' + Math.round(v.kich_thuoc / 1048576) + ' MB' : '') + '</small></span></button>';
       }).join('');
-    } catch (e) { box.innerHTML = '<div class="msg show err">' + esc(LOI_STREAM[e.message] || e.message) + '</div>'; }
+    } catch (e) { box.innerHTML = '<div class="msg show err">' + esc((LOI_STREAM[String(e.message).split(' — ')[0]] ? LOI_STREAM[String(e.message).split(' — ')[0]] + (String(e.message).indexOf(' — ') > 0 ? ' Cloudflare nói: ' + String(e.message).split(' — ').slice(1).join(' — ') : '') : e.message)) + '</div>'; }
   }
   $('dlgBody').addEventListener('click', async function (e) {
     if (e.target.closest('#fStHuy')) { if (dangTai) { try { dangTai.abort(); } catch (x) {} dangTai = null; } $('fStList').innerHTML = ''; msg($('dlgMsg'), 'Đã dừng. Chọn lại đúng tệp đó để chạy tiếp chỗ dở.'); return; }
@@ -762,7 +763,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if ($('fTitle') && !val('fTitle')) $('fTitle').value = r.dataset.ten;
       [].forEach.call($('fStList').querySelectorAll('.strow'), function (x) { x.classList.toggle('on', x === r); });
       msg($('dlgMsg'), 'Đã chọn "' + r.dataset.ten + '" và khoá link. Bấm Thêm để đưa vào buổi.', 'ok');
-    } catch (err) { msg($('dlgMsg'), LOI_STREAM[err.message] || err.message); }
+    } catch (err) { msg($('dlgMsg'), (LOI_STREAM[String(err.message).split(' — ')[0]] ? LOI_STREAM[String(err.message).split(' — ')[0]] + (String(err.message).indexOf(' — ') > 0 ? ' Cloudflare nói: ' + String(err.message).split(' — ').slice(1).join(' — ') : '') : err.message)); }
   });
   /* Tệp nhỏ: gửi một lần. Tệp lớn: cắt khúc bằng tus, rớt mạng chọn lại đúng tệp là chạy tiếp. */
   var dangTai = null;
@@ -793,7 +794,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         var up = await fetch(d.uploadURL, { method: 'POST', body: fd });
         if (!up.ok) throw new Error('Cloudflare từ chối tệp (HTTP ' + up.status + ').');
         xongTai(d.uid);
-      } catch (err) { xongTai(null, LOI_STREAM[err.message] || err.message); }
+      } catch (err) { xongTai(null, (LOI_STREAM[String(err.message).split(' — ')[0]] ? LOI_STREAM[String(err.message).split(' — ')[0]] + (String(err.message).indexOf(' — ') > 0 ? ' Cloudflare nói: ' + String(err.message).split(' — ').slice(1).join(' — ') : '') : err.message)); }
       return;
     }
     /* tệp lớn: cần thư viện tus */
@@ -801,7 +802,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     msg($('dlgMsg'), 'Đang xin chỗ cho tệp ' + Math.round(file.size / 1048576) + ' MB…', 'ok');
     var d;
     try { d = await apiGoi('/api/stream/tai-len-lon', { name: file.name, size: file.size }); }
-    catch (err) { msg($('dlgMsg'), LOI_STREAM[err.message] || err.message); return; }
+    catch (err) { msg($('dlgMsg'), (LOI_STREAM[String(err.message).split(' — ')[0]] ? LOI_STREAM[String(err.message).split(' — ')[0]] + (String(err.message).indexOf(' — ') > 0 ? ' Cloudflare nói: ' + String(err.message).split(' — ').slice(1).join(' — ') : '') : err.message)); return; }
     msg($('dlgMsg'), 'Đang tải lên. Rớt mạng thì nó tự thử lại; đóng hộp thoại là mất tiến trình.', 'ok');
     veTienTrinh(0, file.size);
     dangTai = new tus.Upload(file, {

@@ -394,7 +394,9 @@ async function streamTaiLenLon(body, env, request) {
   });
   if (!r.ok) {
     const t = await r.text();
-    return json({ ok: false, reason: 'khong_xin_duoc_cho', chi_tiet: locLoi(t) }, 502, request);
+    /* Cloudflare hay trả lỗi dạng chữ trơn cho đường tus, nên ghi cả mã HTTP lẫn đầu thân trả lời */
+    const chiTiet = 'HTTP ' + r.status + (t ? ' — ' + (locLoi(t) || t.slice(0, 200)) : '');
+    return json({ ok: false, reason: 'khong_xin_duoc_cho', chi_tiet: chiTiet }, 502, request);
   }
   const endpoint = r.headers.get('Location');
   const uid = r.headers.get('stream-media-id');
