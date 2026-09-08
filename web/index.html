@@ -62,8 +62,8 @@
 
   /* ---- đăng nhập ---- */
   .login{ max-width:440px; margin:0 auto; padding:max(8vh,30px) 18px 40px }
-  .mark{ width:56px; height:56px; border-radius:16px; display:grid; place-items:center; margin-bottom:18px; background:linear-gradient(145deg, var(--primary), var(--primary-deep)); color:#fff; box-shadow:var(--shadow-1) }
-  .mark .ico{ width:30px; height:30px }
+  .mark{ width:88px; height:88px; margin:0 0 12px -8px }
+  .mark .lic{ width:88px; height:88px }
   .login h1{ font-size:28px; line-height:1.15; letter-spacing:-.02em; margin:0 0 6px; font-weight:800; text-wrap:balance }
   .login .sub{ margin:0 0 22px; color:var(--muted); font-size:14.5px }
   .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--shadow-1) }
@@ -116,7 +116,7 @@
   .mascot{ margin-top:auto; padding:10px 4px 0; text-align:center }
   .mascot .bub{ position:relative; margin:0 6px 10px; padding:10px 12px; border-radius:16px; background:var(--tint-alt); color:var(--ink-2); font-size:12.5px; line-height:1.45; text-align:left }
   .mascot .bub::after{ content:""; position:absolute; left:28px; bottom:-8px; border:8px solid transparent; border-top-color:var(--tint-alt); border-bottom:0 }
-  .mascot img{ display:block; width:118px; height:150px; object-fit:cover; object-position:center bottom; margin:0 auto; border-radius:22px; -webkit-mask-image:linear-gradient(#000 82%, transparent); mask-image:linear-gradient(#000 82%, transparent) }
+  .mascot img{ display:block; width:128px; height:128px; object-fit:contain; margin:0 auto }
   .mascot .help{ display:flex; align-items:center; gap:10px; width:100%; margin-top:10px; padding:11px 12px; border:0; background:transparent; color:var(--ink); border-radius:12px; font-weight:600 }
   .mascot .help:hover{ background:var(--tint-alt) }
   .mascot .help .ico{ font-size:20px; color:var(--ink-2) }
@@ -191,8 +191,6 @@
   .qcard:hover{ box-shadow:var(--shadow-1); border-color:var(--primary) }
   .qcard strong{ font-size:19px; font-weight:800 }
   .qcard small{ color:var(--muted) }
-  .bigico{ display:inline-grid; place-items:center; width:74px; height:74px; background:linear-gradient(145deg,#fff,var(--tint-alt)); border-radius:20px; box-shadow:inset 0 2px 2px #fff, 0 5px 10px rgba(41,52,83,.07); color:var(--primary) }
-  .bigico .ico{ font-size:36px }
   .prow{ display:flex; align-items:center; gap:14px; min-width:0; padding:14px 0; border-bottom:1px solid var(--line) }
   .prow:last-child{ border-bottom:0 }
   .prow .fi{ display:grid; place-items:center; flex:none; width:44px; height:48px; border-radius:12px; background:var(--kbg, var(--tint-alt)); color:var(--k, var(--primary)) }
@@ -274,7 +272,6 @@
   .pbar .bar{ flex:1; height:10px; border-radius:99px; background:var(--line); overflow:hidden } .pbar .bar i{ display:block; height:100%; background:var(--primary); border-radius:99px }
   .pbar small{ width:52px; text-align:right; color:var(--muted); font-variant-numeric:tabular-nums }
   .stat{ display:flex; gap:14px; align-items:center; padding:14px 0 }
-  .stat .bigico{ width:56px; height:56px; border-radius:16px } .stat .bigico .ico{ font-size:26px }
   .stat strong{ display:block; font-size:26px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums } .stat small{ color:var(--muted) }
   .appnote{ display:flex; align-items:center; gap:10px; margin:0 0 16px; padding:10px 14px; border-radius:var(--r-m); background:var(--primary-soft); color:var(--ink-2); font-size:13.5px; border:1px solid color-mix(in srgb, var(--primary) 30%, transparent) }
   .appnote .ico{ color:var(--primary); font-size:20px } .appnote a{ font-weight:700 }
@@ -329,6 +326,18 @@
   .helpbox .card{ width:min(560px,100%); padding:24px }
   .helpbox h3{ font-size:20px; margin-bottom:12px } .helpbox ul{ margin:0 0 14px; padding-left:20px; color:var(--ink-2); line-height:1.7 }
 
+  /* ---- icon minh hoạ màu (bộ LearningIcons 24 × 2 skin): <img> đổi tệp theo skin, không tô lại bằng CSS ---- */
+  .lic{ display:block; flex:none; object-fit:contain; user-select:none; -webkit-user-drag:none; pointer-events:none }
+  .qcard .lic{ width:84px; height:84px; margin-bottom:2px }
+  .today .lic{ position:absolute; right:18px; top:14px; width:66px; height:66px }
+  .weekly .lic{ width:76px; height:76px; margin:-4px auto 6px }
+  .pempty .lic,.empty .lic{ width:72px; height:72px }
+  .empty .lic{ margin:0 auto 10px }
+  .stat .lic{ width:58px; height:58px }
+  .menu .who .lic{ width:56px; height:56px; margin:4px 0 6px }
+  .onb h2{ display:flex; align-items:center; gap:14px } .onb h2 .lic{ width:60px; height:60px; margin-left:auto }
+  .helpbox h3{ display:flex; align-items:center; gap:14px } .helpbox h3 .lic{ width:64px; height:64px; margin-left:auto }
+
   /* ---- responsive ---- */
   @media (max-width:1199px){
     .shell{ grid-template-columns:84px minmax(0,1fr); gap:16px; padding:16px }
@@ -360,7 +369,7 @@
 
 <!-- ================= ĐĂNG NHẬP ================= -->
 <main class="login" id="loginScreen">
-  <div class="mark"><span class="ico"><svg viewBox="0 0 24 24"><path d="M10 3h4M10.5 3v6L5 18.5A2 2 0 0 0 6.8 21h10.4a2 2 0 0 0 1.8-2.5L13.5 9V3"/><path d="M7.5 15h9"/></svg></span></div>
+  <div class="mark"><img class="lic" data-lic="classroom" alt="" draggable="false"></div>
   <h1>Góc học tập</h1>
   <p class="sub" id="loginSub">Đăng nhập bằng tài khoản giảng viên đã cấp.</p>
   <form class="card" id="loginForm">
@@ -380,7 +389,7 @@
     <div class="steps"><span id="st1" class="on"></span><span id="st2"></span></div>
 
     <section id="onbPw">
-      <h2>Đặt mật khẩu của riêng bạn</h2>
+      <h2>Đặt mật khẩu của riêng bạn<img class="lic" data-lic="settings" alt="" draggable="false"></h2>
       <p class="lead">Mật khẩu giảng viên cấp chỉ dùng cho lần đầu. Đặt mật khẩu mới để tài khoản là của bạn.</p>
       <form id="pwForm">
         <label class="f">Mật khẩu mới<input type="password" id="pw1" autocomplete="new-password" required minlength="8" placeholder="Ít nhất 8 ký tự"></label>
@@ -391,7 +400,7 @@
     </section>
 
     <section id="onbInfo" hidden>
-      <h2>Cho lớp biết bạn là ai</h2>
+      <h2>Cho lớp biết bạn là ai<img class="lic" data-lic="profile" alt="" draggable="false"></h2>
       <p class="lead">Tên hiện trên dấu chìm tài liệu và trong danh sách lớp. Giao diện sẽ chọn màu theo bạn — đổi lại lúc nào cũng được.</p>
       <form id="infoForm">
         <label class="f">Họ và tên<input type="text" id="fName" required placeholder="Nguyễn Văn An" autocomplete="name"></label>
@@ -428,7 +437,7 @@
       </nav>
       <div class="mascot">
         <div class="bub" id="mascotSay">Có thắc mắc? Mình luôn ở đây để giúp bạn!</div>
-        <img id="mascotImg" src="img/bot-mint.png" alt="">
+        <img id="mascotImg" class="lic" data-lic="help" alt="" draggable="false">
         <button type="button" class="help" id="helpBtn"><span class="ico" data-ico="help"></span>Trợ giúp</button>
       </div>
     </aside>
@@ -519,7 +528,7 @@
 <!-- ================= TRỢ GIÚP ================= -->
 <div class="helpbox" id="helpBox" hidden>
   <div class="card">
-    <h3>Dùng góc học tập thế nào</h3>
+    <h3>Dùng góc học tập thế nào<img class="lic" data-lic="help" alt="" draggable="false"></h3>
     <ul>
       <li><b>Trang chủ</b>: thẻ "Tiếp tục học" đưa bạn về đúng chỗ đang dở. Bài mới có nhãn <b>MỚI</b>.</li>
       <li><b>Bài giảng</b>: chọn buổi ở cột trái, tài liệu ở cột phải. <kbd>↑</kbd><kbd>↓</kbd> đổi buổi.</li>
@@ -613,6 +622,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   };
   [].forEach.call(document.querySelectorAll('.ico[data-ico]'), function (el) { el.innerHTML = I[el.dataset.ico] || ''; });
 
+  /* Icon minh hoạ màu: img/icons/<skin>/<tên>.svg — cùng tên ở hai skin, đổi skin là đổi tệp. */
+  function skinHienTai() { return document.documentElement.dataset.skin === 'peach' ? 'peach' : 'mint'; }
+  function licSrc(name, skin) { return 'img/icons/' + (skin || skinHienTai()) + '/' + name + '.svg'; }
+  function lic(name, size) { return '<img class="lic" src="' + licSrc(name) + '" width="' + size + '" height="' + size + '" alt="" draggable="false">'; }
+  function capNhatLic(skin) {
+    [].forEach.call(document.querySelectorAll('img.lic'), function (im) {
+      var n = im.dataset.lic || (im.getAttribute('src') || '').replace(/^.*\/([^/]+)\.svg$/, '$1');
+      if (n) im.src = licSrc(n, skin);
+    });
+  }
+  capNhatLic();
+
   var KIND = {
     pdf:     { ic: 'file',   name: 'Phiếu bài tập',     cls: 'k-pdf' },
     lecture: { ic: 'pen',    name: 'Bài giảng',         cls: 'k-lecture' },
@@ -627,7 +648,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     skin = skin === 'peach' ? 'peach' : 'mint';
     document.documentElement.dataset.skin = skin;
     [].forEach.call($('skinSw').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.skin === skin)); });
-    $('mascotImg').src = 'img/bot-' + skin + '.png';
+    capNhatLic(skin);
     var h = document.querySelector('.hero .art img'); if (h) h.src = 'img/hero-' + skin + '.png';
     try { localStorage.setItem('hoc-skin', skin); } catch (e) {}
   }
@@ -831,7 +852,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var r = await sb.from('classes').select('*').eq('archived', false).order('name');
     classes = r.data || [];
     var bar = $('classBar');
-    if (!classes.length) { bar.innerHTML = ''; $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty"><span class="ico">' + I.inbox + '</span>Chưa có lớp nào. Giảng viên cần thêm em vào lớp trước.</div></div>'; return; }
+    if (!classes.length) { bar.innerHTML = ''; $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">' + lic('classroom', 72) + '<span>Chưa có lớp nào. Giảng viên cần thêm em vào lớp trước.</span></div></div>'; return; }
     curClass = curClass && classes.some(function (c) { return c.id === curClass; }) ? curClass : classes[0].id;
     bar.innerHTML = classes.map(function (c) { return '<button type="button" data-c="' + c.id + '" class="' + (c.id === curClass ? 'on' : '') + '">' + esc(c.name) + '</button>'; }).join('');
     bar.style.display = classes.length === 1 ? 'none' : '';
@@ -943,7 +964,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     /* Lịch hôm nay: buổi có giờ bắt đầu hôm nay, hoặc ngày dạy là hôm nay */
     var homNay = sessions.filter(function (s) { return (s.starts_at && cungNgay(s.starts_at, now)) || (s.held_on && cungNgay(s.held_on + 'T12:00:00', now)); })
       .sort(function (a, b) { return new Date(a.starts_at || 0) - new Date(b.starts_at || 0); })[0];
-    html += '<div class="pcard today"><h2><span class="ico">' + I.calendar + '</span>Lịch hôm nay</h2>';
+    html += '<div class="pcard today"><h2><span class="ico">' + I.calendar + '</span>Lịch hôm nay</h2>' + lic(homNay ? 'live-class' : 'calendar', 66);
     if (homNay) {
       html += '<div class="tm">' + (homNay.starts_at ? gioPhut(homNay.starts_at) : 'Hôm nay') + '<small>' + esc(tenLop()) + '</small></div>'
         + '<p>' + esc(tenBuoi(homNay)) + (homNay.note ? ' — ' + esc(homNay.note.slice(0, 90)) : '') + '</p>'
@@ -959,14 +980,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var nTask = chuaXong.length;
     var nMoi = tatCa(function (m) { return moKhoa(m, now) && laMoi(m); }).length;
     html += '<div class="quick">'
-      + '<button type="button" class="qcard" data-goview="tasks"><span class="bigico"><span class="ico">' + I.upload + '</span></span><strong>Bài tập</strong><small>' + (nTask ? nTask + ' phiếu chưa xong' : 'Đã xong hết') + '</small></button>'
-      + '<button type="button" class="qcard" data-goview="lessons"><span class="bigico"><span class="ico">' + I.video + '</span></span><strong>Xem bài giảng</strong><small>' + (nMoi ? nMoi + ' bài mới' : 'Học mọi lúc, mọi nơi') + '</small></button>'
-      + '<button type="button" class="qcard" data-goview="lessons"><span class="bigico"><span class="ico">' + I.folder + '</span></span><strong>Tài liệu</strong><small>' + tatCa(function (m) { return moKhoa(m, now); }).length + ' tài liệu đã mở</small></button>'
+      + '<button type="button" class="qcard" data-goview="tasks">' + lic('homework', 84) + '<strong>Bài tập</strong><small>' + (nTask ? nTask + ' phiếu chưa xong' : 'Đã xong hết') + '</small></button>'
+      + '<button type="button" class="qcard" data-goview="lessons">' + lic('video-lesson', 84) + '<strong>Xem bài giảng</strong><small>' + (nMoi ? nMoi + ' bài mới' : 'Học mọi lúc, mọi nơi') + '</small></button>'
+      + '<button type="button" class="qcard" data-goview="lessons">' + lic('documents', 84) + '<strong>Tài liệu</strong><small>' + tatCa(function (m) { return moKhoa(m, now); }).length + ' tài liệu đã mở</small></button>'
       + '</div>';
     /* bài tập cần làm */
     var tasks = chuaXong.slice().sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); }).slice(0, 5);
     html += '<div class="pcard tasks"><h2><span class="ico">' + I.clipboard + '</span>Bài tập cần làm<button type="button" class="more" data-goview="tasks">Xem tất cả <span class="ico">' + I.arrow + '</span></button></h2>';
-    if (!tasks.length) html += '<div class="pempty"><span class="ico">' + I.check + '</span>Hiện chưa có bài tập mới. Hãy quay lại sau nhé!</div>';
+    if (!tasks.length) html += '<div class="pempty">' + lic('achievement', 72) + '<span>Hiện chưa có bài tập mới. Hãy quay lại sau nhé!</span></div>';
     else html += tasks.map(function (x) {
       var k = KIND[x.m.kind] || KIND.link, v = views[x.m.id];
       return '<div class="prow ' + k.cls + '"><span class="fi"><span class="ico">' + I[k.ic] + '</span></span><span class="grow"><strong>' + esc(x.m.title || k.name) + '</strong><small>' + esc(tenBuoi(x.s)) + ' · ' + k.name + '</small></span>'
@@ -979,7 +1000,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var nhan = 'bài tuần này';
     if (!tuan.length) { var s0 = sessions.filter(function (s) { return s.id === curSes; })[0]; tuan = s0 ? (s0.materials || []).filter(function (m) { return moKhoa(m, now); }).map(function (m) { return { m: m, s: s0 }; }) : []; nhan = 'bài của buổi đang học'; }
     var done = tuan.filter(function (x) { return daXem(x.m); }).length, tot = tuan.length, pct = tot ? Math.round(100 * done / tot) : 0;
-    html += '<div class="pcard weekly"><h2><span class="ico">' + I.star + '</span>Mục tiêu tuần</h2>'
+    html += '<div class="pcard weekly"><h2><span class="ico">' + I.star + '</span>Mục tiêu tuần</h2>' + lic(pct >= 100 && tot ? 'achievement' : 'progress', 76)
       + '<span class="num">' + done + ' / ' + tot + '</span><span class="sub">' + nhan + ' đã mở</span>'
       + '<div class="meter"><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + pct + '%</span></div>'
       + '<div class="gentle"><span class="ico">' + I.sprout + '</span>' + (pct >= 100 && tot ? 'Xong hết rồi. Nghỉ một chút cũng xứng đáng.' : 'Kiên trì mỗi ngày để chinh phục mục tiêu nhé!') + '</div></div>';
@@ -1010,7 +1031,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   function renderMain() {
     var s = sessions.filter(function (x) { return x.id === curSes; })[0];
-    if (!s) { $('sesMain').innerHTML = '<div class="card"><div class="empty"><span class="ico">' + I.stack + '</span>Lớp này chưa có buổi nào được mở.</div></div>'; return; }
+    if (!s) { $('sesMain').innerHTML = '<div class="card"><div class="empty">' + lic('classroom', 72) + 'Lớp này chưa có buổi nào được mở.</div></div>'; return; }
     var now = Date.now();
     var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
     var open = mats.filter(function (m) { return moKhoa(m, now); }), later = mats.filter(function (m) { return !moKhoa(m, now); });
@@ -1025,7 +1046,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<span class="mc ico">' + I.chev + '</span></button>';
     }
     var body = mats.length ? open.map(function (m) { return row(m, false); }).join('') + (later.length ? '<div class="mgroup">Mở sau</div>' + later.map(function (m) { return row(m, true); }).join('') : '')
-      : '<div class="empty"><span class="ico">' + I.stack + '</span>Buổi này chưa có tài liệu.</div>';
+      : '<div class="empty">' + lic('documents', 72) + 'Buổi này chưa có tài liệu.</div>';
     var xem = open.filter(daXem).length;
     $('sesMain').innerHTML = (classNotice.trim() ? '<div class="today-strip"><div class="notice"><b>Thông báo</b>' + esc(classNotice.trim()) + '</div></div>' : '') + '<div class="card">'
       + '<div class="smhead"><span class="big">' + esc(so2(s.no)) + '</span><div><h3>' + esc(tenBuoi(s)) + '</h3>'
@@ -1047,7 +1068,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var ms = (s.materials || []).filter(function (m) { return (m.kind === 'pdf' || m.kind === 'answer'); }).sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
       return { s: s, ms: ms };
     }).filter(function (g) { return g.ms.length; });
-    if (!groups.length) { $('tasksBody').innerHTML = '<div class="pcard"><div class="pempty"><span class="ico">' + I.check + '</span>Hiện chưa có bài tập nào.</div></div>'; return; }
+    if (!groups.length) { $('tasksBody').innerHTML = '<div class="pcard"><div class="pempty">' + lic('homework', 72) + '<span>Hiện chưa có bài tập nào.</span></div></div>'; return; }
     $('tasksBody').innerHTML = '<div class="list">' + groups.map(function (g) {
       return '<div class="pcard"><h2><span class="ico">' + I.clipboard + '</span>' + esc(tenBuoi(g.s)) + '</h2>' + g.ms.map(function (m) {
         var k = KIND[m.kind] || KIND.link, locked = !moKhoa(m, now), v = views[m.id], x = { m: m, s: g.s };
@@ -1064,7 +1085,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var now = Date.now();
     function moc(s) { return s.starts_at ? new Date(s.starts_at).getTime() : (s.held_on ? new Date(s.held_on + 'T12:00:00').getTime() : 0); }
     var list = sessions.slice().sort(function (a, b) { var ta = moc(a), tb = moc(b); if (!!ta !== !!tb) return ta ? -1 : 1; return tb - ta; });
-    if (!list.length) { $('scheduleBody').innerHTML = '<div class="pcard"><div class="pempty"><span class="ico">' + I.calendar + '</span>Chưa có buổi nào.</div></div>'; return; }
+    if (!list.length) { $('scheduleBody').innerHTML = '<div class="pcard"><div class="pempty">' + lic('calendar', 72) + '<span>Chưa có buổi nào.</span></div></div>'; return; }
     var TH = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     $('scheduleBody').innerHTML = '<div class="pcard">' + list.map(function (s) {
       var t = moc(s) ? new Date(moc(s)) : null;
@@ -1084,12 +1105,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var pct = all.length ? Math.round(100 * da / all.length) : 0;
     var ngay = {}; Object.keys(views).forEach(function (k) { var d = String(views[k].last_at || '').slice(0, 10); if (d) ngay[d] = 1; });
     $('progressBody').innerHTML = '<div class="list2"><div class="pcard"><h2><span class="ico">' + I.chart + '</span>Tổng quan</h2>'
-      + '<div class="stat"><span class="bigico"><span class="ico">' + I.folder + '</span></span><div><strong>' + da + ' / ' + all.length + '</strong><small>tài liệu đã mở (' + pct + '%)</small></div></div>'
-      + '<div class="stat"><span class="bigico"><span class="ico">' + I.check + '</span></span><div><strong>' + xong + '</strong><small>đã xem xong</small></div></div>'
-      + '<div class="stat"><span class="bigico"><span class="ico">' + I.calendar + '</span></span><div><strong>' + Object.keys(ngay).length + '</strong><small>ngày có học</small></div></div>'
+      + '<div class="stat">' + lic('documents', 58) + '<div><strong>' + da + ' / ' + all.length + '</strong><small>tài liệu đã mở (' + pct + '%)</small></div></div>'
+      + '<div class="stat">' + lic('achievement', 58) + '<div><strong>' + xong + '</strong><small>đã xem xong</small></div></div>'
+      + '<div class="stat">' + lic('calendar', 58) + '<div><strong>' + Object.keys(ngay).length + '</strong><small>ngày có học</small></div></div>'
       + '<div class="meter"><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + pct + '%</span></div></div>'
       + '<div class="pcard"><h2><span class="ico">' + I.trophy + '</span>Theo buổi</h2>'
-      + (sessions.length ? sessions.map(function (s) { var ms = (s.materials || []).filter(function (m) { return moKhoa(m, now); }), x = ms.filter(daXem).length, p = ms.length ? Math.round(100 * x / ms.length) : 0; return '<div class="pbar"><b title="' + esc(tenBuoi(s)) + '">' + esc(tenBuoi(s)) + '</b><span class="bar"><i style="width:' + p + '%"></i></span><small>' + x + '/' + ms.length + '</small></div>'; }).join('') : '<div class="pempty">Chưa có buổi nào.</div>')
+      + (sessions.length ? sessions.map(function (s) { var ms = (s.materials || []).filter(function (m) { return moKhoa(m, now); }), x = ms.filter(daXem).length, p = ms.length ? Math.round(100 * x / ms.length) : 0; return '<div class="pbar"><b title="' + esc(tenBuoi(s)) + '">' + esc(tenBuoi(s)) + '</b><span class="bar"><i style="width:' + p + '%"></i></span><small>' + x + '/' + ms.length + '</small></div>'; }).join('') : '<div class="pempty">' + lic('classroom', 72) + '<span>Chưa có buổi nào.</span></div>')
       + '</div></div>';
   }
 
@@ -1108,7 +1129,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     e.stopPropagation(); toggleMenu(false);
     var mn = $('bellMenu'); if (!mn.hidden) { mn.hidden = true; return; }
     var ds = danhSachMoi();
-    mn.innerHTML = '<div class="who"><b>' + (ds.length ? ds.length + ' tài liệu mới từ lần trước' : 'Không có gì mới') + '</b><span>Ctrl+K để tìm nhanh</span></div>'
+    mn.innerHTML = '<div class="who">' + (ds.length ? '' : lic('notifications', 56)) + '<b>' + (ds.length ? ds.length + ' tài liệu mới từ lần trước' : 'Không có gì mới') + '</b><span>Ctrl+K để tìm nhanh</span></div>'
       + ds.slice(0, 12).map(function (x) { var k = KIND[x.m.kind] || KIND.link; return '<button type="button" class="it" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '"><span>' + esc(x.m.title || k.name) + '<small>' + esc(tenBuoi(x.s)) + ' · ' + k.name + '</small></span></button>'; }).join('')
       + (ds.length ? '<div class="foot"><button type="button" class="it" id="bellSeen">Đánh dấu đã xem hết</button></div>' : '');
     mn.hidden = false;
@@ -1188,7 +1209,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       });
     });
     palItems = out.slice(0, 40); palIdx = 0;
-    $('palList').innerHTML = palItems.length ? palItems.map(function (x, i) { return '<button type="button" class="it ' + x.cls + (i === 0 ? ' on' : '') + '" data-i="' + i + '"><span class="mi ico">' + I[x.ic] + '</span><span><b>' + esc(x.ten) + '</b><small>' + esc(x.phu) + '</small></span></button>'; }).join('') : '<div class="empty">Không thấy gì khớp.</div>';
+    $('palList').innerHTML = palItems.length ? palItems.map(function (x, i) { return '<button type="button" class="it ' + x.cls + (i === 0 ? ' on' : '') + '" data-i="' + i + '"><span class="mi ico">' + I[x.ic] + '</span><span><b>' + esc(x.ten) + '</b><small>' + esc(x.phu) + '</small></span></button>'; }).join('') : '<div class="empty">' + lic('search', 56) + 'Không thấy gì khớp.</div>';
   }
   function chonPal(i) {
     var x = palItems[i]; if (!x) return;
