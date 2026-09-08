@@ -2,9 +2,11 @@
   // Cloudflare Workers: file tĩnh trong web/ + một Worker nhỏ (worker.js) cho vài đường /api/*.
   // Chỉ thư mục web được đưa lên mạng; .sql, hướng dẫn, nhật ký nằm ngoài nên không bao giờ lộ.
   // Khoá quản trị Supabase là SECRET đặt trong Cloudflare (Settings → Variables and Secrets), không ghi ở đây.
+  // keep_vars: mỗi lần GitHub tự phát lại KHÔNG được xoá biến/secret đã đặt tay trong Cloudflare.
   "name": "lop-hoc-online",
   "main": "./worker.js",
   "compatibility_date": "2025-06-01",
+  "keep_vars": true,
   "assets": {
     "directory": "./web",
     "binding": "ASSETS"
