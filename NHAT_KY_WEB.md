@@ -14,17 +14,31 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 
 Đang chạy trên web:
 - Trang học sinh viên: giao diện **Mint / Peach** theo giới tính, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (cột Hồ sơ, gỡ thiết bị, bắt đổi mật khẩu) / Kho tệp / Theo dõi / Cảnh báo.
-- App máy tính bản **1.0.12**: vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
+- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` — cần secret `SUPABASE_SERVICE_ROLE_KEY` trong Cloudflare.
+- App máy tính bản **1.0.13** (logo mới; đang dựng trên GitHub Actions → R2): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
-M còn phải làm (bên Supabase → SQL Editor, chạy theo thứ tự nếu chưa chạy):
-1. `schema_v8_kieu_quay.sql`, `schema_v9_hom_nay.sql` — t chưa thấy m xác nhận đã chạy. Thiếu v9 thì Ghim / giờ bắt đầu / thông báo lớp / đã xem-tiếp tục không lưu được.
-2. `schema_v10_ho_so.sql` — **đã chạy** (m gửi ảnh kết quả 3 dòng).
-3. `schema_v10b_ho_so_thieu_dong.sql` — tạo dòng hồ sơ còn thiếu; câu cuối cho biết `sv.thu@example.com` đang ở trạng thái nào.
+M còn phải làm:
+1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
+2. Bên Supabase → SQL Editor (nếu chưa chạy): `schema_v8_kieu_quay.sql`, `schema_v9_hom_nay.sql` — t chưa thấy m xác nhận. Thiếu v9 thì Ghim / giờ bắt đầu / thông báo lớp / đã xem-tiếp tục không lưu được.
+3. `schema_v10_ho_so.sql` — **đã chạy**; `schema_v10b_ho_so_thieu_dong.sql` — **đã chạy**.
 4. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
 5. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-08 (đêm) — Tạo tài khoản ngay trên trang quản trị; logo app mới
+
+**M yêu cầu:** (1) vào web quản trị tạo và cấp tài khoản trực tiếp cho từng khoá học, tạo xong thấy ngay trong danh sách lớp; (2) icon app xấu, đổi logo.
+
+**Đã làm**
+- `worker.js` + `wrangler.jsonc` (`main`, `assets.binding`): một Worker nhỏ chạy cạnh file tĩnh, hai đường `POST /api/tao-tai-khoan` và `POST /api/cap-lai-mat-khau`. Người gọi gửi access token Supabase; Worker hỏi Supabase token là ai, hồ sơ phải là teacher/admin còn active. Tạo tài khoản bằng Admin API (`email_confirm: true`), mật khẩu tạm 10 ký tự dễ đọc có gạch giữa, upsert hồ sơ (tên, mã SV, `must_change_pw = true`), ghi danh vào lớp (trigger "một tài khoản một khoá" vẫn chạy); email đã có tài khoản thì chỉ ghi danh qua `enroll_by_email` bằng quyền của chính giảng viên. Khoá `SUPABASE_SERVICE_ROLE_KEY` là **secret của Worker** — m dán một lần trong Cloudflare (HUONG_DAN.md, mục "Tạo tài khoản cho sinh viên"); không nằm trong mã, kho, hay trình duyệt.
+- Quản trị → tab Sinh viên: nút **＋ Tạo tài khoản mới** (dán nhiều dòng `email, họ tên, mã SV`, tối đa 60 người), bảng kết quả hiện mật khẩu tạm **một lần** + Sao chép / Tải .txt, dòng lỗi nói rõ vì sao; mỗi sinh viên có nút **Cấp lại mật khẩu** (thay nút "Bắt đổi mật khẩu" cũ chỉ bật cờ). Chạy trên localhost thì trang gọi thẳng Worker thật (CORS mở cho localhost:8765).
+- Logo app: ô vuông bo góc xanh ngọc đậm (`#1d9aa4 → #0a5058`, ánh sáng nhẹ góc trên) + minh hoạ "lớp học" (sách + mũ tốt nghiệp) của bộ icon, dựng bằng GDI+ từ PNG 512 của gói → `app/build/icon.png` (512 px, electron-builder tự sinh .ico/.icns); `web/img/favicon.png` 256 px gắn vào cả ba trang. App lên **1.0.13** (tag `v1.0.13`) để máy Windows đang cài 1.0.12 tự cập nhật; Mac tải lại từ `/tai-app`. Icon trên thanh tác vụ Windows có thể còn hiện hình cũ tới khi Windows làm mới bộ đệm icon (đăng xuất/vào lại).
+
+**Đã test:** `npx wrangler deploy --dry-run` dựng bundle OK (Worker 8,5 KiB + 63 file tĩnh, binding ASSETS); cú pháp quan-tri.html và worker.js OK. **Chưa** test tạo tài khoản thật vì máy chủ chưa có khoá — m dán khoá xong thử với một email trước.
 
 ---
 

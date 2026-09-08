@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Quản trị lớp học</title>
+<link rel="icon" type="image/png" href="img/favicon.png">
 <meta name="color-scheme" content="light dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -281,12 +282,14 @@
           <div class="bar">
             <b>Sinh viên trong lớp</b>
             <span class="grow"></span>
-            <button class="btn primary" id="addStuBtn">＋ Thêm bằng email</button>
+            <button class="btn" id="addStuBtn">＋ Thêm bằng email</button>
+            <button class="btn primary" id="newStuBtn">＋ Tạo tài khoản mới</button>
           </div>
           <div class="card" id="roster"></div>
           <p class="hint" style="margin-top:10px">
-            Tài khoản sinh viên tạo trong Supabase → Authentication → Users → Add user (nhớ bật Auto Confirm User),
-            rồi quay lại đây bấm “Thêm bằng email”. Sinh viên chưa có tài khoản thì không thêm được.
+            <b>Tạo tài khoản mới</b>: gõ email và họ tên, trang tự tạo tài khoản, ghi danh vào lớp này và đưa mật khẩu tạm để gửi cho sinh viên;
+            lần đầu đăng nhập sinh viên phải tự đổi mật khẩu rồi khai hồ sơ. <b>Thêm bằng email</b>: cho người đã có tài khoản sẵn.
+            <b>Cấp lại mật khẩu</b> ở từng dòng khi sinh viên quên.
           </p>
         </div>
       </div>
@@ -1057,7 +1060,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
                   : '<span class="pill">chưa gắn</span>'))
           + '</td>'
           + '<td style="text-align:right">'
-          + (coHoSo && r === 'student' && !p.must_change_pw ? '<button class="btn sm" data-pw="' + e.student + '" title="Lần đăng nhập tới, sinh viên phải đặt mật khẩu mới (dùng khi bạn vừa cấp lại mật khẩu)">Bắt đổi mật khẩu</button> ' : '')
+          + (r === 'student' ? '<button class="btn sm" data-pw2="' + e.student + '" title="Đặt mật khẩu tạm mới cho sinh viên này; lần đăng nhập tới phải tự đổi">Cấp lại mật khẩu</button> ' : '')
           + '<button class="btn sm danger" data-rm="' + e.student + '">Bỏ khỏi lớp</button></td></tr>';
       }).join('') + '</tbody></table>';
   }
@@ -1071,11 +1074,19 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       else { toast(want === 'teacher' ? 'Đã cho làm giáo viên.' : 'Đã hạ về sinh viên.'); await loadRoster(); }
       return;
     }
-    var pw = e.target.closest('button[data-pw]');
-    if (pw) {
-      var rw = await sb.from('profiles').update({ must_change_pw: true }).eq('id', pw.dataset.pw);
-      if (rw.error) toast('Lỗi: ' + rw.error.message);
-      else { toast('Lần đăng nhập tới sinh viên sẽ phải đặt mật khẩu mới.'); await loadRoster(); }
+    var pw2 = e.target.closest('button[data-pw2]');
+    if (pw2) {
+      var hs2 = (roster.filter(function (x) { return x.student === pw2.dataset.pw2; })[0] || {}).profiles || {};
+      if (!confirm('Cấp mật khẩu tạm mới cho ' + (hs2.full_name || hs2.email || 'sinh viên này') + '?\n\nMật khẩu cũ hết tác dụng ngay. Lần đăng nhập tới sinh viên phải tự đổi.')) return;
+      try {
+        var d2 = await apiGoi('/api/cap-lai-mat-khau', { user_id: pw2.dataset.pw2 });
+        dialog('Mật khẩu tạm mới',
+          '<p style="margin:0 0 8px"><b>' + esc(d2.full_name || hs2.full_name || '') + '</b> · ' + esc(hs2.email || '') + '</p>'
+          + '<p style="margin:0"><code style="font-size:20px;letter-spacing:.04em">' + esc(d2.password) + '</code></p>'
+          + '<p class="hint" style="margin-top:10px">Gửi cho sinh viên. Chỉ hiện lần này; lần đăng nhập tới sinh viên phải tự đặt mật khẩu mới.</p>',
+          function () { return true; }, 'Đóng');
+        await loadRoster();
+      } catch (err) { toast('Lỗi: ' + (err && err.message || err)); }
       return;
     }
     var dv = e.target.closest('button[data-dev]');
@@ -1093,6 +1104,78 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var r = await sb.from('enrollments').delete().eq('class_id', curClass).eq('student', b.dataset.rm);
     if (r.error) toast('Lỗi: ' + r.error.message); else { toast('Đã bỏ khỏi lớp.'); await loadRoster(); }
   });
+  /* ---------------- tạo tài khoản ngay tại đây ----------------
+     Trình duyệt không được cầm khoá quản trị Supabase, nên việc tạo tài khoản đi qua /api của Worker
+     (worker.js); khoá nằm trong secret của Cloudflare. Worker kiểm tra người gọi phải là giảng viên. */
+  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.maknoonnjs94.workers.dev' : '';
+  var LOI_API = {
+    chua_cau_hinh: 'Máy chủ chưa có khoá quản trị. Vào Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets, thêm secret SUPABASE_SERVICE_ROLE_KEY (xem HUONG_DAN.md, mục Tạo tài khoản cho sinh viên).',
+    chua_dang_nhap: 'Chưa đăng nhập.', phien_het_han: 'Phiên đăng nhập hết hạn, tải lại trang rồi thử lại.',
+    khong_phai_giang_vien: 'Chỉ giảng viên mới làm được việc này.', tai_khoan_da_tat: 'Tài khoản của bạn đang bị khoá.',
+    khong_thay_lop: 'Không thấy lớp này.', trong: 'Chưa có sinh viên nào trong danh sách.', thieu_lop: 'Chưa chọn lớp.',
+    chi_sinh_vien: 'Chỉ cấp lại mật khẩu cho sinh viên.', tu_doi_o_menu: 'Mật khẩu của chính mình thì đổi ở menu tài khoản.',
+    khong_thay: 'Không thấy tài khoản.', loi_may_chu: 'Máy chủ gặp lỗi.'
+  };
+  var LOI_TAO = { email_sai: 'Email không đúng dạng', da_co_tai_khoan: 'Đã có tài khoản nhưng không ghi danh được', khong_tao_duoc: 'Không tạo được' };
+  async function apiGoi(path, body) {
+    var s = await sb.auth.getSession();
+    var tk = s.data.session && s.data.session.access_token;
+    if (!tk) throw new Error('Chưa đăng nhập.');
+    var r = await fetch(API_BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tk }, body: JSON.stringify(body || {}) });
+    var d = null; try { d = await r.json(); } catch (e) { d = null; }
+    if (!d) throw new Error(r.status === 404 ? 'Máy chủ chưa có phần /api (bản mới chưa phát xong, chờ vài phút rồi thử lại).' : 'Máy chủ trả về lỗi ' + r.status + '.');
+    if (!d.ok) throw new Error((LOI_API[d.reason] || d.reason || 'Lỗi') + (d.chi_tiet ? ' — ' + d.chi_tiet : ''));
+    return d;
+  }
+  /* "email, họ tên, mã SV" mỗi dòng; chấp nhận dấu phẩy, chấm phẩy hoặc tab; dòng chỉ có email cũng được */
+  function docDanhSach(text) {
+    var out = [];
+    String(text || '').split(/\r?\n/).forEach(function (line) {
+      var p = line.split(/[,;\t]/).map(function (x) { return x.trim(); }).filter(function (x, i) { return i === 0 || x !== ''; });
+      if (!p[0]) return;
+      var email = p[0], ten = p[1] || '', mssv = p[2] || '';
+      if (!/@/.test(email) && /@/.test(ten)) { var t = email; email = ten; ten = t; }   /* lỡ gõ tên trước email */
+      out.push({ email: email.toLowerCase(), full_name: ten, student_no: mssv });
+    });
+    return out;
+  }
+  function hienKetQua(lop, rows) {
+    var ok = rows.filter(function (x) { return x.ok; }), hong = rows.filter(function (x) { return !x.ok; });
+    var txt = ok.filter(function (x) { return x.password; }).map(function (x) { return (x.full_name ? x.full_name + ' — ' : '') + x.email + ' — mật khẩu tạm: ' + x.password; }).join('\n');
+    var html = '<p style="margin:0 0 10px">' + (ok.length ? '<b>' + ok.length + '</b> tài khoản đã vào lớp <b>' + esc(lop || '') + '</b>. ' : '')
+      + (hong.length ? '<span style="color:var(--danger)">' + hong.length + ' dòng không tạo được.</span>' : '') + '</p>'
+      + '<div style="max-height:46vh;overflow:auto"><table class="roster" style="font-size:13px"><thead><tr><th>Email</th><th>Họ tên</th><th>Mật khẩu tạm</th></tr></thead><tbody>'
+      + rows.map(function (x) {
+        var o = x.ok ? (x.password ? '<code style="font-size:14.5px;letter-spacing:.03em">' + esc(x.password) + '</code>' : '<small>đã có tài khoản, chỉ ghi danh vào lớp</small>')
+          : '<small style="color:var(--danger)">' + esc(LOI_TAO[x.reason] || x.reason || 'Lỗi') + (x.chi_tiet ? ': ' + esc(x.chi_tiet) : '') + '</small>';
+        if (x.canh_bao) o += '<br><small style="color:var(--danger)">' + esc(x.canh_bao) + '</small>';
+        return '<tr><td>' + esc(x.email) + '</td><td>' + esc(x.full_name || '') + '</td><td>' + o + '</td></tr>';
+      }).join('') + '</tbody></table></div>'
+      + (txt ? '<p style="margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" id="kqCopy">Sao chép danh sách</button><a class="btn sm" id="kqTai" download="tai-khoan-lop.txt">Tải .txt</a></p>' : '')
+      + '<p class="hint" style="margin-top:10px">Mật khẩu tạm chỉ hiện lần này. Sinh viên đăng nhập lần đầu phải tự đặt mật khẩu mới rồi khai hồ sơ.</p>';
+    dialog('Kết quả tạo tài khoản', html, function () { return true; }, 'Đóng');
+    if (txt) {
+      $('kqCopy').onclick = function () { navigator.clipboard.writeText(txt).then(function () { toast('Đã chép danh sách.'); }, function () { toast('Không chép được — bôi đen rồi Ctrl+C.'); }); };
+      $('kqTai').href = URL.createObjectURL(new Blob([txt + '\n'], { type: 'text/plain;charset=utf-8' }));
+    }
+  }
+  $('newStuBtn').addEventListener('click', function () {
+    dialog('Tạo tài khoản mới cho lớp',
+      '<label class="f">Mỗi dòng một sinh viên: <b>email, họ tên, mã SV</b> (mã SV bỏ trống cũng được)'
+      + '<textarea id="fDs" rows="7" style="display:block;width:100%;margin-top:6px;padding:10px 12px;border:1px solid var(--line-2, #ccc);border-radius:12px;font:inherit;font-size:14px;background:var(--paper, #fff);color:inherit;resize:vertical" placeholder="an.nguyen@example.com, Nguyễn Văn An, 23001234&#10;binh.tran@example.com, Trần Thị Bình"></textarea>'
+      + '<small>Tối đa 60 người một lần. Email đã có tài khoản thì chỉ ghi danh vào lớp. Mật khẩu tạm chỉ hiện <b>một lần</b> — chép ngay sau khi tạo.</small></label>',
+      async function () {
+        var ds = docDanhSach(val('fDs'));
+        if (!ds.length) { msg($('dlgMsg'), 'Chưa có dòng nào có email.'); return false; }
+        if (ds.length > 60) { msg($('dlgMsg'), 'Tối đa 60 người một lần (đang có ' + ds.length + ').'); return false; }
+        msg($('dlgMsg'), 'Đang tạo ' + ds.length + ' tài khoản…', 'ok');
+        var d = await apiGoi('/api/tao-tai-khoan', { class_id: curClass, students: ds });
+        hienKetQua(d.lop, d.ket_qua || []);
+        await loadRoster();
+        return false;   /* hộp thoại đã được thay bằng bảng kết quả */
+      }, 'Tạo');
+  });
+
   $('addStuBtn').addEventListener('click', function () {
     dialog('Thêm sinh viên vào lớp',
       '<label class="f">Email sinh viên<input id="fEmail" type="email" placeholder="sinhvien@example.com">'

@@ -1,10 +1,12 @@
 {
-  // Cấu hình cho Cloudflare Workers: chỉ phục vụ file tĩnh, không có mã chạy trên máy chủ.
-  // "directory": "./web"  →  CHỈ ba trang trong thư mục web được đưa lên mạng.
-  // Mấy file .sql và hướng dẫn nằm ngoài web nên không bao giờ lộ ra ngoài.
+  // Cloudflare Workers: file tĩnh trong web/ + một Worker nhỏ (worker.js) cho vài đường /api/*.
+  // Chỉ thư mục web được đưa lên mạng; .sql, hướng dẫn, nhật ký nằm ngoài nên không bao giờ lộ.
+  // Khoá quản trị Supabase là SECRET đặt trong Cloudflare (Settings → Variables and Secrets), không ghi ở đây.
   "name": "lop-hoc-online",
+  "main": "./worker.js",
   "compatibility_date": "2025-06-01",
   "assets": {
-    "directory": "./web"
+    "directory": "./web",
+    "binding": "ASSETS"
   }
 }

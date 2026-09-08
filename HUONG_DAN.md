@@ -73,7 +73,15 @@ insert into public.classes (name, subject) values ('Hóa phân tích K68 · tố
 
 ### Tạo tài khoản cho sinh viên
 
-**Authentication → Users → Add user**, nhập email, đặt mật khẩu tạm, bật **Auto Confirm User**. Gửi email và mật khẩu tạm cho sinh viên, dặn vào rồi bấm **Mật khẩu** để đổi.
+Làm ngay trên trang quản trị: chọn lớp → tab **Sinh viên** → **＋ Tạo tài khoản mới**, mỗi dòng `email, họ tên, mã SV`. Trang tạo tài khoản, ghi danh vào lớp và hiện mật khẩu tạm **một lần** (có nút chép / tải .txt). Sinh viên đăng nhập lần đầu phải tự đổi mật khẩu rồi khai hồ sơ. Sinh viên quên mật khẩu thì bấm **Cấp lại mật khẩu** ở dòng của người đó.
+
+Việc này chạy qua một đoạn mã nhỏ trên Cloudflare (`worker.js`) và cần **khoá quản trị của Supabase**, dán **một lần**:
+
+1. Supabase → **Project Settings → API Keys** → chép khoá **service_role** (dự án dùng kiểu khoá mới thì chép khoá `sb_secret_…`).
+2. Cloudflare → **Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type **Secret**, Variable name `SUPABASE_SERVICE_ROLE_KEY`, Value = khoá vừa chép → **Deploy**.
+3. Không gửi khoá này cho ai, không dán vào file, không dán vào chat. Chưa có khoá thì trang quản trị báo "Máy chủ chưa có khoá quản trị".
+
+Cách cũ vẫn dùng được khi cần: **Authentication → Users → Add user**, bật **Auto Confirm User**, rồi bấm **Thêm bằng email** trên trang quản trị.
 
 ### Ghi danh sinh viên vào lớp
 
