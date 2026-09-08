@@ -13,7 +13,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 ## Trạng thái hiện tại (2026-09-08, tối)
 
 Đang chạy trên web:
-- Trang học sinh viên: giao diện **Mint / Peach** theo giới tính, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
+- Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 2 nhân vật, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` — cần secret `SUPABASE_SERVICE_ROLE_KEY` trong Cloudflare.
 - App máy tính bản **1.0.13** (logo mới; đã lên R2 lúc 19:03 ngày 08/9, run 16 thành công cả Windows lẫn Mac): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
@@ -26,6 +26,22 @@ M còn phải làm:
 5. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-08 (khuya) — Bốn giao diện cho sinh viên tự chọn
+
+**M yêu cầu:** đưa bộ `design-reference/StudentHome_4_Themes` (ChatGPT dựng) vào, "cho sv tha hồ chọn".
+
+**Đã làm**
+- Chép tài nguyên 4 mẫu vào `web/img/themes/<mint|sky|peach|lavender>/` — mỗi mẫu 40 SVG (tranh nền, hero, avatar nam/nữ, 28 icon minh hoạ, 12 glyph nhỏ), tổng ~540 KB. Bỏ hẳn bộ `img/icons/` và hai ảnh `hero-*.png` cũ.
+- `web/index.html`: bốn bảng màu `html[data-skin=...]` lấy đúng token của bộ (Mint #30766b, Sky #386a8c, Peach #965647, Lavender #6c5c94); màu loại tài liệu (`--k-*`) nay suy ra từ token nên tự đổi theo mẫu.
+- Nút **Góc của bạn** trên thanh trên cùng (thay hai chấm màu) mở hộp chọn: 4 thẻ màu + 2 nhân vật (bạn nam / bạn nữ), **độc lập nhau**. Chọn xong đổi ngay: tranh nền, hero, icon, avatar ở thanh trên, mascot cột trái.
+- Bước khai hồ sơ lần đầu có thêm hàng 4 ô màu; giới tính chỉ còn quyết định **nhân vật mặc định**, không khoá màu.
+- Lưu vào hồ sơ qua `rpc('doi_giao_dien', {p_theme, p_avatar})`; máy chủ chưa chạy schema_v11 thì tự lùi về bản một tham số, không lỗi.
+- `schema_v11_giao_dien.sql`: nới ràng buộc `theme` thành mint/sky/peach/lavender, thêm cột `avatar` (boy/girl), hàm hai tham số, đặt sẵn nhân vật theo giới tính cho người đã khai.
+
+**Đã test** (trang thử `_test_index.html`, máy chủ nội bộ): đổi lần lượt 4 mẫu — màu chính, tranh nền, hero, icon, avatar đều đổi đúng đường dẫn; 4 mẫu × các tệp chính trả 200; không ảnh nào hỏng; hộp chọn và hàng màu ở bước khai hồ sơ hiện đúng.
 
 ---
 
