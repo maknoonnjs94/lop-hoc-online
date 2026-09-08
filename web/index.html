@@ -246,6 +246,14 @@
   .vtext{ max-width:760px; margin:0 auto; background:var(--surface); color:var(--ink); padding:24px 26px; border-radius:12px; white-space:pre-wrap; line-height:1.65 }
   .vload{ color:#9fb3c8; text-align:center; padding:48px 12px; font-size:14px }
   .vhint{ color:#9fb3c8; font-size:12.5px; text-align:center; margin:12px 0 0 }
+  /* rời cửa sổ trong lúc mở tài liệu: nội dung mờ đi, che bằng lời nhắc — bấm vào là xem tiếp */
+  .veil{ position:absolute; left:0; right:0; top:56px; bottom:0; z-index:70; display:none; place-items:center; padding:20px; text-align:center; color:#fff; background:rgba(11,17,22,.5); cursor:pointer }
+  .veil b{ display:block; font-size:17px; margin-bottom:6px }
+  .veil span{ color:#c7d5e2; font-size:13.5px }
+  .viewer.unfocused .veil{ display:grid }
+  .viewer.unfocused .vbody{ filter:blur(18px); pointer-events:none }
+  .shot.info{ background:var(--primary-deep); border-color:rgba(255,255,255,.2) }
+  .shot.info .ico,.shot.info span{ color:#bfe9ec }
 
   /* dấu chìm phủ lưới: tên + email + giờ xem, ảnh lọt ra là biết của ai */
   .wmgrid{ position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:5; user-select:none }
@@ -355,7 +363,8 @@
     <span class="esc">Esc</span>
     <button class="btn" id="vClose" type="button"><span class="ico" data-ico="x"></span>Đóng</button>
   </div>
-  <div class="vbody" id="vBody"></div>
+  <div class="vbody" id="vBody" tabindex="-1"></div>
+  <div class="veil" id="veil"><div><b>Cửa sổ đang không được chọn</b><span>Tài liệu được che lại khi bạn rời khỏi trang. Bấm vào đây để xem tiếp.</span></div></div>
 </div>
 
 <!-- ================= CẢNH BÁO CHỤP MÀN HÌNH ================= -->
@@ -447,6 +456,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var lyDo = '';
   try { lyDo = sessionStorage.getItem('hoc-ly-do') || ''; sessionStorage.removeItem('hoc-ly-do'); } catch (e) {}
   if (lyDo === 'idle') msg($('loginMsg'), 'Đã tự đăng xuất vì không thấy thao tác nào trong 5 phút. Đăng nhập lại để tiếp tục.', 'info');
+  if (lyDo === 'chup') msg($('loginMsg'), 'Phiên học đã bị đóng vì thao tác chụp màn hình, in hoặc lưu lặp lại 3 lần. Sự việc đã được ghi nhận kèm tên bạn và báo cho giảng viên.', 'err');
 
   if (!/^https:\/\/[a-z0-9-]+\.supabase\.co/.test(SUPABASE_URL)) {
     $('loginSub').textContent = 'Trang chưa được cấu hình: mở file index.html và dán Project URL cùng anon key vào phần CẤU HÌNH ở đầu thẻ script.';
@@ -743,6 +753,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     body.innerHTML = '<div class="vload">Đang mở…</div>';
     v.classList.add('show');
     document.body.style.overflow = 'hidden';
+    nhacLanDau();
 
     var r = await sb.from('material_contents').select('url, storage_path, body').eq('material_id', id).maybeSingle();
     if (r.error || !r.data) {
@@ -838,12 +849,23 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* =====================================================================
      CANH GÁC — chỉ chạy sau khi đã đăng nhập
-     1. Chụp màn hình: trình duyệt chỉ thấy được phím PrintScreen (Windows). Khi thấy:
-        ghi sự kiện về máy chủ, hiện cảnh báo, xoá ảnh vừa chụp khỏi clipboard.
-        Ctrl+P / Ctrl+S bị chặn và ghi lại. Win+Shift+S, Mac, điện thoại: không thấy được.
-     2. Không thao tác 5 phút: hỏi 30 giây rồi tự đăng xuất.
+
+     Trình duyệt thấy được gì khi sinh viên chụp màn hình?
+       - Phím PrintScreen (khi Windows chưa gắn nó cho Snipping Tool): thấy keyup → chắc chắn.
+       - Win+Shift+S, hoặc PrintScreen kiểu Windows 11 (mở Snipping Tool): hệ điều hành nuốt phím,
+         nhưng cửa sổ trình duyệt MẤT TIÊU ĐIỂM ngay tức thì. Nếu trước đó không có Alt (Alt+Tab),
+         không có Ctrl (Ctrl+Tab), không có Win đơn (Win+Tab, Win+D), và con trỏ chuột vẫn đang nằm
+         trong trang (không phải bấm sang cửa sổ khác) thì gần như chắc là chụp:
+         có Win+Shift → 'win_snip' (tính là chắc), còn lại → 'nghi_chup' (ghi + nhắc, không tính lần).
+       - Bấm vào video làm tiêu điểm chui vào iframe YouTube, phím bấm không tới trang nữa → kéo
+         tiêu điểm về ngay; video vẫn chạy bình thường.
+     Ctrl+P / Ctrl+S: chặn và ghi. Ba lần chắc chắn trong một phiên → đóng phiên.
+     Rời cửa sổ khi đang mở tài liệu: nội dung mờ đi cho tới khi quay lại.
+     Không thao tác 5 phút: hỏi 30 giây rồi tự đăng xuất.
      ===================================================================== */
-  var canhGac = false, shotTimer = null;
+  var canhGac = false, shotTimer = null, soLanChac = 0, daNhacLanDau = false;
+  var moc = { alt: 0, ctrl: 0, meta: 0, metaShift: 0, roiChuot: 0 };
+  function viewerMo() { return $('viewer').classList.contains('show'); }
   function ghiSuKien(kind) {
     if (!sb || !me) return;
     try {
@@ -855,16 +877,36 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       }).then(function () {}, function () {});
     } catch (e) {}
   }
-  function baoChup(tieuDe, phu) {
+  function baoChup(tieuDe, phu, kieu) {
     $('shotT').textContent = tieuDe;
     $('shotS').textContent = phu;
+    $('shot').className = 'shot' + (kieu ? ' ' + kieu : '');
     $('shot').hidden = false;
     clearTimeout(shotTimer);
-    shotTimer = setTimeout(function () { $('shot').hidden = true; }, 7000);
+    shotTimer = setTimeout(function () { $('shot').hidden = true; }, kieu === 'info' ? 6000 : 10000);
   }
   function xoaClipboard() {
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(' ').then(function () {}, function () {}); } catch (e) {}
   }
+  /* vi phạm chắc chắn: đếm lần, đủ 3 thì đóng phiên */
+  function viPhamChac(kind, tieuDe, phu) {
+    soLanChac++;
+    ghiSuKien(kind);
+    if (soLanChac >= 3) {
+      try { sessionStorage.setItem('hoc-ly-do', 'chup'); } catch (e) {}
+      sb.auth.signOut();
+      return;
+    }
+    baoChup(tieuDe, phu + ' Lần ' + soLanChac + '/3 — đủ 3 lần, phiên học sẽ bị đóng.');
+  }
+  function nhacLanDau() {
+    if (daNhacLanDau) return;
+    daNhacLanDau = true;
+    baoChup('Tài liệu được bảo vệ', 'Mọi trang đều mang dấu chìm tên bạn. Chụp màn hình, in hay lưu đều được ghi nhận và báo cho giảng viên.', 'info');
+  }
+  function keoTieuDiem() { try { $('vBody').focus({ preventScroll: true }); } catch (e) {} }
+  function cheMo(on) { $('viewer').classList.toggle('unfocused', !!on); }
+  $('veil').addEventListener('click', function () { window.focus(); cheMo(false); keoTieuDiem(); });
 
   var IDLE_MS = 5 * 60 * 1000, WARN_S = 30;
   var lastAct = Date.now(), idleOn = false, idleLeft = WARN_S, idleTick = null;
@@ -900,23 +942,56 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (canhGac) return;
     canhGac = true;
 
+    /* dấu vết phím và chuột — để đọc đúng nghĩa của một lần mất tiêu điểm */
+    window.addEventListener('keydown', function (e) {
+      var t = Date.now();
+      if (e.key === 'Alt') moc.alt = t;
+      if (e.key === 'Control') moc.ctrl = t;
+      if (e.key === 'Meta' || e.key === 'OS') { moc.meta = t; if (e.shiftKey) moc.metaShift = t; }
+      if (e.key === 'Shift' && e.metaKey) moc.metaShift = t;
+    }, true);
+    document.documentElement.addEventListener('mouseleave', function () { moc.roiChuot = Date.now(); });
+    document.documentElement.addEventListener('mouseenter', function () { moc.roiChuot = 0; });
+
+    /* 1. phím PrintScreen tới được trang → chắc chắn */
     window.addEventListener('keyup', function (e) {
       if (e.key === 'PrintScreen' || e.keyCode === 44) {
         xoaClipboard();
-        ghiSuKien('printscreen');
-        baoChup('Phát hiện thao tác chụp màn hình', 'Sự kiện đã được ghi lại kèm tên bạn và gửi tới giảng viên. Ảnh vừa chụp đã bị xoá khỏi bộ nhớ tạm.');
+        viPhamChac('printscreen', 'Phát hiện chụp màn hình', 'Đã ghi lại kèm tên bạn và báo cho giảng viên. Ảnh vừa chụp đã bị xoá khỏi bộ nhớ tạm.');
       }
     });
+    /* 2. in / lưu */
     window.addEventListener('keydown', function (e) {
       var k = String(e.key || '').toLowerCase();
       if ((e.ctrlKey || e.metaKey) && (k === 'p' || k === 's')) {
         e.preventDefault();
-        ghiSuKien(k === 'p' ? 'in' : 'luu');
-        baoChup(k === 'p' ? 'Không in được tài liệu của lớp' : 'Không lưu được trang này', 'Thao tác đã được ghi lại kèm tên bạn và gửi tới giảng viên.');
+        viPhamChac(k === 'p' ? 'in' : 'luu', k === 'p' ? 'Không in được tài liệu của lớp' : 'Không lưu được trang này', 'Thao tác đã được ghi lại kèm tên bạn và báo cho giảng viên.');
       }
     });
     window.addEventListener('beforeprint', function () { ghiSuKien('in'); });
 
+    /* 3. mất tiêu điểm — dấu hiệu duy nhất còn lại khi hệ điều hành nuốt phím chụp */
+    window.addEventListener('blur', function () {
+      setTimeout(function () {
+        var ae = document.activeElement;
+        if (ae && ae.tagName === 'IFRAME') { keoTieuDiem(); return; }      /* bấm vào video: kéo tiêu điểm về, không phải rời trang */
+        if (!viewerMo()) return;
+        var t = Date.now();
+        cheMo(true);
+        if (t - moc.alt < 1500 || t - moc.ctrl < 1500) return;                 /* Alt+Tab, Ctrl+Tab: đổi cửa sổ */
+        if (t - moc.metaShift < 2000) {
+          viPhamChac('win_snip', 'Phát hiện chụp màn hình (Win+Shift+S)', 'Đã ghi lại kèm tên bạn và báo cho giảng viên.');
+          return;
+        }
+        if (t - moc.meta < 1500) return;                                        /* Win+Tab, Win+D: đổi cửa sổ */
+        if (moc.roiChuot && t - moc.roiChuot < 3000) return;                    /* chuột đã ra khỏi trang: bấm sang cửa sổ khác */
+        ghiSuKien('nghi_chup');
+        baoChup('Trang vừa mất tiêu điểm khi đang mở tài liệu', 'Nếu bạn vừa chụp màn hình, thao tác đã được ghi lại kèm tên bạn và báo cho giảng viên.');
+      }, 80);
+    });
+    window.addEventListener('focus', function () { cheMo(false); });
+
+    /* 4. không thao tác */
     ['mousemove', 'mousedown', 'pointerdown', 'keydown', 'touchstart', 'scroll', 'wheel'].forEach(function (ev) {
       window.addEventListener(ev, hoatDong, { passive: true });
     });
