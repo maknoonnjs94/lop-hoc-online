@@ -999,12 +999,27 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   });
 
   /* ---------------- sinh viên ---------------- */
+  var coHoSo = true; /* false khi máy chủ chưa chạy schema_v10_ho_so.sql */
+  var GIOI = { nam: 'Nam', nu: 'Nữ', khac: 'Khác' };
+  function oHoSo(p) {
+    if (!coHoSo) return '<small style="color:var(--muted)">chạy schema_v10 để xem</small>';
+    if ((p.role || 'student') !== 'student') return '<small style="color:var(--muted)">—</small>';
+    var dong = [GIOI[p.gender] || '', p.major || '', p.birth_year ? 'sinh ' + p.birth_year : '', p.student_no ? 'MSSV ' + p.student_no : ''].filter(Boolean);
+    var s = dong.length ? esc(dong.join(' · ')) : '';
+    if (!p.onboarded_at) s += (s ? '<br>' : '') + '<span class="pill off" title="Sinh viên chưa đi qua bước khai danh tính lần đầu">chưa khai hồ sơ</span>';
+    if (p.must_change_pw) s += ' <span class="pill" title="Lần đăng nhập tới sẽ bị bắt đổi mật khẩu">chưa đổi mật khẩu</span>';
+    return s || '<small style="color:var(--muted)">(trống)</small>';
+  }
   async function loadRoster() {
     var box = $('roster');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     var r = await sb.from('enrollments')
-      .select('student, joined_at, profiles(full_name, email, student_no, active, role)')
+      .select('student, joined_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
       .eq('class_id', curClass);
+    if (r.error && /gender|birth_year|major|must_change_pw|onboarded_at/.test(r.error.message || '')) {
+      coHoSo = false;
+      r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role)').eq('class_id', curClass);
+    } else coHoSo = true;
     if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
     roster = (r.data || []).sort(function (a, b) {
       return String((a.profiles || {}).full_name || '').localeCompare(String((b.profiles || {}).full_name || ''), 'vi');
@@ -1021,12 +1036,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
     var ngay = function (s) { try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; } };
-    box.innerHTML = '<table class="roster"><thead><tr><th>Họ tên</th><th>Email</th><th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
+    box.innerHTML = '<table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th><th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
       + roster.map(function (e) {
         var p = e.profiles || {}, r = p.role || 'student', self = e.student === me.id;
         return '<tr><td>' + esc(p.full_name || '(chưa đặt tên)')
           + (p.active === false ? ' <span class="pill off">đang khoá</span>' : '')
-          + '</td><td>' + esc(p.email || '') + '</td>'
+          + '</td><td>' + oHoSo(p) + '</td><td>' + esc(p.email || '') + '</td>'
           + '<td><span class="pill ' + (r === 'student' ? '' : 'on') + '">' + (ROLE[r] || r) + '</span>'
           + (self ? '' : ' <button class="btn sm" data-role="' + (r === 'student' ? 'teacher' : 'student')
               + '" data-id="' + e.student + '" title="Đổi quyền của người này">'
@@ -1041,7 +1056,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
                       + ' <button class="btn sm" data-dev="' + e.student + '" title="Xoá thiết bị đang gắn để sinh viên đăng nhập được trên máy mới">Gỡ</button>'
                   : '<span class="pill">chưa gắn</span>'))
           + '</td>'
-          + '<td style="text-align:right"><button class="btn sm danger" data-rm="' + e.student + '">Bỏ khỏi lớp</button></td></tr>';
+          + '<td style="text-align:right">'
+          + (coHoSo && r === 'student' && !p.must_change_pw ? '<button class="btn sm" data-pw="' + e.student + '" title="Lần đăng nhập tới, sinh viên phải đặt mật khẩu mới (dùng khi bạn vừa cấp lại mật khẩu)">Bắt đổi mật khẩu</button> ' : '')
+          + '<button class="btn sm danger" data-rm="' + e.student + '">Bỏ khỏi lớp</button></td></tr>';
       }).join('') + '</tbody></table>';
   }
   $('roster').addEventListener('click', async function (e) {
@@ -1052,6 +1069,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var ru = await sb.from('profiles').update({ role: want }).eq('id', rl.dataset.id);
       if (ru.error) toast('Lỗi: ' + ru.error.message);
       else { toast(want === 'teacher' ? 'Đã cho làm giáo viên.' : 'Đã hạ về sinh viên.'); await loadRoster(); }
+      return;
+    }
+    var pw = e.target.closest('button[data-pw]');
+    if (pw) {
+      var rw = await sb.from('profiles').update({ must_change_pw: true }).eq('id', pw.dataset.pw);
+      if (rw.error) toast('Lỗi: ' + rw.error.message);
+      else { toast('Lần đăng nhập tới sinh viên sẽ phải đặt mật khẩu mới.'); await loadRoster(); }
       return;
     }
     var dv = e.target.closest('button[data-dev]');

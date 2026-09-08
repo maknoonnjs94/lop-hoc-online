@@ -5,3 +5,4 @@ Thumbs.db
 app/dist/
 app/node_modules/
 desktop.ini
+web/_test_*.html
