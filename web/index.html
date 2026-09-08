@@ -742,7 +742,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function enter(user) {
     me = user;
     var pr = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    profile = pr.data || { full_name: '', role: 'student', active: true };
+    /* Chưa có dòng hồ sơ (tài khoản tạo tay, trigger không chạy) → coi như sinh viên mới: vẫn phải đổi mật khẩu và khai. */
+    profile = pr.data || { full_name: '', role: 'student', active: true, must_change_pw: true, onboarded_at: null, gender: '', theme: '' };
     if (profile.active === false) { alert('Tài khoản đang bị khoá. Liên hệ giảng viên.'); await sb.auth.signOut(); return; }
     var chot = await xinThietBi();
     if (!chot.ok) {
