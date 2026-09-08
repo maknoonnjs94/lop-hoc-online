@@ -123,7 +123,15 @@ Vài điểm đã tính sẵn:
 - Vé chỉ sống bằng đúng quỹ còn lại (thêm 10 phút dư), tối đa 4 giờ — không thể mở một vé rồi xem cả ngày.
 - Sinh viên không tự hạ số phút đã xem được: máy chủ chỉ cho cộng thêm, mỗi lần tối đa 60 giây.
 
-Muốn cho một em xem thêm: vào **Theo dõi**, hoặc đơn giản là nâng quỹ của video đó lên (sửa video, chọn số phút lớn hơn) — quỹ mới áp dụng cho tất cả.
+### Sinh viên xin thêm giờ thì nới riêng cho em đó
+
+Quản trị → tab **Theo dõi** → tìm video → ở cột **Đã mở**, mỗi sinh viên là một nút ghi rõ *đã xem / tổng quỹ*, ví dụ `Bành Thị Lệ Xuân 58/60 p`. Ai hết quỹ thì nút viền đỏ.
+
+Bấm vào tên em đó → hộp thoại hiện quỹ chung, số phút đã xem, và ô **Nới thêm cho riêng bạn này (phút)**. Gõ số phút rồi Lưu. Dấu ⊕ cạnh tên nghĩa là em đó đang được nới.
+
+- Chỉ ảnh hưởng đúng em đó, các bạn khác giữ nguyên quỹ chung.
+- Đặt lại 0 là thu hồi phần nới.
+- Muốn nâng cho **cả lớp** thì sửa video, chọn số phút lớn hơn ở ô Giới hạn thời lượng xem.
 
 ## Xem ai đã xem bao nhiêu
 

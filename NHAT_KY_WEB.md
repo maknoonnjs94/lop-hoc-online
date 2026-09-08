@@ -43,7 +43,9 @@ M còn phải làm:
 
 **Đã test** (trang thử): còn quỹ → hàng video hiện "còn 45 phút xem"; hết quỹ → video biến khỏi danh sách, hiện mục "Đã dùng hết lượt xem". Cú pháp worker + hai trang OK.
 
-**Cần m chạy:** `schema_v16_gioi_han_xem.sql`.
+**Nới quỹ riêng cho từng sinh viên** (m yêu cầu thêm ngay sau đó): `schema_v17_noi_quy_rieng.sql` — cột `view_events.quy_them` (giây), trigger giữ luôn cột này (sinh viên không tự nới), RPC `noi_quy_xem(p_user, p_material, p_phut)` chỉ giảng viên gọi được, có upsert kèm session_id/class_id để dòng mới vẫn hiện trong Theo dõi; `ghi_gio_xem` trả quỹ đã cộng phần nới. Worker tính `quyTong = gioi_han_giay + quy_them`. Quản trị: trong Theo dõi, mỗi sinh viên ở video có quỹ thành một nút `Tên 58/60 p` (viền đỏ khi hết, ⊕ khi đang được nới) → bấm mở hộp nhập số phút nới.
+
+**Cần m chạy:** `schema_v16_gioi_han_xem.sql` rồi `schema_v17_noi_quy_rieng.sql`.
 
 ---
 

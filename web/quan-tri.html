@@ -1036,6 +1036,22 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
 
   /* ---------------- theo dõi: ai đã xem gì ---------------- */
+  /* Nới thêm giờ xem cho một sinh viên ở một video. Quỹ thực tế = quỹ chung + phần nới. */
+  function moNoiQuy(b) {
+    var quy = Number(b.dataset.quy) || 0, noi = Number(b.dataset.noi) || 0, dung = Number(b.dataset.dung) || 0;
+    dialog('Nới giờ xem cho ' + b.dataset.ten,
+      '<p class="hint" style="margin:0 0 12px">Quỹ chung của video: <b>' + Math.round(quy / 60) + ' phút</b>. Bạn này đã xem <b>' + Math.round(dung / 60) + ' phút</b>' + (noi ? ', đang được nới thêm <b>' + Math.round(noi / 60) + ' phút</b>' : '') + '.</p>'
+      + '<label class="f">Nới thêm cho riêng bạn này (phút)<input id="fNoi" type="number" min="0" max="6000" step="15" value="' + Math.round(noi / 60) + '"><small>Đặt 0 là bỏ phần nới. Chỉ ảnh hưởng bạn này, các bạn khác giữ quỹ chung.</small></label>',
+      async function () {
+        var phut = Math.max(0, Number(val('fNoi')) || 0);
+        var r = await sb.rpc('noi_quy_xem', { p_user: b.dataset.u, p_material: b.dataset.m, p_phut: phut });
+        if (r.error || !(r.data && r.data.ok)) { msg($('dlgMsg'), 'Không lưu được: ' + ((r.error && r.error.message) || (r.data && r.data.reason) || '') + (/noi_quy_xem|quy_them/.test((r.error && r.error.message) || '') ? ' — chưa chạy schema_v17_noi_quy_rieng.sql' : '')); return false; }
+        toast(phut ? ('Đã nới thêm ' + phut + ' phút cho ' + b.dataset.ten + '.') : ('Đã bỏ phần nới của ' + b.dataset.ten + '.'));
+        await loadTheo();
+      }, 'Lưu');
+  }
+  $('theoList').addEventListener('click', function (e) { var b = e.target.closest('button.noiq'); if (b) moNoiQuy(b); });
+
   async function loadTheo() {
     var box = $('theoList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
@@ -1043,7 +1059,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (rs.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rs.error.message) + '</div>'; return; }
     var rr = await sb.from('enrollments').select('student, profiles(full_name, email, role)').eq('class_id', curClass);
     var sv = (rr.data || []).filter(function (e) { return !e.profiles || e.profiles.role === 'student'; });
-    var rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress, tong_giay').eq('class_id', curClass);
+    var rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress, tong_giay, quy_them').eq('class_id', curClass);
     if (rv.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rv.error.message) + (/view_events/.test(rv.error.message) ? '<br><small>Chưa chạy file <b>schema_v9_hom_nay.sql</b> trong Supabase.</small>' : '') + '</div>'; return; }
     var xem = {}; (rv.data || []).forEach(function (v) { (xem[v.material_id] = xem[v.material_id] || {})[v.user_id] = v; });
     var ten = {}; sv.forEach(function (e) { ten[e.student] = (e.profiles && e.profiles.full_name) || (e.profiles && e.profiles.email) || e.student.slice(0, 8); });
@@ -1061,7 +1077,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           + mats.map(function (m) {
               var k = KIND[m.kind] || KIND.link, x = xem[m.id] || {};
               var da = sv.filter(function (e) { return x[e.student]; }), chua = sv.filter(function (e) { return !x[e.student]; });
-              var chi = da.map(function (e) { var v = x[e.student], pr = v.progress || {}; var t = pr.done ? '✓' : (pr.page ? 'tr.' + pr.page + '/' + (pr.pages || '?') : (pr.seconds ? Math.round(pr.seconds / 60) + 'ph' : '')); return esc(ten[e.student]) + (t ? ' <small style="color:var(--muted)">' + t + '</small>' : ''); }).join(', ');
+              var chi = da.map(function (e) {
+                var v = x[e.student], pr = v.progress || {};
+                var t = pr.done ? '✓' : (pr.page ? 'tr.' + pr.page + '/' + (pr.pages || '?') : (pr.seconds ? Math.round(pr.seconds / 60) + 'p' : ''));
+                var quyM = Number(m.gioi_han_giay) || 0;
+                if (!quyM) return esc(ten[e.student]) + (t ? ' <small style="color:var(--muted)">' + t + '</small>' : '');
+                var noi = Number(v.quy_them) || 0, dung = Number(v.tong_giay) || 0, tong = quyM + noi;
+                var het = dung >= tong;
+                return '<button type="button" class="btn sm noiq" data-u="' + e.student + '" data-m="' + m.id + '" data-ten="' + esc(ten[e.student]) + '" data-quy="' + quyM + '" data-noi="' + noi + '" data-dung="' + dung + '" title="Bấm để nới thêm giờ xem cho bạn này" style="margin:2px 3px 2px 0' + (het ? ';border-color:var(--danger,#a72e48);color:var(--danger,#a72e48)' : '') + '">'
+                  + esc(ten[e.student]) + ' <span style="opacity:.75">' + Math.round(dung / 60) + '/' + Math.round(tong / 60) + ' p' + (noi ? ' ⊕' : '') + '</span></button>';
+              }).join(' ');
               var tongMo = da.reduce(function (t, e) { return t + (Number(x[e.student].opens) || 0); }, 0);
               var tongGiay = da.reduce(function (t, e) { return t + (Number(x[e.student].tong_giay) || 0); }, 0);
               var quy = Number(m.gioi_han_giay) || 0;

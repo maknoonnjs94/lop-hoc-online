@@ -1176,7 +1176,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function tenBuoi(s) { return s.title || ('Buổi ' + (s.no != null ? s.no : '')); }
   function tatCa(loc) { var out = []; sessions.forEach(function (s) { (s.materials || []).forEach(function (m) { if (!loc || loc(m, s)) out.push({ m: m, s: s }); }); }); return out; }
   /* ---- quỹ thời gian xem video (giảng viên đặt cho từng video) ---- */
-  function quyXem(m) { return Math.max(0, Number(m && m.gioi_han_giay) || 0); }
+  function quyXem(m) {
+    var q = Math.max(0, Number(m && m.gioi_han_giay) || 0);
+    if (!q) return 0;
+    var v = views[m.id];
+    return q + Math.max(0, Number(v && v.quy_them) || 0);   /* giảng viên nới riêng cho mình */
+  }
   function daXem(m) { var v = views[m.id]; return Math.max(0, Number(v && v.tong_giay) || 0); }
   function conLaiGiay(m) { var q = quyXem(m); return q ? Math.max(0, q - daXem(m)) : null; }
   function hetLuot(m) { var q = quyXem(m); return q > 0 && daXem(m) >= q; }
@@ -1205,7 +1210,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function taiLuotXem() {
     views = {};
     try {
-      var r = await sb.from('view_events').select('material_id, session_id, last_at, opens, progress, tong_giay').eq('user_id', me.id).eq('class_id', curClass);
+      var r = await sb.from('view_events').select('material_id, session_id, last_at, opens, progress, tong_giay, quy_them').eq('user_id', me.id).eq('class_id', curClass);
       (r.data || []).forEach(function (v) { views[v.material_id] = v; });
     } catch (e) {}
   }

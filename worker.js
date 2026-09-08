@@ -322,17 +322,19 @@ async function streamToken(body, request, env) {
   const quy = Math.max(0, Number(m.gioi_han_giay) || 0);
   let conLai = 0;
   if (quy > 0 && !nd.staff) {
-    const ve = await restOne(env, '/view_events?user_id=eq.' + nd.id + '&material_id=eq.' + mid + '&select=tong_giay');
+    const ve = await restOne(env, '/view_events?user_id=eq.' + nd.id + '&material_id=eq.' + mid + '&select=tong_giay,quy_them');
     const daXem = Math.max(0, Number(ve && ve.tong_giay) || 0);
-    if (daXem >= quy) {
-      return json({ ok: false, reason: 'het_luot', da_xem: daXem, gioi_han: quy }, 403, request);
+    /* giảng viên có thể nới thêm cho riêng em này */
+    const quyTong = quy + Math.max(0, Number(ve && ve.quy_them) || 0);
+    if (daXem >= quyTong) {
+      return json({ ok: false, reason: 'het_luot', da_xem: daXem, gioi_han: quyTong }, 403, request);
     }
-    conLai = quy - daXem;
+    conLai = quyTong - daXem;
     /* Phí mở: mỗi lần xin vé trừ sẵn 2 phút, để máy nào không gửi nhật ký xem cũng bị trừ dần. */
     try {
       await fetch(SUPABASE_URL + '/rest/v1/view_events?user_id=eq.' + nd.id + '&material_id=eq.' + mid, {
         method: 'PATCH', headers: adminHeaders(env, { Prefer: 'return=minimal' }),
-        body: JSON.stringify({ tong_giay: Math.min(quy, daXem + 120) })
+        body: JSON.stringify({ tong_giay: Math.min(quyTong, daXem + 120) })
       });
     } catch (e) {}
   }
