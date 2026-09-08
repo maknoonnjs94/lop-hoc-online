@@ -50,8 +50,13 @@ export default {
           const rs = await fetch(CF_API + env.CF_ACCOUNT_ID + '/stream?per_page=1', { headers: { Authorization: 'Bearer ' + env.CF_STREAM_TOKEN } });
           const tx = await rs.text();
           let loi = '';
-          try { const d = JSON.parse(tx); if (d.success === false) loi = ((d.errors || [])[0] || {}).message || ''; } catch (e) { loi = tx.slice(0, 160); }
-          thuStream = { status: rs.status, loi: loi || undefined };
+          try { const d = JSON.parse(tx); if (d.success === false) loi = ((d.errors || []).map(function (x) { return (x.code ? x.code + ': ' : '') + (x.message || ''); }).join(' | ')) || ''; } catch (e) { loi = ''; }
+          if (!loi) loi = tx.slice(0, 200);
+          /* Account ID không phải bí mật, nhưng vẫn chỉ báo hình dạng để dò lỗi chép thiếu */
+          const aid = String(env.CF_ACCOUNT_ID || '');
+          thuStream = { status: rs.status, loi: loi || undefined,
+            account: { do_dai: aid.length, dung_dang: /^[0-9a-f]{32}$/.test(aid), dau: aid.slice(0, 6), cuoi: aid.slice(-4) },
+            token: { do_dai: String(env.CF_STREAM_TOKEN || '').length } };
         } catch (e) { thuStream = { status: -1, loi: String(e && e.message || e) }; }
       }
       return json({ ok: true, co_khoa: !!k, kieu_khoa: kieu, do_dai: k.length, doc_ho_so: thu, stream: streamSan(env), thu_stream: thuStream, sql: sql, bien: Object.keys(env).filter(function (x) { return x !== 'ASSETS'; }) }, 200, request);
