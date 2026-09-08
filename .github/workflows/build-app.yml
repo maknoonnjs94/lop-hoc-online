@@ -86,8 +86,11 @@ jobs:
           EP="https://$ID.r2.cloudflarestorage.com"
           echo "aws: $(aws --version 2>&1)"
           echo "endpoint: $EP · kho: $R2_BUCKET · độ dài Access Key ID: ${#AWS_ACCESS_KEY_ID} · độ dài Secret: ${#AWS_SECRET_ACCESS_KEY}"
-          if ! aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP" 2> r2err.txt; then
-            echo "::error::Không vào được kho R2. Lỗi: $(tail -3 r2err.txt)"
+          if ! aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$EP" > r2out.txt 2> r2err.txt; then
+            echo "--- aws stderr ---"; cat r2err.txt; echo "--- aws stdout ---"; cat r2out.txt
+            ERR=$(cat r2err.txt r2out.txt | tr -s '\r\n' '  ' | tail -c 500)
+            echo "::error::Không vào được kho R2 [$R2_BUCKET @ $EP] — $ERR"
+            { echo "### R2: KHÔNG vào được kho"; echo '```'; cat r2err.txt r2out.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             echo "Gợi ý: InvalidAccessKeyId / SignatureDoesNotMatch = sai Access Key ID hoặc Secret; NoSuchBucket = tên kho không phải '$R2_BUCKET' (đặt biến R2_BUCKET trong Settings → Secrets and variables → Actions → Variables); AccessDenied = token không có quyền Object Read & Write cho kho này."
             exit 1
           fi
