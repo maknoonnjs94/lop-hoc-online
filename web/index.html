@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>Góc học tập</title>
+<title>Giảng đường Hóa học</title>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,8 +90,10 @@
 
   /* ---- đăng nhập ---- */
   .login{ max-width:440px; margin:0 auto; padding:max(8vh,30px) 18px 40px }
-  .mark{ width:88px; height:88px; margin:0 0 12px -8px }
-  .mark .lic{ width:88px; height:88px }
+  .mark{ width:168px; height:168px; margin:0 auto 14px; position:relative }
+  .mark img.logo{ width:168px; height:168px; border-radius:50%; object-fit:cover; display:block; background:#fff; box-shadow:0 10px 30px rgba(20,60,90,.14) }
+  .mark .lic-fallback{ display:none } .mark.khong-logo img.logo{ display:none } .mark.khong-logo .lic-fallback{ display:block } .mark .lic{ width:120px; height:120px; margin:0 auto }
+  .login h1,.login .sub{ text-align:center }
   .login h1{ font-size:28px; line-height:1.15; letter-spacing:-.02em; margin:0 0 6px; font-weight:800; text-wrap:balance }
   .login .sub{ margin:0 0 22px; color:var(--muted); font-size:14.5px }
   .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--shadow-1) }
@@ -131,9 +133,11 @@
   /* ---- khung app ---- */
   .shell{ position:relative; display:grid; grid-template-columns:224px minmax(0,1fr); gap:24px; max-width:1600px; margin:0 auto; padding:20px }
   .side{ position:sticky; top:20px; height:calc(100vh - 40px); min-height:600px; display:flex; flex-direction:column; background:color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--line); border-radius:var(--r-l); padding:22px 14px }
-  .brand{ display:flex; align-items:center; gap:10px; font-size:22px; font-weight:800; color:var(--ink); text-decoration:none; padding:0 4px; letter-spacing:-.01em; white-space:nowrap }
-  .brand > span{ display:grid; place-items:center; width:38px; height:42px; background:var(--tint); border-radius:12px; color:var(--primary); transform:rotate(-8deg); flex:none }
-  .brand > span .ico{ font-size:22px }
+  .brand{ display:flex; align-items:center; gap:12px; font-size:17px; line-height:1.15; font-weight:800; color:var(--ink); text-decoration:none; padding:0 2px; letter-spacing:-.01em; white-space:nowrap }
+  .brand img.logo{ width:64px; height:64px; border-radius:50%; object-fit:cover; flex:none; background:#fff; box-shadow:0 3px 10px rgba(20,60,90,.12) }
+  .brand .ico-fallback{ display:none; place-items:center; width:38px; height:42px; background:var(--tint); border-radius:12px; color:var(--primary); transform:rotate(-8deg); flex:none }
+  .brand.khong-logo img.logo{ display:none } .brand.khong-logo .ico-fallback{ display:grid }
+  .brand .ico-fallback .ico{ font-size:22px }
   .nav{ display:grid; gap:8px; margin-top:34px }
   .nav button{ position:relative; display:flex; align-items:center; gap:14px; border:0; color:var(--ink); background:transparent; text-align:left; padding:14px 16px; border-radius:16px; min-height:54px; font-size:15px; font-weight:600 }
   .nav button .ico{ font-size:22px; color:var(--ink-2) }
@@ -223,16 +227,18 @@
   .pcard h2{ font-size:20px; line-height:1.3; display:flex; gap:10px; align-items:center; margin-bottom:16px }
   .pcard h2 .ico{ font-size:22px; color:var(--primary) }
   .pcard h2 .more{ margin-left:auto; font-size:13px; font-weight:600; color:var(--primary); display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0 }
-  .hero{ min-height:275px; overflow:hidden; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; align-items:center }
-  .hero .copy{ position:relative; z-index:1; width:54% }
+  .hero{ min-height:300px; overflow:hidden; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; align-items:center }
+  .hero .copy{ position:relative; z-index:1; width:50% }
   .eyebrow{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); padding:7px 12px; border-radius:999px; font-size:11px; letter-spacing:1px; color:var(--primary); font-weight:800; text-transform:uppercase }
   .hero h2{ font-size:clamp(23px,2.3vw,32px); margin:14px 0 6px; letter-spacing:-.02em; display:block; text-wrap:balance }
   .hero p{ color:var(--muted); margin-bottom:20px }
-  .hero .art{ position:absolute; right:16px; bottom:16px; top:16px; width:44%; pointer-events:none; display:flex; align-items:center; justify-content:flex-end }
+  .hero .art{ position:absolute; right:0; top:0; bottom:0; width:62%; pointer-events:none }
   /* Minh hoạ "khoảnh khắc học tập": ảnh giữ nguyên tỉ lệ, bo góc, đổi theo nhân vật đã chọn. */
   .canh{ display:block; width:100%; height:auto; max-width:260px; margin:0 auto; border-radius:16px; box-shadow:0 6px 18px rgba(20,30,40,.09) }
   .canhbox{ padding:10px 0 6px }
-  .hero .art img.canh{ max-width:none; max-height:100%; border-radius:18px }
+  /* Ảnh cảnh học phủ trọn cạnh phải, mép trái tan dần vào nền thẻ nên nhìn như một khối. */
+  .hero .art img.canh{ width:100%; height:100%; max-width:none; margin:0; object-fit:cover; object-position:right center; border-radius:0; box-shadow:none;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.55) 18%, #000 34%); mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.55) 18%, #000 34%) }
   .weekly .canh{ max-width:220px; margin:-2px auto 12px }
   .hero .quip{ position:relative; z-index:1; font-size:13px; color:var(--primary); font-weight:600; margin-top:14px }
   .today{ display:flex; flex-direction:column }
@@ -397,7 +403,7 @@
   @media (max-width:1199px){
     .shell{ grid-template-columns:84px minmax(0,1fr); gap:16px; padding:16px }
     .side{ padding:20px 10px; top:16px; height:calc(100vh - 32px) }
-    .brand{ font-size:0; justify-content:center; padding:0 } .brand > span{ transform:none }
+    .brand{ font-size:0; justify-content:center; padding:0; gap:0 } .brand img.logo{ width:52px; height:52px } .brand .ico-fallback{ transform:none }
     .nav button{ padding:14px 8px; justify-content:center; flex-direction:column; gap:4px; font-size:10.5px } .nav button b{ margin:0; position:absolute; top:6px; right:8px }
     .mascot{ display:none }
     .topbar{ gap:10px; padding:10px 12px; top:16px } .profbtn > span:last-child{ display:none } .search kbd{ display:none }
@@ -411,9 +417,9 @@
   }
   @media (max-width:639px){
     .shell{ display:block; padding:10px } .side{ position:relative; inset:auto; min-height:0; height:auto; padding:10px 8px; margin-bottom:12px }
-    .brand{ font-size:20px; justify-content:flex-start; padding:0 6px } .nav{ grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; gap:2px }
+    .brand{ font-size:16px; justify-content:flex-start; padding:0 6px; gap:10px } .brand img.logo{ width:46px; height:46px } .nav{ grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; gap:2px }
     .nav button{ min-width:0; padding:10px 2px; border-radius:12px; font-size:10px }
-    .hero{ display:block } .hero .copy{ width:100% } .hero .art{ position:static; width:100%; margin-top:14px; justify-content:center } .hero .art img.canh{ max-width:300px }
+    .hero{ display:block } .hero .copy{ width:100% } .hero .art{ position:static; width:calc(100% + 48px); margin:14px -24px -24px; height:200px } .hero .art img.canh{ -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 30%); mask-image:linear-gradient(180deg, transparent 0, #000 30%) }
     .topbar{ flex-wrap:wrap; position:static } .search{ order:2; flex-basis:100% } .quick{ gap:8px } .qcard{ padding:14px 6px } .qcard small{ display:none }
     .heading h1{ font-size:26px } .row2{ grid-template-columns:1fr } .thgrid{ grid-template-columns:1fr } .gocbtn span{ display:none } .gocbtn{ padding:0 11px }
   }
@@ -425,8 +431,8 @@
 
 <!-- ================= ĐĂNG NHẬP ================= -->
 <main class="login" id="loginScreen">
-  <div class="mark"><img class="lic" data-lic="classroom" alt="" draggable="false"></div>
-  <h1>Góc học tập</h1>
+  <div class="mark"><img class="logo" src="img/logo.png" alt="" draggable="false" onerror="this.parentNode.classList.add('khong-logo')"><span class="lic-fallback"><img class="lic" data-lic="classroom" alt="" draggable="false"></span></div>
+  <h1>Giảng đường Hóa học</h1>
   <p class="sub" id="loginSub">Đăng nhập bằng tài khoản giảng viên đã cấp.</p>
   <form class="card" id="loginForm">
     <label class="f">Email<input type="email" id="email" autocomplete="username" required placeholder="email@example.com" inputmode="email"></label>
@@ -466,7 +472,7 @@
           <label><input type="radio" name="gender" value="nu"><span class="gsw peach"></span><b>Nữ</b><small>nhân vật bạn nữ</small></label>
           <label><input type="radio" name="gender" value="khac"><span class="gsw khac"></span><b>Khác</b><small>chọn nhân vật sau</small></label>
         </div>
-        <div class="f" style="margin-bottom:0">Màu góc học tập <small style="display:inline;font-weight:400;color:var(--muted)">(đổi lúc nào cũng được)</small></div>
+        <div class="f" style="margin-bottom:0">Màu giao diện <small style="display:inline;font-weight:400;color:var(--muted)">(đổi lúc nào cũng được)</small></div>
         <div class="thmini" id="thMini"></div>
         <div class="row2">
           <label class="f">Năm sinh<select id="fYear"></select></label>
@@ -474,7 +480,7 @@
         </div>
         <label class="f">Ngành học<input type="text" id="fMajor" list="majors" placeholder="Hóa học, Hóa dược, Sư phạm Hóa…" required>
           <datalist id="majors"><option value="Hóa học"><option value="Hóa dược"><option value="Công nghệ kỹ thuật hóa học"><option value="Sư phạm Hóa học"><option value="Khoa học vật liệu"><option value="Công nghệ sinh học"><option value="Kỹ thuật môi trường"><option value="Y khoa"><option value="Dược học"></datalist></label>
-        <button class="btn block" type="submit" id="infoBtnGo">Vào góc học tập</button>
+        <button class="btn block" type="submit" id="infoBtnGo">Vào giảng đường</button>
         <div class="msg" id="infoMsg"></div>
       </form>
     </section>
@@ -485,7 +491,7 @@
 <div id="appScreen" hidden>
   <div class="shell">
     <aside class="side">
-      <a class="brand" href="#" id="brandBtn"><span><span class="ico" data-ico="leaf"></span></span>Góc học tập</a>
+      <a class="brand" href="#" id="brandBtn"><img class="logo" src="img/logo.png" alt="" draggable="false" onerror="this.parentNode.classList.add('khong-logo')"><span class="ico-fallback"><span class="ico" data-ico="leaf"></span></span><span class="ten">Giảng đường<br>Hóa học</span></a>
       <nav class="nav" id="nav">
         <button type="button" data-view="home" class="on"><span class="ico" data-ico="home"></span>Trang chủ</button>
         <button type="button" data-view="lessons"><span class="ico" data-ico="video"></span>Bài giảng</button>
@@ -509,7 +515,7 @@
             <button class="iconbtn" id="bellBtn" type="button" title="Tài liệu mới"><span class="ico" data-ico="bell"></span><b id="bellN" hidden>0</b></button>
             <div class="menu bellmenu" id="bellMenu" hidden></div>
           </div>
-          <button class="gocbtn" id="gocBtn" type="button" title="Chọn màu và avatar cho góc học tập của bạn"><i></i><span>Góc của bạn</span></button>
+          <button class="gocbtn" id="gocBtn" type="button" title="Chọn màu, nhân vật và ảnh đại diện"><i></i><span>Góc của bạn</span></button>
           <div class="acctwrap">
             <button class="profbtn" id="avBtn" type="button" aria-haspopup="menu" aria-expanded="false"><span class="avatar"><span id="avIni">?</span><img id="avImg" alt=""></span><span id="avName">…</span></button>
             <div class="menu" id="avMenu" hidden role="menu">
@@ -523,7 +529,7 @@
       </header>
 
       <main class="main">
-        <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Góc học tập</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ. <a href="tai-app.html" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
+        <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Giảng đường Hóa học</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ. <a href="tai-app.html" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
         <div class="classbar" id="classBar"></div>
 
         <section id="viewHome">
@@ -583,7 +589,7 @@
 <!-- ================= TRỢ GIÚP ================= -->
 <div class="helpbox" id="helpBox" hidden>
   <div class="card">
-    <h3>Dùng góc học tập thế nào<img class="lic" data-lic="help" alt="" draggable="false"></h3>
+    <h3>Dùng Giảng đường Hóa học thế nào<img class="lic" data-lic="help" alt="" draggable="false"></h3>
     <ul>
       <li><b>Trang chủ</b>: thẻ "Tiếp tục học" đưa bạn về đúng chỗ đang dở. Bài mới có nhãn <b>MỚI</b>.</li>
       <li><b>Bài giảng</b>: chọn buổi ở cột trái, tài liệu ở cột phải. <kbd>↑</kbd><kbd>↓</kbd> đổi buổi.</li>
@@ -599,7 +605,7 @@
 <div class="gocbox" id="gocBox" hidden>
   <div class="card">
     <h3>Góc của bạn</h3>
-    <p class="lead">Chọn màu và nhân vật cho góc học tập. Đổi lúc nào cũng được, không ảnh hưởng bài vở.</p>
+    <p class="lead">Chọn màu, nhân vật và ảnh đại diện cho giảng đường của bạn. Đổi lúc nào cũng được, không ảnh hưởng bài vở.</p>
     <h4>Màu giao diện</h4>
     <div class="thgrid" id="thGrid"></div>
     <h4>Ảnh đại diện</h4>
@@ -996,7 +1002,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       await sb.auth.signOut(); return;
     }
     if (!laGV() && !TRONG_APP) {
-      if (REQUIRE_APP) { me = null; alert('Lớp học chỉ mở trong ứng dụng Góc học tập trên máy tính.\n\nTải ứng dụng tại: ' + APP_URL); await sb.auth.signOut(); return; }
+      if (REQUIRE_APP) { me = null; alert('Lớp học chỉ mở trong ứng dụng Giảng đường Hóa học trên máy tính.\n\nTải ứng dụng tại: ' + APP_URL); await sb.auth.signOut(); return; }
       $('appNote').hidden = false;
     }
     show($('loginScreen'), false);
@@ -1185,7 +1191,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var hero = doDang || moiNhat || null;
     var hk = hero ? (KIND[hero.m.kind] || KIND.link) : null;
     html += '<div class="pcard hero">'
-      + '<div class="copy"><span class="eyebrow"><span class="ico">' + I.play + '</span>' + (doDang ? 'Tiếp tục học' : (hero ? 'Bài mới' : 'Góc học tập')) + '</span>'
+      + '<div class="copy"><span class="eyebrow"><span class="ico">' + I.play + '</span>' + (doDang ? 'Tiếp tục học' : (hero ? 'Bài mới' : 'Giảng đường Hóa học')) + '</span>'
       + '<h2>' + (hero ? esc(hero.m.title || hk.name) : 'Chưa có bài nào để học') + '</h2>'
       + '<p>' + (hero ? esc(tenBuoi(hero.s)) + ' · ' + (doDang ? esc(tienDoChu(hero.m)) : hk.name) : 'Giảng viên giao bài là hiện ở đây.') + '</p>'
       + (hero ? nutMo(hero, doDang ? 'Tiếp tục học' : 'Bắt đầu').replace('class="btn sm"', 'class="btn"') : '')
@@ -1388,13 +1394,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
             var s = sessions.filter(function (x) { return x.id === m.session_id; })[0]; if (!s) return;
             var k = KIND[m.kind] || KIND.link, ten = m.title || k.name;
             baoChup('Giảng viên vừa giao: ' + ten, tenBuoi(s) + ' · ' + k.name + '. Bấm chuông để mở.', 'ok');
-            thongBaoMay('Góc học tập: có tài liệu mới', ten + ' — ' + tenBuoi(s));
+            thongBaoMay('Giảng đường Hóa học: có tài liệu mới', ten + ' — ' + tenBuoi(s));
             noiMascot('Có bài mới: ' + ten);
           });
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: 'class_id=eq.' + curClass }, function (p) {
           var s = p['new'] || {}, cu = p.old || {};
-          taiLai(function () { if (s.published && cu.published === false) { baoChup('Buổi mới được mở: ' + tenBuoi(s), 'Vào Bài giảng để xem tài liệu.', 'ok'); thongBaoMay('Góc học tập: buổi mới', tenBuoi(s)); } });
+          taiLai(function () { if (s.published && cu.published === false) { baoChup('Buổi mới được mở: ' + tenBuoi(s), 'Vào Bài giảng để xem tài liệu.', 'ok'); thongBaoMay('Giảng đường Hóa học: buổi mới', tenBuoi(s)); } });
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'classes', filter: 'id=eq.' + curClass }, function (p) {
           var c = p['new'] || {};
@@ -1412,7 +1418,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       sessions.forEach(function (s) {
         if (!s.starts_at || daNhacBuoi[s.id]) return;
         var d = new Date(s.starts_at).getTime() - now;
-        if (d > 0 && d <= 30 * 60000) { daNhacBuoi[s.id] = true; baoChup('Sắp tới giờ học: ' + tenBuoi(s), 'Bắt đầu lúc ' + fmtWhen(s.starts_at) + '.', 'ok'); thongBaoMay('Góc học tập: sắp bắt đầu', tenBuoi(s) + ' — ' + fmtWhen(s.starts_at)); }
+        if (d > 0 && d <= 30 * 60000) { daNhacBuoi[s.id] = true; baoChup('Sắp tới giờ học: ' + tenBuoi(s), 'Bắt đầu lúc ' + fmtWhen(s.starts_at) + '.', 'ok'); thongBaoMay('Giảng đường Hóa học: sắp bắt đầu', tenBuoi(s) + ' — ' + fmtWhen(s.starts_at)); }
       });
     }, 60000);
   }
