@@ -1,5 +1,7 @@
 # rác của Windows / OneDrive
-Thumbs.db
-desktop.ini
-.DS_Store
 *.tmp
+.DS_Store
+Thumbs.db
+app/dist/
+app/node_modules/
+desktop.ini

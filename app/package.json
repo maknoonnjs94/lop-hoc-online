@@ -1,0 +1,46 @@
+{
+  "name": "lop-hoc",
+  "productName": "LopHoc",
+  "version": "1.0.0",
+  "description": "Ứng dụng Lớp học online — cửa sổ được hệ điều hành bảo vệ, hiện đen trong mọi ảnh chụp và bản quay màn hình",
+  "main": "main.js",
+  "author": "Phạm Anh Ngọc",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win nsis --x64 --publish never",
+    "build:mac": "electron-builder --mac dmg --universal --publish never"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "vn.hus.lophoc",
+    "productName": "LopHoc",
+    "artifactName": "LopHoc-${version}-${os}.${ext}",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "package.json"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Lop hoc online",
+      "language": "1066"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "icon": "build/icon.png",
+      "category": "public.app-category.education",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null
+    },
+    "dmg": { "sign": false }
+  }
+}

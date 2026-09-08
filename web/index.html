@@ -163,6 +163,11 @@
   .menu .out .ico{ color:var(--danger) }
 
   /* ============ lớp ============ */
+  .appnote{ display:flex; align-items:center; gap:10px; max-width:1120px; margin:14px auto 0; padding:10px 14px; border-radius:var(--r-m); background:var(--primary-soft); color:var(--ink-2); font-size:13.5px; border:1px solid color-mix(in srgb, var(--primary) 30%, transparent) }
+  .appnote .ico{ color:var(--primary); font-size:20px }
+  .appnote a{ font-weight:700 }
+  .appnote button{ margin-left:auto; border:0; background:none; color:var(--muted); font-size:14px; padding:4px 6px; border-radius:6px }
+  .appnote button:hover{ background:var(--surface) }
   .classbar{ display:flex; gap:8px; overflow-x:auto; padding:18px 0 0; scrollbar-width:none }
   .classbar::-webkit-scrollbar{ display:none }
   .classbar button{
@@ -346,6 +351,7 @@
     <button type="button" id="pwBtn" role="menuitem"><span class="ico" data-ico="key"></span>Đổi mật khẩu</button>
     <button type="button" id="outBtn" class="out" role="menuitem"><span class="ico" data-ico="out"></span>Đăng xuất</button>
   </div>
+  <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Lớp học</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ, không chụp hay quay được. <a href="https://github.com/maknoonnjs94/lop-hoc-online/releases/latest" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
   <div class="wrap">
     <div class="classbar" id="classBar"></div>
     <div class="layout">
@@ -398,6 +404,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   'use strict';
   var sb = null, me = null, profile = null, classes = [], curClass = null, curMat = null;
   var sessions = [], curSes = null;
+  /* Ứng dụng máy tính (Electron) gắn chuỗi LopHocApp/ vào user agent. Cửa sổ của app được hệ điều hành
+     bảo vệ nên không chụp, không quay được. REQUIRE_APP = true → sinh viên bắt buộc dùng app, web chỉ còn
+     cho giảng viên. Để false trong lúc chưa phát app cho sinh viên. */
+  var REQUIRE_APP = false;
+  var APP_URL = 'https://github.com/maknoonnjs94/lop-hoc-online/releases/latest';
+  var TRONG_APP = /LopHocApp\//.test(navigator.userAgent) || !!window.lopHocApp;
 
   var $ = function (id) { return document.getElementById(id); };
   function show(el, on) { el.hidden = !on; }
@@ -439,7 +451,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     alert:  '<svg viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>',
     cal:    '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>',
     stack:  '<svg viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/></svg>',
-    inbox:  '<svg viewBox="0 0 24 24"><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1.5 2h3L15 13h5"/></svg>'
+    inbox:  '<svg viewBox="0 0 24 24"><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1.5 2h3L15 13h5"/></svg>',
+    shield: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg>'
   };
   [].forEach.call(document.querySelectorAll('.ico[data-ico]'), function (el) { el.innerHTML = I[el.dataset.ico] || ''; });
 
@@ -504,6 +517,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   document.addEventListener('click', function () { toggleMenu(false); });
   $('avMenu').addEventListener('click', function (e) { e.stopPropagation(); });
   $('brandBtn').addEventListener('click', function (e) { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  $('appNoteX').addEventListener('click', function () { $('appNote').hidden = true; });
 
   $('outBtn').addEventListener('click', function () { sb.auth.signOut(); });
   $('pwBtn').addEventListener('click', async function () {
@@ -575,6 +589,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       }
       await sb.auth.signOut();
       return;
+    }
+
+    var laGV = profile.role === 'admin' || profile.role === 'teacher';
+    if (!laGV && !TRONG_APP) {
+      if (REQUIRE_APP) {
+        me = null;
+        alert('Lớp học chỉ mở trong ứng dụng Lớp học trên máy tính.\n\nTải ứng dụng tại: ' + APP_URL);
+        await sb.auth.signOut();
+        return;
+      }
+      $('appNote').hidden = false;
     }
 
     $('whoName').textContent = profile.full_name || user.email;

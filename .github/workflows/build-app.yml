@@ -1,0 +1,64 @@
+# Dựng ứng dụng máy tính cho Windows và macOS trên máy của GitHub.
+# Cách kích hoạt: đẩy một thẻ (tag) tên app-v1.0.0, app-v1.0.1… — hoặc bấm "Run workflow" trong tab Actions.
+# Kết quả: bản cài .exe (Windows) và .dmg (macOS) nằm ở mục Releases của kho, sinh viên tải về từ đó.
+name: Dựng ứng dụng máy tính
+
+on:
+  push:
+    tags: ['app-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cài thư viện
+        run: npm install --no-audit --no-fund
+
+      - name: Dựng bản Windows (.exe)
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win nsis --x64 --publish never
+
+      - name: Dựng bản macOS (.dmg, không ký)
+        if: runner.os == 'macOS'
+        run: npx electron-builder --mac dmg --universal --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Giữ lại tệp cài
+        uses: actions/upload-artifact@v4
+        with:
+          name: lop-hoc-${{ runner.os }}
+          path: |
+            app/dist/*.exe
+            app/dist/*.dmg
+          if-no-files-found: error
+
+      - name: Đưa lên Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Ứng dụng Lớp học ${{ github.ref_name }}
+          body: |
+            Bản cài ứng dụng Lớp học cho máy tính.
+            - Windows: tải file .exe, chạy, nếu SmartScreen hỏi thì bấm "Thông tin thêm" → "Vẫn chạy".
+            - macOS: tải file .dmg, kéo vào Applications, lần đầu mở bằng chuột phải → Open.
+          files: |
+            app/dist/*.exe
+            app/dist/*.dmg
