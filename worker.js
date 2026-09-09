@@ -399,11 +399,12 @@ async function coKho(env, ten) {
     return r.ok;
   } catch (e) { return false; }
 }
-/* Hàm RPC đã có chưa — gọi thử với tham số rỗng, chỉ cần KHÔNG phải lỗi "không tìm thấy hàm". */
-async function coHam(env, ten) {
+/* Hàm RPC đã có chưa. Phải gửi ĐÚNG TÊN THAM SỐ: PostgREST chọn hàm theo tên tham số,
+   gửi thân rỗng là nó đi tìm bản không tham số rồi trả 404 dù hàm vẫn tồn tại. */
+async function coHam(env, ten, than) {
   try {
     const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + ten, {
-      method: 'POST', headers: adminHeaders(env), body: '{}' });
+      method: 'POST', headers: adminHeaders(env), body: than || '{}' });
     return r.status !== 404;
   } catch (e) { return false; }
 }
@@ -427,7 +428,7 @@ async function kiemSchema(env) {
     coCot(env, 'materials', 'o_tra_loi'),
     coCot(env, 'dap_an_o', 'dap_an'),
     coCot(env, 'materials', 'cho_tai'),
-    coHam(env, 'thong_ke_o')
+    coHam(env, 'thong_ke_o', JSON.stringify({ p_class: null }))
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
