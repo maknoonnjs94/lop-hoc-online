@@ -25,7 +25,7 @@ M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
 
 Đã xong hết phần cài đặt máy chủ — không còn gì treo:
 
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19 — `/api/trang-thai` báo `true` cả loạt.
+- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
 - **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
 - **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
 - **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
@@ -37,6 +37,80 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 ```
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-15 — Mục HỎI ĐÁP riêng, mở đầu bằng Câu hỏi thường gặp
+
+**M chốt:** *"trước mắt sẽ là mục C (câu hỏi thường gặp, m thiết kế cái đó trước), sau đó là câu hỏi gom
+theo buổi học, theo từng phiếu bài tập, không hiện tên người hỏi (ẩn danh), và mọi người sẽ thấy câu trả lời."*
+
+### Vì sao m không thấy phần hỏi đáp cũ
+
+Nó có, và đã lên bản chính — nhưng **bị chôn**: khung hỏi bài chỉ hiện *bên trong trình xem tài liệu*,
+sau khi mở một tài liệu rồi cuộn xuống tận đáy. Không có mục trong thanh điều hướng, trang chủ không nhắc.
+Muốn hỏi thì phải đoán được rằng cuộn xuống đáy phiếu bài tập sẽ có chỗ hỏi.
+
+### Chốt về thiết kế
+
+Mục riêng **không thay** ô hỏi dưới từng bài — hai thứ làm hai việc khác nhau:
+lúc bí là lúc đang đọc câu 3 của phiếu buổi 5, nên **hỏi thì phải hỏi tại chỗ**;
+còn **đọc thì phải đọc một chỗ**, không ai mở lại 12 tài liệu để tìm xem cô đã trả lời gì.
+Ô hỏi tại chỗ là *cửa vào*, mục riêng là *nơi ở* của toàn bộ cuộc trò chuyện.
+
+### `schema_v23_hoi_dap_rieng.sql` — m phải chạy một lần trên Supabase
+
+Tới v22, `cau_hoi.material_id` là **NOT NULL** và luật đọc dựa trên "có xem được tài liệu này không".
+Nghĩa là **không thể có câu hỏi chung**, và câu trả lời hay thì chìm nghỉm dưới đáy một phiếu buổi 3. v23 mở ra:
+
+- `material_id` được phép rỗng; thêm `class_id` (điền sẵn cho mọi câu hỏi cũ) → **câu hỏi chung của lớp**.
+- `ghim` / `ghim_stt` / `chu_de` → mục **Câu hỏi thường gặp**, xếp tay, gom theo chủ đề.
+- Luật đọc mới: câu **đã ghim và đã có trả lời** thì cả lớp đọc được, **không cần mở tài liệu gốc** — đó chính là ý nghĩa của việc ghim. Câu chưa trả lời vẫn chỉ người hỏi thấy.
+- Trigger `cau_hoi_lop`: nếu câu hỏi có gắn tài liệu thì `class_id` **luôn suy ra từ tài liệu**, trang web gửi lên gì cũng không đổi được.
+- Sinh viên **không tự ghim được**: luật ghi chặn `ghim = true` và chặn tự điền sẵn câu trả lời.
+- Ba hàm mới `ghim_cau_hoi` · `luu_faq` · `xep_faq`, đều chặn ở `is_staff()`. `bang_cau_hoi` dựng lại (thêm ghim/chủ đề, tài liệu có thể rỗng).
+
+**Ẩn danh giữ nguyên và mạnh hơn trước:** bảng `cau_hoi` không cho sinh viên đọc `profiles`,
+trang học không hỏi tên, và mục mới cũng không hiện tên ở bất kỳ chỗ nào — chỉ "Bạn" hoặc "Một bạn trong lớp".
+
+### Trang học: mục thứ sáu trên thanh điều hướng
+
+Ba ngăn, mở sẵn ở ngăn đầu:
+
+1. **Thường gặp** — làm kỹ nhất, đúng thứ tự m dặn. Mỗi câu là một khối bấm mở ra đọc; gom theo chủ đề, đánh số liên tục; trả lời mang logo Giảng đường. Đây là thứ **lãi dần theo năm**: cùng một câu sẽ lặp lại ở mọi khoá, ghim một lần dùng mãi.
+2. **Theo buổi học** — mỗi buổi một khối gập, trong buổi lại tách theo **từng phiếu / video**, kèm đếm "1 chờ / 4". Buổi mới nhất mở sẵn. Bấm tên phiếu là mở thẳng tài liệu đó. Câu hỏi chung của lớp nằm ở khối đầu.
+3. **Câu hỏi của bạn** — mọi câu mình đã hỏi, ghi rõ hỏi ở buổi nào / phiếu nào.
+
+Thêm: ô soạn **câu hỏi chung** ngay đầu trang (mang mặt nhân vật của chính em ấy), ô tìm **bỏ dấu**
+(gõ "nop bai muon" ra "Nộp bài muộn…"), chuông nhỏ cạnh nút Hỏi đáp khi câu của mình vừa được trả lời,
+và nút *Xem tất cả hỏi đáp của lớp* ở đáy khung hỏi bài dưới mỗi tài liệu.
+
+Thanh điều hướng trên điện thoại đổi từ 5 cột sang **3 cột × 2 hàng** vì giờ có sáu mục.
+
+### Trang quản trị: khối Câu hỏi thường gặp
+
+Tab **Hỏi đáp** giờ có hai phần. Trên là khối gập *Câu hỏi thường gặp*: **＋ Soạn một câu**
+(viết luôn cả hỏi lẫn đáp, không cần chờ ai hỏi), Sửa, Bỏ ghim, ↑ ↓ xếp thứ tự, nhãn chủ đề
+(có gợi ý sẵn: Cách học · Bài tập & nộp bài · Video bài giảng · Thi cử · Tài khoản).
+Dưới là danh sách sinh viên hỏi như cũ, mỗi câu **đã trả lời** thêm nút **📌 Ghim vào Thường gặp**.
+Câu không gắn tài liệu hiện nhãn **Câu hỏi chung**.
+
+Chưa chạy v23 thì cả hai trang **không vỡ**: quản trị hiện lời nhắc chạy SQL và vẫn trả lời được như cũ;
+trang học hiện lời nhắc trong mục Hỏi đáp.
+
+### Đã test
+
+- `test/ra-soat.js` — sạch cả hai trang (0 lỗi).
+- Cú pháp **từng khối script** của bốn tệp (bản thật + bản thử) đều dựng được bằng `vm.Script`; số ký tự khớp nhau, không có khối nào bị cắt cụt.
+- Chạy thật trong trình duyệt trên bản thử: gửi câu hỏi chung → thấy nó xuất hiện, ngăn tự nhảy sang *Câu hỏi của bạn*; gom nhóm ra đúng buổi 5 (phiếu 3 câu + video 1 câu) và buổi 4; tìm bỏ dấu chạy; ô trống ra đúng lời nhắn.
+- Bản quản trị: xếp ↑↓ đổi đúng thứ tự, ghim một câu sinh viên hỏi (có chọn chủ đề) lên đúng cuối danh sách, soạn câu mới, **chặn khi thiếu câu trả lời**, bấm Sửa nạp lại đúng nội dung và chủ đề.
+- Điện thoại 375 px: không tràn ngang (375/375), thanh điều hướng 3 cột.
+
+### M còn phải làm
+
+1. Chạy `schema_v23_hoi_dap_rieng.sql` trong Supabase → SQL Editor.
+2. Kiểm bằng `curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai` → phải thấy `"v23_hoi_dap_rieng":true`.
+3. Vào Quản trị → Hỏi đáp → soạn sẵn vài câu thường gặp trước khi mở lớp; sinh viên vào là thấy ngay.
 
 ---
 

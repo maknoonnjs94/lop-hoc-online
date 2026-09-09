@@ -35,6 +35,7 @@ Thêm phần sau vào đuôi địa chỉ:
 | `?nop=cham` | Bài đã được chấm → hiện điểm và nhận xét, không sửa được nữa |
 | `?han=het` | Quá hạn nộp → nút nộp đóng lại |
 | `?hoi=trong` | Chưa có câu hỏi nào |
+| `?hoi=chuaghim` | Có câu hỏi nhưng chưa ghim câu thường gặp nào — xem màn hình trống của mục Thường gặp |
 | `?han=gap` | Còn 2 giờ tới hạn → dải nhắc chuyển màu gấp |
 | `?chuong=1` | Vừa được chấm bài và trả lời câu hỏi → thử chuông báo |
 | `?o=1` | Phiếu buổi 5 có 4 ô trả lời đặt sẵn → gõ thẳng vào phiếu, máy chấm đúng/sai |

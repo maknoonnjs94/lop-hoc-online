@@ -411,6 +411,20 @@
           </p>
         </div>
         <div id="paneHoi" hidden>
+          <details class="card ses" id="faqBox" open style="margin-bottom:18px">
+            <summary>
+              <span class="no">★</span>
+              <div class="t"><b>Câu hỏi thường gặp</b>
+                <span>Sinh viên mở mục Hỏi đáp là thấy khối này đầu tiên. Trả lời một lần, dùng cho mọi khoá sau.</span></div>
+              <span class="pill" id="faqN">0</span>
+            </summary>
+            <div class="mats">
+              <div class="bar"><button class="btn sm primary" id="faqThem">＋ Soạn một câu</button>
+                <span class="grow"></span>
+                <span class="hint">Ghim thêm câu hay từ danh sách bên dưới.</span></div>
+              <div id="faqList"></div>
+            </div>
+          </details>
           <div class="bar">
             <b>Sinh viên hỏi bài</b>
             <span class="grow"></span>
@@ -420,7 +434,12 @@
           <p class="hint" style="margin-top:10px">
             Câu chưa trả lời xếp lên đầu. Trả lời một lần là cả lớp đọc được ngay dưới tài liệu đó —
             tên người hỏi chỉ mình m thấy. Câu không phù hợp thì bấm Ẩn.
+            Câu nào đáng để cả lớp đọc thì bấm <b>📌 Ghim</b>, nó lên mục Câu hỏi thường gặp.
           </p>
+          <datalist id="faqChuDe">
+            <option value="Cách học"><option value="Bài tập &amp; nộp bài"><option value="Video bài giảng">
+            <option value="Thi cử"><option value="Tài khoản">
+          </datalist>
         </div>
         <div id="paneBao" hidden>
           <div class="bar">
@@ -1857,29 +1876,117 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* =====================================================================
      HỎI ĐÁP — câu chưa trả lời lên đầu.
      ===================================================================== */
+  var faqDs = [];
   async function loadHoi() {
-    var box = $('hoiList');
-    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var box = $('hoiList'), fbox = $('faqList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>'; fbox.innerHTML = '';
     if (!curClass) { box.innerHTML = '<div class="empty">Chọn một lớp ở cột bên trái.</div>'; return; }
     var r = await sb.rpc('bang_cau_hoi', { p_class: curClass });
-    if (r.error) { box.innerHTML = nhacChayV19('<b>hỏi bài</b>') + '<div class="empty">' + esc(r.error.message) + '</div>'; return; }
+    if (r.error) {
+      box.innerHTML = nhacChayV19('<b>hỏi bài</b>') + '<div class="empty">' + esc(r.error.message) + '</div>';
+      fbox.innerHTML = nhacChayV23();
+      return;
+    }
     var ds = r.data || [];
+    /* Cột ghim chỉ có từ schema_v23; thiếu thì vẫn dùng được phần trả lời như cũ. */
+    var coGhim = !ds.length || ds[0].ghim !== undefined;
     var chua = ds.filter(function (q) { return !q.tra_loi && !q.an; }).length;
     $('hoiN').textContent = chua; $('hoiN').hidden = !chua;
-    if (!ds.length) { box.innerHTML = '<div class="empty">Chưa có câu hỏi nào.<br><small>Sinh viên hỏi ngay dưới mỗi tài liệu khi mở ra xem.</small></div>'; return; }
-    box.innerHTML = ds.map(function (q) {
+
+    faqDs = coGhim ? ds.filter(function (q) { return q.ghim; }) : [];
+    $('faqN').textContent = faqDs.length;
+    $('faqThem').disabled = !coGhim;
+    fbox.innerHTML = !coGhim ? nhacChayV23()
+      : (faqDs.length ? faqDs.map(veMotFaq).join('')
+         : '<div class="empty">Chưa ghim câu nào.<br><small>Bấm “＋ Soạn một câu” để viết sẵn, hoặc ghim một câu sinh viên đã hỏi ở danh sách bên dưới.</small></div>');
+
+    var hoi = coGhim ? ds.filter(function (q) { return !q.ghim; }) : ds;
+    if (!hoi.length) { box.innerHTML = '<div class="empty">Chưa có câu hỏi nào.<br><small>Sinh viên hỏi ở mục Hỏi đáp, hoặc ngay dưới mỗi tài liệu khi mở ra xem.</small></div>'; return; }
+    box.innerHTML = hoi.map(function (q) {
+      var nguon = q.material_id ? (esc(q.buoi || '') + ' · ' + esc(q.tai_lieu || '')) : '<b>Câu hỏi chung</b>';
       return '<div class="card" data-q="' + q.id + '" style="margin-bottom:10px;padding:14px 16px' + (q.an ? ';opacity:.55' : '') + '">'
         + '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">'
         + '<span class="pill ' + (q.tra_loi ? 'on' : 'off') + '">' + (q.an ? 'Đã ẩn' : (q.tra_loi ? 'Đã trả lời' : 'Chờ trả lời')) + '</span>'
         + '<b>' + esc(q.ho_ten || q.email || '(không rõ)') + '</b>'
-        + '<small style="color:var(--muted)">' + esc(q.buoi || '') + ' · ' + esc(q.tai_lieu || '') + ' · ' + fmtWhen(q.tao_luc) + '</small></div>'
+        + '<small style="color:var(--muted)">' + nguon + ' · ' + fmtWhen(q.tao_luc) + '</small></div>'
         + '<div style="white-space:pre-wrap;line-height:1.55;margin-bottom:10px">' + esc(q.noi_dung) + '</div>'
         + '<textarea class="traIn" placeholder="Trả lời cho cả lớp cùng đọc…" style="width:100%;min-height:64px">' + esc(q.tra_loi || '') + '</textarea>'
         + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="btn sm primary traLuu">' + (q.tra_loi ? 'Sửa trả lời' : 'Gửi trả lời') + '</button>'
-        + '<button type="button" class="btn sm traAn">' + (q.an ? 'Bỏ ẩn' : 'Ẩn câu này') + '</button></div></div>';
+        + '<button type="button" class="btn sm traAn">' + (q.an ? 'Bỏ ẩn' : 'Ẩn câu này') + '</button>'
+        + (coGhim && q.tra_loi && !q.an ? '<button type="button" class="btn sm traGhim">📌 Ghim vào Thường gặp</button>' : '')
+        + '</div></div>';
     }).join('');
   }
+
+  function nhacChayV23() {
+    return '<div class="hint" style="margin:0;padding:10px 12px;border-radius:12px;background:var(--accent-soft,#fdeedd)">'
+      + 'Chưa bật mục hỏi đáp riêng. Chạy một lần file <b>schema_v23_hoi_dap_rieng.sql</b> trong Supabase → SQL Editor là xong.</div>';
+  }
+
+  /* ------------------------- Câu hỏi thường gặp ------------------------- */
+  function veMotFaq(q, i) {
+    return '<div class="card" data-faq="' + q.id + '" style="margin-bottom:8px;padding:12px 14px">'
+      + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px">'
+      + '<span class="pill on">' + (i + 1) + '</span>'
+      + (q.chu_de ? '<span class="pill">' + esc(q.chu_de) + '</span>' : '')
+      + (q.cua_gv ? '' : '<span class="pill off">Từ câu sinh viên hỏi</span>')
+      + '<span class="grow"></span>'
+      + '<button type="button" class="btn sm faqLen" title="Đưa lên trên">↑</button>'
+      + '<button type="button" class="btn sm faqXuong" title="Đưa xuống dưới">↓</button>'
+      + '<button type="button" class="btn sm faqSua">Sửa</button>'
+      + '<button type="button" class="btn sm faqBo">Bỏ ghim</button></div>'
+      + '<div style="font-weight:700;line-height:1.5;white-space:pre-wrap">' + esc(q.noi_dung) + '</div>'
+      + '<div style="white-space:pre-wrap;line-height:1.55;color:var(--muted);margin-top:7px;padding-left:12px;border-left:3px solid var(--ok)">'
+      + esc(q.tra_loi || '') + '</div></div>';
+  }
+
+  function moFaq(q) {
+    dialog(q ? 'Sửa câu hỏi thường gặp' : 'Soạn câu hỏi thường gặp',
+      '<label class="f">Câu hỏi<textarea id="faqHoi" placeholder="Ví dụ: Nộp bài muộn thì có bị trừ điểm không ạ?" style="min-height:64px">' + esc(q ? q.noi_dung : '') + '</textarea></label>'
+      + '<label class="f">Trả lời<textarea id="faqDap" placeholder="Trả lời gọn, đủ ý — cả lớp sẽ đọc cái này." style="min-height:110px">' + esc(q ? (q.tra_loi || '') : '') + '</textarea></label>'
+      + '<label class="f">Chủ đề <small style="color:var(--muted);font-weight:400">(để trống cũng được — dùng để gom nhóm)</small>'
+      + '<input id="faqCd" list="faqChuDe" placeholder="Bài tập &amp; nộp bài" value="' + esc(q ? (q.chu_de || '') : '') + '"></label>',
+      async function () {
+        var hoi = val('faqHoi'), dap = val('faqDap');
+        if (!hoi) { msg($('dlgMsg'), 'Chưa có câu hỏi.'); return false; }
+        if (!dap) { msg($('dlgMsg'), 'Chưa có câu trả lời — mục này để trả lời sẵn, không phải để hỏi.'); return false; }
+        var r = await sb.rpc('luu_faq', { p_id: q ? q.id : null, p_class: curClass, p_hoi: hoi, p_dap: dap, p_chu_de: val('faqCd') });
+        if (r.error || !r.data || !r.data.ok) { msg($('dlgMsg'), 'Không lưu được: ' + ((r.error && r.error.message) || (r.data && r.data.reason) || '')); return false; }
+        toast('Đã lưu câu hỏi thường gặp.'); await loadHoi();
+      },
+      q ? 'Lưu' : 'Thêm vào mục thường gặp');
+  }
+  $('faqThem').addEventListener('click', function () { moFaq(null); });
+
+  $('faqList').addEventListener('click', async function (e) {
+    var card = e.target.closest('[data-faq]'); if (!card) return;
+    var id = card.dataset.faq;
+    var q = faqDs.filter(function (x) { return x.id === id; })[0];
+    if (e.target.closest('.faqSua')) { if (q) moFaq(q); return; }
+    var nut = e.target.closest('.faqLen, .faqXuong, .faqBo'); if (!nut) return;
+    nut.disabled = true;
+    var r;
+    if (nut.classList.contains('faqBo')) r = await sb.rpc('ghim_cau_hoi', { p_id: id, p_ghim: false });
+    else r = await sb.rpc('xep_faq', { p_id: id, p_len: nut.classList.contains('faqLen') });
+    nut.disabled = false;
+    if (r.error || !r.data || !r.data.ok) { toast('Không đổi được: ' + ((r.error && r.error.message) || (r.data && r.data.reason) || '')); return; }
+    await loadHoi();
+  });
   $('hoiList').addEventListener('click', async function (e) {
+    var ghim = e.target.closest('.traGhim');
+    if (ghim) {
+      var idg = e.target.closest('[data-q]').dataset.q;
+      dialog('Ghim vào mục thường gặp',
+        '<p class="hint" style="margin:0 0 12px">Câu này sẽ hiện ở đầu mục Hỏi đáp cho cả lớp, kể cả những bạn chưa mở tài liệu gốc. Tên người hỏi vẫn không hiện.</p>'
+        + '<label class="f">Chủ đề <small style="color:var(--muted);font-weight:400">(để trống cũng được)</small>'
+        + '<input id="ghimCd" list="faqChuDe" placeholder="Bài tập &amp; nộp bài"></label>',
+        async function () {
+          var r = await sb.rpc('ghim_cau_hoi', { p_id: idg, p_ghim: true, p_chu_de: val('ghimCd') });
+          if (r.error || !r.data || !r.data.ok) { msg($('dlgMsg'), 'Không ghim được: ' + ((r.error && r.error.message) || (r.data && r.data.reason) || '')); return false; }
+          toast('Đã ghim lên mục Câu hỏi thường gặp.'); await loadHoi();
+        }, 'Ghim');
+      return;
+    }
     var luu = e.target.closest('.traLuu'), an = e.target.closest('.traAn');
     var card = e.target.closest('[data-q]'); if (!card || (!luu && !an)) return;
     var nut = luu || an; nut.disabled = true;

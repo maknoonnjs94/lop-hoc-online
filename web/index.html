@@ -524,6 +524,80 @@
   .onb h2{ display:flex; align-items:center; gap:14px } .onb h2 .lic{ width:60px; height:60px; margin-left:auto }
   .helpbox h3{ display:flex; align-items:center; gap:14px } .helpbox h3 .lic{ width:64px; height:64px; margin-left:auto }
 
+  /* ---------- Mục Hỏi đáp riêng ---------- */
+  .hq{ display:grid; gap:16px }
+  .hq-hero{ display:flex; gap:20px; align-items:flex-start; padding:22px 24px }
+  .hq-hero > img{ width:104px; height:104px; flex:none; margin-top:-4px }
+  .hq-hero > .than{ flex:1; min-width:0 }
+  .hq-hero h3{ font-size:19px; font-weight:800; letter-spacing:-.01em }
+  .hq-hero p{ color:var(--muted); font-size:13.5px; line-height:1.6; margin-top:5px; max-width:62ch }
+  /* .vpanel textarea và .vpanel .sub chỉ có trong trình xem — ngoài này phải tự đặt */
+  .hq-hero textarea{ width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 13px; font:inherit;
+    font-size:14px; resize:vertical; min-height:66px; color:var(--ink); background:var(--surface);
+    user-select:text; -webkit-user-select:text }
+  .hq-hero textarea:focus{ outline:none; border-color:var(--primary) }
+  .hq-hero .sub{ color:var(--muted); font-size:12.5px; line-height:1.5 }
+  .hq-tabs{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:0 2px }
+  .hq-tab{ display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink-2); border-radius:999px; padding:9px 16px; font-size:13px; font-weight:700 }
+  .hq-tab:hover{ border-color:var(--line-2) }
+  .hq-tab.on{ background:var(--primary); border-color:var(--primary); color:var(--on-primary) }
+  .hq-tab b{ min-width:20px; height:20px; padding:0 6px; border-radius:999px; display:grid; place-items:center;
+    font-size:11px; font-weight:800; background:var(--tint); color:var(--primary) }
+  .hq-tab.on b{ background:rgba(255,255,255,.24); color:#fff }
+  .hq-tim{ margin-left:auto; display:flex; align-items:center; gap:8px; background:var(--surface);
+    border:1px solid var(--line); border-radius:999px; padding:0 14px; height:38px; min-width:210px }
+  .hq-tim .ico{ font-size:17px; color:var(--muted) }
+  .hq-tim input{ border:0; background:none; outline:none; font:inherit; font-size:13px; color:var(--ink); width:100%; min-width:0 }
+  .hq-than{ display:grid; gap:10px }
+  .hq-trong{ text-align:center; padding:26px 12px }
+  .hq-trong img{ width:132px; height:132px; opacity:.95 }
+  .hq-trong p{ margin:10px auto 0; max-width:46ch; font-size:13.5px; color:var(--muted); line-height:1.6 }
+
+  /* Câu hỏi thường gặp: mở ra đọc từng câu, không phải cuộn qua cả trang */
+  .faq{ display:grid; gap:9px }
+  .faq-i{ border:1px solid var(--line); border-radius:var(--r-m); background:var(--surface); overflow:hidden;
+    transition:border-color .12s, box-shadow .12s }
+  .faq-i[open]{ border-color:var(--line-2); box-shadow:var(--shadow-1) }
+  .faq-i > summary{ display:flex; gap:13px; align-items:flex-start; padding:15px 17px; cursor:pointer;
+    list-style:none; font-size:14.5px; font-weight:700; line-height:1.5 }
+  .faq-i > summary::-webkit-details-marker{ display:none }
+  .faq-i > summary:hover{ background:var(--tint-alt) }
+  .faq-i .so{ flex:none; width:27px; height:27px; border-radius:9px; display:grid; place-items:center;
+    background:var(--tint); color:var(--primary); font-size:12.5px; font-weight:800; font-variant-numeric:tabular-nums }
+  .faq-i[open] .so{ background:var(--primary); color:var(--on-primary) }
+  .faq-i .mui{ flex:none; margin-left:auto; width:18px; height:18px; color:var(--muted); transition:transform .15s }
+  .faq-i[open] .mui{ transform:rotate(90deg); color:var(--primary) }
+  .faq-i .hd-tra{ margin:0 17px 16px 57px }
+
+  /* Gom theo buổi học, trong mỗi buổi lại tách theo từng phiếu */
+  .hq-buoi{ border:1px solid var(--line); border-radius:var(--r-m); background:var(--surface); overflow:hidden }
+  .hq-buoi > summary{ display:flex; gap:12px; align-items:center; padding:14px 17px; cursor:pointer;
+    list-style:none; font-size:14.5px; font-weight:800 }
+  .hq-buoi > summary::-webkit-details-marker{ display:none }
+  .hq-buoi > summary:hover{ background:var(--tint-alt) }
+  .hq-buoi .dot{ flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+    background:var(--surface-2); border:2px solid var(--line-2); font-size:11.5px; font-weight:800;
+    color:var(--muted); font-variant-numeric:tabular-nums }
+  .hq-buoi[open] .dot{ background:var(--primary); border-color:var(--primary); color:var(--on-primary) }
+  .hq-buoi .n{ margin-left:auto; flex:none; min-width:22px; height:22px; padding:0 8px; border-radius:999px;
+    display:grid; place-items:center; font-size:11.5px; font-weight:700; color:var(--muted); background:var(--surface-2) }
+  .hq-buoi .n.cho{ color:#a07a2a; background:#fdf5e4 }
+  .hq-lot{ padding:0 17px 14px }
+  .hq-lot .hd-ds{ margin-top:6px }
+  .hq-mat{ display:flex; align-items:center; gap:9px; width:100%; text-align:left; border:0; background:none;
+    border-top:1px solid var(--line); margin-top:4px; padding:13px 2px 4px; font-size:13px; font-weight:700; color:var(--ink-2) }
+  .hq-mat:hover{ color:var(--primary) }
+  .hq-mat .k{ flex:none; font-size:11px; font-weight:800; border-radius:999px; padding:3px 9px }
+  .hq-mat .ten{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .hq-mat .mui{ flex:none; margin-left:auto; width:16px; height:16px; color:var(--line-2) }
+  .hq-mat:hover .mui{ color:var(--primary) }
+  .hd-chan{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line) }
+  @media (max-width:560px){
+    .hq-hero{ display:block; padding:18px } .hq-hero > img{ width:84px; height:84px; margin:0 0 6px }
+    .hq-tim{ margin-left:0; flex-basis:100% } .faq-i .hd-tra{ margin:0 14px 14px 14px }
+  }
+
   /* ---- responsive ---- */
   @media (max-width:1199px){
     .shell{ grid-template-columns:84px minmax(0,1fr); gap:16px; padding:16px }
@@ -542,7 +616,7 @@
   }
   @media (max-width:639px){
     .shell{ display:block; padding:10px } .side{ position:relative; inset:auto; min-height:0; height:auto; padding:10px 8px; margin-bottom:12px }
-    .brand{ font-size:16px; justify-content:flex-start; padding:0 6px; gap:10px } .brand img.logo{ width:46px; height:46px } .nav{ grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; gap:2px }
+    .brand{ font-size:16px; justify-content:flex-start; padding:0 6px; gap:10px } .brand img.logo{ width:46px; height:46px } .nav{ grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:10px; gap:2px }
     .nav button{ min-width:0; padding:10px 2px; border-radius:12px; font-size:10px }
     .hero{ display:block } .hero .copy,.hero.trai .copy{ width:100%; margin:0; padding:20px 20px 10px } .hero .art,.hero.trai .art{ position:relative; inset:auto; width:100%; height:215px } .hero .art img.canh,.hero.trai .art img.canh{ object-position:center 30%; -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 18%); mask-image:linear-gradient(180deg, transparent 0, #000 18%) }
     .topbar{ flex-wrap:wrap; position:static } .search{ order:2; flex-basis:100% } .quick{ gap:8px } .qcard{ padding:14px 6px } .qcard small{ display:none }
@@ -625,6 +699,7 @@
         <button type="button" data-view="tasks"><span class="ico" data-ico="clipboard"></span>Bài tập<b id="navTaskN" hidden>0</b></button>
         <button type="button" data-view="schedule"><span class="ico" data-ico="calendar"></span>Lịch học</button>
         <button type="button" data-view="progress"><span class="ico" data-ico="chart"></span>Tiến độ</button>
+        <button type="button" data-view="hoi"><span class="ico" data-ico="help"></span>Hỏi đáp<b id="navHoiN" hidden>0</b></button>
       </nav>
       <div class="mascot">
         <div class="bub" id="mascotSay">Có thắc mắc? Mình luôn ở đây để giúp bạn!</div>
@@ -685,6 +760,11 @@
         <section id="viewProgress" hidden>
           <div class="heading"><h1>Tiến độ</h1><p>Bạn đã đi được tới đâu.</p></div>
           <div id="progressBody"></div>
+        </section>
+
+        <section id="viewHoi" hidden>
+          <div class="heading"><h1>Hỏi đáp</h1><p>Câu hỏi thường gặp, thắc mắc của cả lớp theo từng buổi, và những câu bạn đã hỏi.</p></div>
+          <div id="hoiBody"></div>
         </section>
       </main>
     </div>
@@ -1280,7 +1360,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function goView(v) {
     view = v;
     [].forEach.call($('nav').querySelectorAll('button[data-view]'), function (b) { b.classList.toggle('on', b.dataset.view === v); });
-    ['home', 'lessons', 'tasks', 'schedule', 'progress'].forEach(function (k) { $('view' + k.charAt(0).toUpperCase() + k.slice(1)).hidden = k !== v; });
+    ['home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi'].forEach(function (k) { $('view' + k.charAt(0).toUpperCase() + k.slice(1)).hidden = k !== v; });
     renderView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -1291,6 +1371,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     else if (view === 'tasks') renderTasks();
     else if (view === 'schedule') renderSchedule();
     else if (view === 'progress') renderProgress();
+    else if (view === 'hoi') renderHoi();
     capNhatChuong();
   }
 
@@ -1320,6 +1401,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function tenLop() { var c = classes.filter(function (x) { return x.id === curClass; })[0]; return c ? c.name : ''; }
 
   async function loadSessions() {
+    hqDs = null;   /* đổi lớp hoặc có tin mới thì lấy lại hỏi đáp */
     var r = await sb.from('sessions').select('*, materials(*)').eq('class_id', curClass).eq('published', true);
     if (r.error) { $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">Không tải được danh sách buổi: ' + esc(r.error.message) + '</div></div>'; return; }
     sessions = (r.data || []).sort(function (a, b) {
@@ -1591,24 +1673,38 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     });
     hoiDaTra.forEach(function (q) {
       if (!sauLanTruoc(q.tra_luc)) return;
+      /* câu hỏi chung không gắn tài liệu nào — dẫn thẳng sang mục Hỏi đáp */
+      if (!q.material_id) {
+        ra.push({ di: 'hoi', luc: q.tra_luc, ten: 'Giảng viên đã trả lời câu hỏi của bạn', phu: 'Mục Hỏi đáp' });
+        return;
+      }
       var m = matById(q.material_id); if (!m || !moKhoa(m)) return;
       ra.push({ m: m, luc: q.tra_luc, ten: 'Giảng viên đã trả lời câu hỏi của bạn', phu: m.title || 'Hỏi bài' });
     });
     return ra.sort(function (a, b) { return new Date(b.luc) - new Date(a.luc); });
   }
-  function capNhatChuong() { var n = tinMoi().length; $('bellN').textContent = n; $('bellN').hidden = !n; }
+  function capNhatChuong() {
+    var n = tinMoi().length; $('bellN').textContent = n; $('bellN').hidden = !n;
+    var nh = hoiDaTra.filter(function (q) { return sauLanTruoc(q.tra_luc); }).length;
+    var b = $('navHoiN'); if (b) { b.textContent = nh; b.hidden = !nh; }
+  }
   $('bellBtn').addEventListener('click', function (e) {
     e.stopPropagation(); toggleMenu(false);
     var mn = $('bellMenu'); if (!mn.hidden) { mn.hidden = true; return; }
     var ds = tinMoi();
     mn.innerHTML = '<div class="who">' + (ds.length ? '' : lic('notifications', 56)) + '<b>' + (ds.length ? ds.length + ' tin mới từ lần trước' : 'Không có gì mới') + '</b><span>Ctrl+K để tìm nhanh</span></div>'
-      + ds.slice(0, 12).map(function (x) { var k = KIND[x.m.kind] || KIND.link; return '<button type="button" class="it" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '"><span>' + esc(x.ten) + '<small>' + esc(x.phu) + '</small></span></button>'; }).join('')
+      + ds.slice(0, 12).map(function (x) {
+          if (x.di) return '<button type="button" class="it" data-govi="' + x.di + '"><span>' + esc(x.ten) + '<small>' + esc(x.phu) + '</small></span></button>';
+          var k = KIND[x.m.kind] || KIND.link;
+          return '<button type="button" class="it" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '"><span>' + esc(x.ten) + '<small>' + esc(x.phu) + '</small></span></button>';
+        }).join('')
       + (ds.length ? '<div class="foot"><button type="button" class="it" id="bellSeen">Đánh dấu đã xem hết</button></div>' : '');
     mn.hidden = false;
   });
   $('bellMenu').addEventListener('click', function (e) {
     e.stopPropagation();
     if (e.target.closest('#bellSeen')) { lanTruoc = Date.now(); ghiMocLanTruoc(); $('bellMenu').hidden = true; renderView(); return; }
+    var gv = e.target.closest('.it[data-govi]'); if (gv) { $('bellMenu').hidden = true; goView(gv.dataset.govi); return; }
     var b = e.target.closest('.it[data-open]'); if (!b) return;
     $('bellMenu').hidden = true; openMaterial(b.dataset.open, b.dataset.kind, b.dataset.title);
   });
@@ -2147,29 +2243,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       o += '<div class="hd-trong"><img src="' + licSrc('discussion') + '" alt="" draggable="false">'
         + '<p>Chưa ai hỏi gì về tài liệu này.<br>Bạn hỏi câu đầu tiên nhé — hỏi sớm đỡ dồn về cuối kỳ.</p></div>';
     } else {
-      o += '<div class="hd-ds">' + ds.map(function (q) {
-        var toi = q.user_id === me.id;
-        var mat = toi ? anhMat(avatarNay) : licSrc('profile');
-        return '<div class="hd-item">'
-          + '<div class="hd-hang">'
-          + '<img class="hd-mat" src="' + mat + '" alt="" draggable="false">'
-          + '<div style="flex:1;min-width:0">'
-          + '<div class="hd-bong' + (toi ? ' toi' : '') + '">' + esc(q.noi_dung) + '</div>'
-          + '<div class="hd-ai"><b>' + (toi ? 'Bạn' : 'Một bạn trong lớp') + '</b> · ' + fmtWhen(q.tao_luc) + '</div>'
-          + '</div></div>'
-          + (q.tra_loi
-              ? '<div class="hd-tra">'
-                + '<img class="hd-mat gv" src="img/logo.png" alt="" draggable="false">'
-                + '<div style="flex:1;min-width:0">'
-                + '<div class="hd-bong">' + esc(q.tra_loi) + '</div>'
-                + '<div class="hd-ai"><b>Giảng viên</b> · ' + fmtWhen(q.tra_luc) + '</div>'
-                + '</div></div>'
-              : (toi ? '<div class="qwait"><i></i>Đang chờ giảng viên trả lời</div>' : ''))
-          + '</div>';
-      }).join('') + '</div>';
+      o += '<div class="hd-ds">' + ds.map(veMotCauHoi).join('') + '</div>';
     }
+    o += '<div class="hd-chan"><button type="button" class="btn sm sec" id="hdSangMuc">Xem tất cả hỏi đáp của lớp<span class="ico">' + I.arrow + '</span></button></div>';
     box.innerHTML = o;
     $('hdGui').addEventListener('click', function () { guiCauHoi(m); });
+    $('hdSangMuc').addEventListener('click', function () { closeViewer(); goView('hoi'); });
   }
   async function guiCauHoi(m) {
     var inp = $('hdIn'), tt = $('hdTt'), t = String(inp.value || '').trim();
@@ -2180,6 +2259,259 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     await veHoiDap(m);
     noiMascot('Đã gửi câu hỏi, chờ giảng viên trả lời nhé.');
   }
+
+  /* Một câu hỏi — dùng chung cho khung dưới tài liệu và cho mục Hỏi đáp,
+     để hai nơi không bao giờ trông khác nhau. Không chỗ nào hiện tên người hỏi. */
+  function veMotCauHoi(q) {
+    var toi = me && q.user_id === me.id;
+    var mat = toi ? anhMat(avatarNay) : licSrc('profile');
+    return '<div class="hd-item">'
+      + '<div class="hd-hang">'
+      + '<img class="hd-mat" src="' + mat + '" alt="" draggable="false">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div class="hd-bong' + (toi ? ' toi' : '') + '">' + esc(q.noi_dung) + '</div>'
+      + '<div class="hd-ai"><b>' + (toi ? 'Bạn' : 'Một bạn trong lớp') + '</b> · ' + fmtWhen(q.tao_luc) + '</div>'
+      + '</div></div>'
+      + (q.tra_loi
+          ? '<div class="hd-tra">'
+            + '<img class="hd-mat gv" src="img/logo.png" alt="" draggable="false">'
+            + '<div style="flex:1;min-width:0">'
+            + '<div class="hd-bong">' + esc(q.tra_loi) + '</div>'
+            + '<div class="hd-ai"><b>Giảng viên</b> · ' + fmtWhen(q.tra_luc) + '</div>'
+            + '</div></div>'
+          : (toi ? '<div class="qwait"><i></i>Đang chờ giảng viên trả lời</div>' : ''))
+      + '</div>';
+  }
+
+  /* =================================================================
+     MỤC HỎI ĐÁP RIÊNG
+     Ba ngăn: Thường gặp (giảng viên ghim) · Theo buổi học · Câu hỏi của bạn.
+     ================================================================= */
+  var hqDs = null, hqTab = 'faq', hqTim = '', hqDangTai = false, hqLoi = '', hqMo = {};
+
+  async function taiHoiDap() {
+    hqLoi = 0;
+    if (!coHoiDap || !me || !curClass) { hqDs = []; return; }
+    var r = await sb.from('cau_hoi')
+      .select('id, material_id, user_id, noi_dung, tao_luc, tra_loi, tra_luc, ghim, ghim_stt, chu_de')
+      .eq('class_id', curClass).order('tao_luc', { ascending: false });
+    if (r.error) {
+      /* Chưa chạy schema v23 thì chưa có class_id / ghim / chu_de. */
+      hqLoi = r.error.message || 'khong tai duoc';
+      hqDs = [];
+      return;
+    }
+    hqDs = r.data || [];
+  }
+
+  function hqTaiLieu(id) {
+    for (var i = 0; i < sessions.length; i++) {
+      var ms = sessions[i].materials || [];
+      for (var j = 0; j < ms.length; j++) if (ms[j].id === id) return { m: ms[j], s: sessions[i] };
+    }
+    return null;
+  }
+  function hqHop(q) {
+    if (!hqTim) return true;
+    return boDau((q.noi_dung || '') + ' ' + (q.tra_loi || '') + ' ' + (q.chu_de || '')).indexOf(boDau(hqTim).trim()) >= 0;
+  }
+  function hqTrong(tranh, loi) {
+    return '<div class="pcard hq-trong"><img src="' + licSrc(tranh) + '" alt="" draggable="false"><p>' + loi + '</p></div>';
+  }
+
+  function renderHoi() {
+    var box = $('hoiBody');
+    if (!coHoiDap) {
+      box.innerHTML = '<div class="pcard"><div class="pempty"><span class="ico">' + I.help + '</span>Phần hỏi đáp chưa được bật cho lớp này.</div></div>';
+      return;
+    }
+    if (hqDs === null) {
+      box.innerHTML = '<div class="pcard"><div class="pempty">Đang tải hỏi đáp…</div></div>';
+      if (!hqDangTai) {
+        hqDangTai = true;
+        taiHoiDap().then(function () { hqDangTai = false; if (view === 'hoi') renderHoi(); capNhatChuong(); });
+      }
+      return;
+    }
+
+    var ds = hqDs;
+    var faq = ds.filter(function (q) { return q.ghim && q.tra_loi; })
+                .sort(function (a, b) { return (a.ghim_stt || 0) - (b.ghim_stt || 0); });
+    var cuaToi = ds.filter(function (q) { return me && q.user_id === me.id; });
+    var theoN = ds.filter(function (q) { return !q.ghim; }).length;
+
+    var o = '<div class="hq">';
+    o += '<div class="pcard hq-hero">'
+      + '<img class="lic" src="' + licSrc('ask-teacher') + '" alt="" draggable="false">'
+      + '<div class="than">'
+      + '<h3>Hỏi gì cũng được</h3>'
+      + '<p>Ngó qua <b>Câu hỏi thường gặp</b> trước đã — nhiều thắc mắc giảng viên đã trả lời sẵn. Chưa thấy thì hỏi ngay ở đây; giảng viên trả lời một lần, cả lớp cùng đọc được. <b>Bạn học không nhìn thấy tên người hỏi.</b></p>'
+      + '<div class="hd-soan" style="margin-top:14px">'
+      + '<img class="hd-mat" src="' + anhMat(avatarNay) + '" alt="" draggable="false">'
+      + '<div class="than"><textarea id="hqIn" placeholder="Ví dụ: Cuối kỳ có thi phần chuẩn độ tạo phức không ạ?"></textarea>'
+      + '<div class="nprow" style="margin-top:8px"><button type="button" class="btn sm primary" id="hqGui">Gửi câu hỏi</button>'
+      + '<span class="sub" id="hqTt" style="margin:0">Câu hỏi chung, không gắn vào bài nào.</span></div></div></div>'
+      + '</div></div>';
+
+    o += '<div class="hq-tabs">'
+      + [
+          ['faq', 'Thường gặp', faq.length],
+          ['buoi', 'Theo buổi học', theoN],
+          ['toi', 'Câu hỏi của bạn', cuaToi.length]
+        ].map(function (t) {
+          return '<button type="button" class="hq-tab' + (hqTab === t[0] ? ' on' : '') + '" data-hq="' + t[0] + '">'
+            + t[1] + (t[2] ? '<b>' + t[2] + '</b>' : '') + '</button>';
+        }).join('')
+      + '<label class="hq-tim"><span class="ico">' + I.search + '</span>'
+      + '<input id="hqTim" type="search" placeholder="Tìm trong hỏi đáp…" autocomplete="off" value="' + esc(hqTim) + '"></label>'
+      + '</div>';
+
+    o += '<div class="hq-than" id="hqThan"></div></div>';
+    box.innerHTML = o;
+    hqVeThan();
+  }
+
+  /* Chỉ vẽ lại phần thân: gõ tìm kiếm hay đổi ngăn thì ô soạn câu hỏi vẫn còn nguyên. */
+  function hqVeThan() {
+    var than = $('hqThan'); if (!than) return;
+    var ds = (hqDs || []).filter(hqHop);
+
+    if (hqLoi) {
+      than.innerHTML = '<div class="pcard"><div class="pempty"><span class="ico">' + I.alert + '</span>'
+        + 'Chưa chạy <b>schema_v23</b> trên Supabase nên chưa có mục hỏi đáp riêng.<br><small>' + esc(hqLoi) + '</small></div></div>';
+      return;
+    }
+
+    if (hqTab === 'faq') {
+      var faq = ds.filter(function (q) { return q.ghim && q.tra_loi; })
+                  .sort(function (a, b) { return (a.ghim_stt || 0) - (b.ghim_stt || 0); });
+      if (!faq.length) {
+        than.innerHTML = hqTrong('notes', hqTim
+          ? 'Không có câu hỏi thường gặp nào khớp với “' + esc(hqTim) + '”.'
+          : 'Giảng viên chưa ghim câu nào vào đây.<br>Khi có câu hỏi hay, cô sẽ ghim lên để cả lớp khỏi phải hỏi lại.');
+        return;
+      }
+      /* gom theo chủ đề, giữ đúng thứ tự giảng viên đã xếp */
+      var nhom = [], viTri = {};
+      faq.forEach(function (q) {
+        var k = String(q.chu_de || '').trim();
+        if (viTri[k] == null) { viTri[k] = nhom.length; nhom.push({ ten: k, ds: [] }); }
+        nhom[viTri[k]].ds.push(q);
+      });
+      var coTen = nhom.some(function (g) { return g.ten; }), stt = 0, o = '';
+      nhom.forEach(function (g) {
+        if (coTen) o += '<h2 class="sec" style="margin-top:8px">' + esc(g.ten || 'Câu hỏi khác') + '<i>' + g.ds.length + ' câu</i></h2>';
+        o += '<div class="faq">' + g.ds.map(function (q) {
+          stt++;
+          return '<details class="faq-i" data-id="' + q.id + '"' + (hqMo[q.id] ? ' open' : '') + '>'
+            + '<summary><span class="so">' + stt + '</span><span>' + esc(q.noi_dung) + '</span>'
+            + '<span class="ico mui">' + I.chev + '</span></summary>'
+            + '<div class="hd-tra">'
+            + '<img class="hd-mat gv" src="img/logo.png" alt="" draggable="false">'
+            + '<div style="flex:1;min-width:0"><div class="hd-bong">' + esc(q.tra_loi) + '</div>'
+            + '<div class="hd-ai"><b>Giảng viên</b> · ' + fmtWhen(q.tra_luc) + '</div></div></div>'
+            + '</details>';
+        }).join('') + '</div>';
+      });
+      than.innerHTML = o;
+      return;
+    }
+
+    if (hqTab === 'buoi') {
+      var conLai = ds.filter(function (q) { return !q.ghim; });
+      var chung = conLai.filter(function (q) { return !q.material_id; });
+      var o = '';
+      if (chung.length) {
+        o += '<details class="hq-buoi"' + (hqMo['_chung'] ? ' open' : '') + ' data-id="_chung">'
+          + '<summary><span class="dot">?</span><span>Câu hỏi chung của lớp</span>'
+          + '<span class="n">' + chung.length + '</span></summary>'
+          + '<div class="hq-lot"><div class="hd-ds">' + chung.map(veMotCauHoi).join('') + '</div></div></details>';
+      }
+      var coBuoi = 0;
+      sessions.forEach(function (s) {
+        var ms = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+        var khoi = [], tong = 0, cho = 0;
+        ms.forEach(function (m) {
+          var qs = conLai.filter(function (q) { return q.material_id === m.id; });
+          if (!qs.length) return;
+          khoi.push({ m: m, qs: qs });
+          tong += qs.length;
+          cho += qs.filter(function (q) { return !q.tra_loi; }).length;
+        });
+        if (!khoi.length) return;
+        coBuoi++;
+        var mo = hqMo[s.id] != null ? hqMo[s.id] : coBuoi === 1;   /* buổi mới nhất mở sẵn */
+        o += '<details class="hq-buoi" data-id="' + s.id + '"' + (mo ? ' open' : '') + '>'
+          + '<summary><span class="dot">' + (s.no != null ? s.no : '·') + '</span>'
+          + '<span>' + esc(tenBuoi(s)) + '</span>'
+          + '<span class="n' + (cho ? ' cho' : '') + '">' + (cho ? cho + ' chờ / ' + tong : tong) + '</span></summary>'
+          + '<div class="hq-lot">' + khoi.map(function (x) {
+            var k = KIND[x.m.kind] || KIND.link;
+            return '<button type="button" class="hq-mat" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '">'
+              + '<span class="k" style="background:var(--k-' + x.m.kind + '-bg);color:var(--k-' + x.m.kind + ')">' + esc(k.name) + '</span>'
+              + '<span class="ten">' + esc(x.m.title || k.name) + '</span>'
+              + '<span class="ico mui">' + I.chev + '</span></button>'
+              + '<div class="hd-ds">' + x.qs.map(veMotCauHoi).join('') + '</div>';
+          }).join('') + '</div></details>';
+      });
+      than.innerHTML = o || hqTrong('discussion', hqTim
+        ? 'Không có câu hỏi nào khớp với “' + esc(hqTim) + '”.'
+        : 'Chưa có câu hỏi nào ở các buổi đã mở.<br>Bạn hỏi câu đầu tiên nhé — hỏi sớm đỡ dồn về cuối kỳ.');
+      return;
+    }
+
+    /* Câu hỏi của bạn */
+    var cuaToi = ds.filter(function (q) { return me && q.user_id === me.id; });
+    if (!cuaToi.length) {
+      than.innerHTML = hqTrong('study-group', hqTim
+        ? 'Bạn chưa hỏi câu nào khớp với “' + esc(hqTim) + '”.'
+        : 'Bạn chưa hỏi câu nào.<br>Hỏi ở ô phía trên, hoặc hỏi ngay dưới một phiếu bài tập khi đang làm dở.');
+      return;
+    }
+    var cho = cuaToi.filter(function (q) { return !q.tra_loi; }).length;
+    than.innerHTML = '<h2 class="sec">' + cuaToi.length + ' câu bạn đã hỏi<i>' + (cho ? cho + ' câu đang chờ trả lời' : 'đã được trả lời hết') + '</i></h2>'
+      + '<div class="pcard"><div class="hd-ds">' + cuaToi.map(function (q) {
+          var nguon = q.material_id ? hqTaiLieu(q.material_id) : null;
+          var nhan = nguon ? esc(tenBuoi(nguon.s)) + ' · ' + esc(nguon.m.title || '') : 'Câu hỏi chung';
+          return '<div class="hq-chung"><span class="ico">' + I.chev + '</span>' + nhan + '</div>' + veMotCauHoi(q);
+        }).join('') + '</div></div>';
+  }
+
+  async function guiHoiChung() {
+    var inp = $('hqIn'), tt = $('hqTt'), t = String(inp.value || '').trim();
+    if (t.length < 5) { tt.textContent = 'Viết rõ hơn một chút nhé.'; return; }
+    $('hqGui').disabled = true; tt.textContent = 'Đang gửi…';
+    var r = await sb.from('cau_hoi').insert({ class_id: curClass, user_id: me.id, noi_dung: t.slice(0, 2000) });
+    $('hqGui').disabled = false;
+    if (r.error) { tt.textContent = 'Không gửi được: ' + r.error.message; return; }
+    inp.value = ''; hqTab = 'toi';
+    await taiHoiDap(); await taiHoiDaTra();
+    if (view === 'hoi') renderHoi();
+    noiMascot('Đã gửi câu hỏi, chờ giảng viên trả lời nhé.');
+  }
+
+  $('viewHoi').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-hq]');
+    if (t) {
+      hqTab = t.dataset.hq;
+      [].forEach.call(this.querySelectorAll('[data-hq]'), function (x) { x.classList.toggle('on', x === t); });
+      hqVeThan(); return;
+    }
+    if (e.target.closest('#hqGui')) { guiHoiChung(); return; }
+    var om = e.target.closest('[data-open]');
+    if (om) { openMaterial(om.dataset.open, om.dataset.kind, om.dataset.title); return; }
+  });
+  $('viewHoi').addEventListener('input', function (e) {
+    if (e.target.id !== 'hqTim') return;
+    hqTim = e.target.value; clearTimeout(hqGo);
+    hqGo = setTimeout(hqVeThan, 160);
+  });
+  var hqGo = null;
+  /* Sự kiện toggle không nổi bọt lên cha — phải bắt ở pha capture. */
+  $('viewHoi').addEventListener('toggle', function (e) {
+    var d = e.target; if (!d || d.tagName !== 'DETAILS' || !d.dataset.id) return;
+    hqMo[d.dataset.id] = d.open;
+  }, true);
 
   /* Vẽ phần nộp bài + hỏi bài xuống dưới nội dung tài liệu. */
   /* Nút tải về bản gốc — chỉ khi giảng viên bật cho tài liệu đó. */

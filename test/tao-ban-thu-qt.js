@@ -69,9 +69,20 @@ const stub = `<script>
         chi_tiet:{ oa:'sai', ob:'sai', oc:'dung', od:'sai' } }
     ],
     cau_hoi: [
-      { id:'q1', material_id:'m1', user_id:'u1', noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5), tra_loi:null, tra_luc:null, an:false },
-      { id:'q2', material_id:'m2', user_id:'u2', noi_dung:'Phút 12 của video cô viết nhầm số 0,1 thành 0,01 phải không ạ?', tao_luc:d(-2*36e5), tra_loi:null, tra_luc:null, an:false },
-      { id:'q3', material_id:'m1', user_id:'u3', noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5), tra_loi:'Để nước còn đọng không pha loãng dung dịch chuẩn.', tra_luc:d(-1*864e5), an:false }
+      { id:'f1', material_id:null, class_id:'c1', user_id:'gv', ghim:true, ghim_stt:1, chu_de:'Bài tập & nộp bài', an:false,
+        noi_dung:'Nộp bài muộn có bị trừ điểm không ạ?', tao_luc:d(-20*864e5),
+        tra_loi:'Quá hạn thì hệ thống vẫn nhận nhưng đánh dấu là nộp muộn. Muộn dưới một ngày cô không trừ.', tra_luc:d(-20*864e5) },
+      { id:'f2', material_id:null, class_id:'c1', user_id:'gv', ghim:true, ghim_stt:2, chu_de:'Video bài giảng', an:false,
+        noi_dung:'Video xem lại được mấy lần ạ?', tao_luc:d(-18*864e5),
+        tra_loi:'Mỗi video có một quỹ giờ xem. Hết quỹ mà vẫn cần thì nhắn cô nới thêm.', tra_luc:d(-18*864e5) },
+      { id:'f3', material_id:'m1', class_id:'c1', user_id:'u3', ghim:true, ghim_stt:3, chu_de:'Thi cử', an:false,
+        noi_dung:'Cuối kỳ có thi phần chuẩn độ tạo phức không ạ?', tao_luc:d(-9*864e5),
+        tra_loi:'Có, trọng số khoảng 20%.', tra_luc:d(-8*864e5) },
+      { id:'q0', material_id:null, class_id:'c1', user_id:'u1', ghim:false, an:false,
+        noi_dung:'Buổi bù sáng thứ 7 học ở phòng nào ạ?', tao_luc:d(-3*36e5), tra_loi:null, tra_luc:null },
+      { id:'q1', material_id:'m1', class_id:'c1', user_id:'u1', ghim:false, noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5), tra_loi:null, tra_luc:null, an:false },
+      { id:'q2', material_id:'m2', class_id:'c1', user_id:'u2', ghim:false, noi_dung:'Phút 12 của video cô viết nhầm số 0,1 thành 0,01 phải không ạ?', tao_luc:d(-2*36e5), tra_loi:null, tra_luc:null, an:false },
+      { id:'q3', material_id:'m1', class_id:'c1', user_id:'u3', ghim:false, noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5), tra_loi:'Để nước còn đọng không pha loãng dung dịch chuẩn.', tra_luc:d(-1*864e5), an:false }
     ]
   };
   var TEN = {}; DB.profiles.forEach(function (p) { TEN[p.id] = p; });
@@ -162,17 +173,66 @@ const stub = `<script>
       return ra;
     }
     if (ten === 'bang_cau_hoi') {
-      return DB.cau_hoi.map(function (c) {
+      return DB.cau_hoi.filter(function (c) {
+        if (!c.material_id) return (c.class_id || 'c1') === a.p_class;
+        var m = DB.materials.filter(function (y) { return y.id === c.material_id; })[0] || {};
+        var s = DB.sessions.filter(function (y) { return y.id === m.session_id; })[0] || {};
+        return s.class_id === a.p_class;
+      }).map(function (c) {
         var m = DB.materials.filter(function (x) { return x.id === c.material_id; })[0] || {};
         var s = DB.sessions.filter(function (x) { return x.id === m.session_id; })[0] || {};
         var p = TEN[c.user_id] || {};
-        return { id:c.id, material_id:c.material_id, tai_lieu:m.title, buoi:s.title || ('Buổi ' + s.no),
-          ho_ten:p.full_name, email:p.email, noi_dung:c.noi_dung, tao_luc:c.tao_luc, tra_loi:c.tra_loi, tra_luc:c.tra_luc, an:c.an };
-      }).filter(function (x) {
-        var m = DB.materials.filter(function (y) { return y.id === x.material_id; })[0] || {};
-        var s = DB.sessions.filter(function (y) { return y.id === m.session_id; })[0] || {};
-        return s.class_id === a.p_class;
-      }).sort(function (x, y) { return (!!x.tra_loi) - (!!y.tra_loi) || (x.tao_luc < y.tao_luc ? 1 : -1); });
+        return { id:c.id, material_id:c.material_id || null,
+          tai_lieu: c.material_id ? m.title : null,
+          buoi: c.material_id ? (s.title || ('Buổi ' + s.no)) : null, session_no:s.no,
+          ho_ten: p.full_name || (c.user_id === 'gv' ? 'Giảng viên' : null), email:p.email, cua_gv: c.user_id === 'gv',
+          noi_dung:c.noi_dung, tao_luc:c.tao_luc, tra_loi:c.tra_loi, tra_luc:c.tra_luc, an:c.an,
+          ghim: !!c.ghim, ghim_stt: c.ghim_stt || null, chu_de: c.chu_de || null };
+      }).sort(function (x, y) {
+        return (!!y.ghim) - (!!x.ghim)
+          || (x.ghim ? (x.ghim_stt || 0) - (y.ghim_stt || 0) : 0)
+          || (!!x.tra_loi) - (!!y.tra_loi)
+          || (x.tao_luc < y.tao_luc ? 1 : -1);
+      });
+    }
+    if (ten === 'ghim_cau_hoi') {
+      var cg = DB.cau_hoi.filter(function (x) { return x.id === a.p_id; })[0];
+      if (!cg) return { ok:false, reason:'khong_thay' };
+      cg.ghim = !!a.p_ghim;
+      if (a.p_chu_de != null) cg.chu_de = String(a.p_chu_de).trim() || null;
+      if (cg.ghim && !cg.ghim_stt) {
+        cg.ghim_stt = Math.max.apply(null, [0].concat(DB.cau_hoi.map(function (x) { return x.ghim && x.id !== cg.id ? (x.ghim_stt || 0) : 0; }))) + 1;
+      }
+      if (!cg.ghim) cg.ghim_stt = null;
+      return { ok:true };
+    }
+    if (ten === 'luu_faq') {
+      if (!String(a.p_hoi || '').trim()) return { ok:false, reason:'thieu_cau_hoi' };
+      if (!String(a.p_dap || '').trim()) return { ok:false, reason:'thieu_tra_loi' };
+      var cf = a.p_id ? DB.cau_hoi.filter(function (x) { return x.id === a.p_id; })[0] : null;
+      var maxS = Math.max.apply(null, [0].concat(DB.cau_hoi.map(function (x) { return x.ghim ? (x.ghim_stt || 0) : 0; })));
+      if (!cf) {
+        cf = { id:'f' + (Date.now() % 100000), material_id:null, class_id:a.p_class, user_id:'gv',
+          tao_luc:new Date().toISOString(), an:false, ghim:true, ghim_stt:maxS + 1 };
+        DB.cau_hoi.push(cf);
+      }
+      cf.noi_dung = String(a.p_hoi).trim();
+      cf.tra_loi = String(a.p_dap).trim();
+      cf.tra_luc = cf.tra_luc || new Date().toISOString();
+      cf.chu_de = String(a.p_chu_de || '').trim() || null;
+      cf.ghim = true; cf.an = false;
+      if (!cf.ghim_stt) cf.ghim_stt = maxS + 1;
+      return { ok:true, id:cf.id };
+    }
+    if (ten === 'xep_faq') {
+      var ds = DB.cau_hoi.filter(function (x) { return x.ghim; })
+                         .sort(function (x, y) { return (x.ghim_stt || 0) - (y.ghim_stt || 0); });
+      var vt = ds.map(function (x) { return x.id; }).indexOf(a.p_id);
+      if (vt < 0) return { ok:false, reason:'khong_thay' };
+      var kia = a.p_len ? vt - 1 : vt + 1;
+      if (kia < 0 || kia >= ds.length) return { ok:true, reason:'het_duong' };
+      var t = ds[vt].ghim_stt; ds[vt].ghim_stt = ds[kia].ghim_stt; ds[kia].ghim_stt = t;
+      return { ok:true };
     }
     if (ten === 'cham_bai') {
       var b = DB.bai_nop.filter(function (x) { return x.id === a.p_id; })[0];

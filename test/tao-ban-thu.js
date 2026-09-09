@@ -66,17 +66,52 @@ const stub = `<script>
     tep:[{ path:'m1/u1/bai-lam.jpg', ten:'bai-lam.jpg', co:820000 }],
     cham_luc: nop === 'cham' ? (chuong ? bayGio : d(-36e5)) : null, diem: nop === 'cham' ? '8,5' : null,
     nhan_xet: nop === 'cham' ? 'Câu 4 sai dấu khi cân bằng, còn lại tốt. Xem lại mục 5.2 nhé.' : '' }];
-  var cauHoi = P.get('hoi') === 'trong' ? [] : [
-    { id:'q1', material_id:'m1', user_id:'u1', noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5),
+  /* ?hoi=trong không câu nào · ?hoi=chuaghim chưa ghim câu thường gặp nào */
+  var hoiCh = P.get('hoi'), cauHoi = hoiCh === 'trong' ? [] : [
+    /* --- mục Câu hỏi thường gặp: giảng viên ghim, không gắn tài liệu nào --- */
+    { id:'f1', material_id:null, class_id:'c1', user_id:'gv', ghim:true, ghim_stt:1, chu_de:'Bài tập & nộp bài',
+      noi_dung:'Nộp bài muộn có bị trừ điểm không ạ?', tao_luc:d(-20*864e5),
+      tra_loi:'Quá hạn thì hệ thống vẫn nhận nhưng đánh dấu là nộp muộn. Muộn dưới một ngày cô không trừ; muộn hơn thì nhắn cho cô biết lý do trước khi nộp.', tra_luc:d(-20*864e5) },
+    { id:'f2', material_id:null, class_id:'c1', user_id:'gv', ghim:true, ghim_stt:2, chu_de:'Bài tập & nộp bài',
+      noi_dung:'Em nộp nhầm ảnh thì làm sao ạ?', tao_luc:d(-19*864e5),
+      tra_loi:'Bấm Rút bài rồi nộp lại, miễn là cô chưa chấm. Cô chấm rồi thì nhắn cho cô.', tra_luc:d(-19*864e5) },
+    { id:'f3', material_id:null, class_id:'c1', user_id:'gv', ghim:true, ghim_stt:3, chu_de:'Video bài giảng',
+      noi_dung:'Video xem lại được mấy lần ạ?', tao_luc:d(-18*864e5),
+      tra_loi:'Mỗi video có một quỹ giờ xem. Xem hết quỹ mà vẫn cần xem lại thì nhắn cô, cô nới thêm cho.', tra_luc:d(-18*864e5) },
+    { id:'f4', material_id:'m1', class_id:'c1', user_id:'u9', ghim:true, ghim_stt:4, chu_de:'Thi cử',
+      noi_dung:'Cuối kỳ có thi phần chuẩn độ tạo phức không ạ?', tao_luc:d(-9*864e5),
+      tra_loi:'Có, trọng số khoảng 20%. Đề bám sát phiếu bài tập buổi 4 và buổi 5.', tra_luc:d(-8*864e5) },
+
+    /* --- câu hỏi chung của lớp, chưa ghim --- */
+    { id:'q0', material_id:null, class_id:'c1', user_id:'u1', ghim:false,
+      noi_dung:'Buổi bù sáng thứ 7 học ở phòng nào ạ?', tao_luc:d(-3*36e5), tra_loi:null, tra_luc:null },
+
+    /* --- hỏi dưới từng phiếu --- */
+    { id:'q1', material_id:'m1', class_id:'c1', user_id:'u1', ghim:false, noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5),
       tra_loi:'Điểm tương đương là điểm lý thuyết khi số mol vừa đủ; điểm cuối là lúc chỉ thị đổi màu, thường lệch một chút. Sai số đó gọi là sai số chỉ thị.', tra_luc: chuong ? bayGio : d(-4*36e5) },
-    { id:'q2', material_id:'m1', user_id:'u1', noi_dung:'Cô ơi bài 3 em ra 0,12 M có đúng không ạ?', tao_luc:d(-36e5), tra_loi:null, tra_luc:null },
-    { id:'q3', material_id:'m1', user_id:'u9', noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5),
-      tra_loi:'Để nước còn đọng trong buret không pha loãng dung dịch chuẩn, làm nồng độ thực tế thấp hơn.', tra_luc:d(-2*864e5) }
+    { id:'q2', material_id:'m1', class_id:'c1', user_id:'u1', ghim:false, noi_dung:'Cô ơi bài 3 em ra 0,12 M có đúng không ạ?', tao_luc:d(-36e5), tra_loi:null, tra_luc:null },
+    { id:'q3', material_id:'m1', class_id:'c1', user_id:'u9', ghim:false, noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5),
+      tra_loi:'Để nước còn đọng trong buret không pha loãng dung dịch chuẩn, làm nồng độ thực tế thấp hơn.', tra_luc:d(-2*864e5) },
+    { id:'q4', material_id:'m2', class_id:'c1', user_id:'u9', ghim:false, noi_dung:'Phút 12 video cô viết 0,1 hay 0,01 ạ, em nhìn không rõ.', tao_luc:d(-30*36e5),
+      tra_loi:'0,01 M nhé. Cô sẽ ghi đè lại chú thích ở bản sau.', tra_luc:d(-29*36e5) },
+    { id:'q5', material_id:'m5', class_id:'c1', user_id:'u9', ghim:false, noi_dung:'Hằng số bền điều kiện khác hằng số bền ở chỗ nào ạ?', tao_luc:d(-6*864e5), tra_loi:null, tra_luc:null }
   ];
+  if (hoiCh === 'chuaghim') cauHoi = cauHoi.filter(function (c) { return !c.ghim; });
+  var hoiSo = 0;
+  /* cau_hoi: gửi câu hỏi mới thì phải thấy nó xuất hiện thật, không thì không thử được luồng */
+  function qHoi(){
+    var o = q(cauHoi);
+    o.insert = function (row) {
+      cauHoi.unshift(Object.assign({ id:'qz' + (++hoiSo), class_id:'c1', material_id:null, ghim:false,
+        tao_luc:new Date().toISOString(), tra_loi:null, tra_luc:null }, row));
+      return q(null);
+    };
+    return o;
+  }
   function q(data){ var o = {}; ['select','eq','order','maybeSingle','upsert','update','insert','not','is','in','limit','single'].forEach(function(k){ o[k] = function(){ return o; }; }); o.then = function(a, b){ return Promise.resolve({ data:data, error:null }).then(a, b); }; return o; }
   window.supabase = { createClient: function(){ return {
     auth: { getSession: function(){ return Promise.resolve({ data:{ session:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } } } }); }, onAuthStateChange: function(){}, signOut: function(){ alert('Đây là bản thử — thật thì sẽ đăng xuất.'); return Promise.resolve({}); }, signInWithPassword: function(){ return Promise.resolve({ data:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } }, error:null }); }, updateUser: function(){ return Promise.resolve({ data:{}, error:null }); }, resetPasswordForEmail: function(){ return Promise.resolve({ error:null }); } },
-    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return q(cauHoi); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
+    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return qHoi(); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
     rpc: function(name, a){ if (name === 'hoan_tat_ho_so') { Object.assign(profile, { full_name:a.p_full_name, gender:a.p_gender, birth_year:a.p_birth_year, major:a.p_major, onboarded_at:new Date().toISOString(), theme: a.p_gender === 'nu' ? 'peach' : 'mint' }); } if (name === 'da_doi_mat_khau') profile.must_change_pw = false; if (name === 'dat_anh_dai_dien') profile.avatar_path = a.p_path;
       if (name === 'nop_bai') { baiNop = [{ material_id:a.p_material, nop_luc:new Date().toISOString(), loi_nhan:a.p_loi_nhan, tep:a.p_tep, cham_luc:null, diem:null, nhan_xet:'' }]; }
       if (name === 'rut_bai') baiNop = [];

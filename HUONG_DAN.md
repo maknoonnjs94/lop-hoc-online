@@ -315,13 +315,24 @@ Hiện ra một bảng gom hết: đã mở bao nhiêu tài liệu trên tổng 
 
 Dùng trước buổi phụ đạo để biết em nào đang hổng chỗ nào, khỏi phải mở bốn tab.
 
-## Hỏi bài
+## Hỏi bài và mục Hỏi đáp
 
-Dưới **mọi** tài liệu đều có ô hỏi, không phải bật gì cả.
+Cần chạy một lần `schema_v23_hoi_dap_rieng.sql` (chưa chạy thì ô hỏi dưới tài liệu vẫn chạy, chỉ thiếu mục riêng).
 
-Sinh viên thấy: câu của chính mình (kèm trạng thái *đang chờ trả lời*) và mọi câu **đã được trả lời** của cả lớp. Tên người hỏi không hiện với bạn học — chỉ mình m thấy.
+Sinh viên có **hai chỗ để hỏi**, và cả hai đổ về **một chỗ để đọc**:
 
-M trả lời ở tab **Hỏi đáp**: câu chưa trả lời xếp lên đầu, số câu chờ hiện ngay trên tên tab. Trả lời một lần là cả lớp đọc được. Câu không phù hợp thì bấm **Ẩn** — ẩn xong chỉ mình m còn thấy.
+- **Dưới mọi tài liệu** có ô hỏi — hỏi tại chỗ, lúc đang làm dở câu 3 của phiếu. Không phải bật gì cả.
+- **Mục Hỏi đáp** trên thanh điều hướng (mục thứ sáu) — hỏi câu chung không gắn bài nào ("cuối kỳ thi phần nào ạ?"), và đọc lại toàn bộ. Ba ngăn:
+  1. **Thường gặp** — những câu m ghim, gom theo chủ đề, bấm mở ra đọc. Sinh viên vào là thấy ngăn này trước.
+  2. **Theo buổi học** — mỗi buổi một khối, trong buổi tách theo từng phiếu / video; bấm tên phiếu là mở thẳng tài liệu.
+  3. **Câu hỏi của bạn** — mọi câu mình đã hỏi, kèm trạng thái *đang chờ trả lời*.
+
+Sinh viên thấy: câu của chính mình và mọi câu **đã được trả lời** của cả lớp. **Tên người hỏi không hiện với bạn học ở bất kỳ chỗ nào** — chỉ mình m thấy. Câu chưa trả lời chỉ người hỏi thấy.
+
+M làm việc ở tab **Hỏi đáp** của trang quản trị, có hai phần:
+
+- **Câu hỏi thường gặp** (khối trên): **＋ Soạn một câu** để viết sẵn cả hỏi lẫn đáp mà không cần chờ ai hỏi — nên soạn vài câu *trước khi mở lớp*. Có Sửa, Bỏ ghim, ↑ ↓ xếp thứ tự, và ô chủ đề (gợi ý sẵn: Cách học · Bài tập & nộp bài · Video bài giảng · Thi cử · Tài khoản; để trống cũng được). Câu đã ghim thì cả lớp đọc được kể cả bạn chưa mở tài liệu gốc — ghim một lần, dùng cho mọi khoá sau.
+- **Sinh viên hỏi bài** (khối dưới): câu chưa trả lời xếp lên đầu, số câu chờ hiện ngay trên tên tab. Trả lời một lần là cả lớp đọc được. Câu hay thì bấm **📌 Ghim vào Thường gặp**. Câu không phù hợp thì bấm **Ẩn** — ẩn xong chỉ mình m còn thấy. Câu không gắn tài liệu có nhãn *Câu hỏi chung*.
 
 ## Mỗi tài khoản một máy
 
