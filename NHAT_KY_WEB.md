@@ -40,6 +40,20 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-16 (tối) — Rà lại toàn bộ đường bóc công thức (đợt 73)
+
+M yêu cầu rà cả quy trình thay vì vá từng chỗ. Đã dựng bộ thử riêng
+`So_Bai_Tap_HUS/Tools/thu_cong_thuc.js` — **38 phép thử**, rút mã thẳng từ `so_bai_tap.html`
+rồi chạy trong trình duyệt. Nó tìm ra 4 lỗi thật, nặng nhất là **thứ tự sai**: dựng căn trước
+rồi mới vá số mũ, nên `√3,89 ×10- 4 × 0,250` ra `√(3,89 × 10)- 4 × 0,250` — số mũ nằm
+ngoài dấu căn, **sai hẳn về Toán**. Chi tiết ở `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md`.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 73** → nút *Giao cho lớp* xuất PDF có công thức đúng.
+- `web/sheet.css` không đổi.
+- `web/_test_congthuc.html` là trang thử tại máy, đã nằm trong `.gitignore` (`web/_test_*`).
+
+---
+
 ## 2026-09-16 (chiều) — Vá số mũ vỡ khi bóc PDF (đợt 71)
 
 M báo chữ bóc bằng AI ra sai công thức: `K_a=10- 4,76`, `10⁻³,75`, `pH=- log [H⁺ ]`.

@@ -2479,7 +2479,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-16 · đợt 71 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-16 · đợt 73 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -4117,8 +4117,11 @@
            .replace(/\s*×\s*/g, ' × ')
            /* nới dấu = ra, nhưng chừa liên kết đôi/ba trong công thức cấu tạo: C=O, C=C */
            .replace(/\s*=\s*/g, ' = ').replace(/([A-Z]) = ([A-Z])/g, '$1=$2');
-      t = t.replace(/\b10\s*\^\s*(-?\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>' + e.replace(/-/g, '−') + '</sup>'; });
-      t = t.replace(/\b10[−-]\s?(\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>−' + e + '</sup>'; });
+      t = t.replace(/\b10\s*\^\s*([−\-\u2010-\u2014]?\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>' + e.replace(/[-\u2010-\u2014]/g, '−') + '</sup>'; });
+      /* Đứng ngay sau dấu nhân / dấu bằng / ngoặc mở thì "10 - 4" chắc chắn là số mũ,
+         không phải khoảng giá trị — chỗ này mới cho phép có khoảng trắng trước dấu trừ. */
+      t = t.replace(/([×·⋅=(]\s*)10\s+[−\-\u2010-\u2014]\s?(\d+(?:[.,]\d+)?)/g, function (m, tr, e) { so++; return tr + '10<sup>−' + e + '</sup>'; });
+      t = t.replace(/\b10[−\-\u2010-\u2014]\s?(\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>−' + e + '</sup>'; });
       if (t === truoc) return;
       var holder = document.createElement('span');
       holder.innerHTML = t;
@@ -4126,15 +4129,42 @@
       nd.parentNode.removeChild(nd);
     });
 
+    /* (a2) "Ca" đáng lẽ là nồng độ phân tích C_a. Ca cũng là canxi thật, nên chỉ đổi ở chỗ
+       CHẮC CHẮN là công thức: ngay sau dấu nhân, hoặc đứng trước "/K_a". Và cả câu phải có
+       K_a/K_b thì mới ở trong ngữ cảnh điện ly. "Ca(OH)2", "CaCl2", "Ca2+", "dung dịch Ca
+       0,1M" đều giữ nguyên — sai chỗ này là ra đề sai, nên thà bỏ sót còn hơn đổi bừa. */
+    if (/<sub>[ab][123]?<\/sub>/.test(box.innerHTML)) {
+      var can2 = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null), ds2 = [];
+      while (can2.nextNode()) {
+        var n2 = can2.currentNode;
+        if (n2.parentElement && n2.parentElement.closest('.can-kh, sup, sub')) continue;
+        ds2.push(n2);
+      }
+      ds2.forEach(function (nd) {
+        var t = nd.nodeValue, truoc = t;
+        t = t.replace(/([×·⋅]\s*)C([ab])(?![(\dA-Za-z])/g, function (m, tr, c) { so++; return tr + 'C<sub>' + c + '</sub>'; });
+        /* "Ca/K" rồi <sub>a</sub> nằm ở THẺ KẾ TIẾP — mẫu phải kết ở cuối nút chữ, không dò được "<sub>" */
+        t = t.replace(/\bC([ab])(\s*\/\s*p?K)\s*$/g, function (m, c, sau) { so++; return 'C<sub>' + c + '</sub>' + sau; });
+        if (t === truoc) return;
+        var hold2 = document.createElement('span');
+        hold2.innerHTML = t;
+        while (hold2.firstChild) nd.parentNode.insertBefore(hold2.firstChild, nd);
+        nd.parentNode.removeChild(nd);
+      });
+    }
+
     /* (b) số mũ bị cắt: <sup>−3</sup> rồi ",75" — kéo phần rơi xuống dòng trở lại. */
     [].slice.call(box.querySelectorAll('sup')).forEach(function (sp) {
       var noi = sp.textContent.trim();
-      if (!/^[−+-]?\d*$/.test(noi) || !noi) return;      /* chỉ gộp cho số mũ dạng SỐ */
+      if (!noi) return;
+      var chiDau = /^[−+\-\u2010-\u2014]$/.test(noi);        /* "10<sup>−</sup>4,76" — mất sạch phần số */
+      var coSo = /^[−+\-\u2010-\u2014]?\d+$/.test(noi);      /* "10<sup>−3</sup>,41" — rơi phần thập phân */
+      if (!chiDau && !coSo) return;
       var t = sp.nextSibling;
       if (!t || t.nodeType !== 3) return;
-      var m = /^(,\d+)/.exec(t.nodeValue);
+      var m = chiDau ? /^(\d+(?:[.,]\d+)?)/.exec(t.nodeValue) : /^([.,]\d+)/.exec(t.nodeValue);
       if (!m) return;
-      sp.textContent = noi + m[1];
+      sp.textContent = noi.replace(/[-\u2010-\u2014]/g, '−') + m[1];
       t.nodeValue = t.nodeValue.slice(m[1].length);
       so++;
     });
@@ -4227,6 +4257,9 @@
            .replace(/_(\d+(?:[.,]\d+)?|[A-Za-z]+\d?)/g, '<sub>$1</sub>');
       s = s.replace(/\^([^\s{}])/g, '<sup>$1</sup>').replace(/_([^\s{}])/g, '<sub>$1</sub>');
     }
+    /* Dấu trừ đầu số mũ dùng dấu trừ thật (−) cho khớp với chỗ bộ vá số mũ sinh ra,
+       không thì cùng một trang có chỗ "10⁻⁴" chỗ "10-4" nhìn lệch nhau. */
+    s = s.replace(/<sup>([^<]*)<\/sup>/g, function (m, x) { return '<sup>' + x.replace(/^[-\u2010-\u2014]/, '−') + '</sup>'; });
     return s.replace(/[{}]/g, '').replace(/ {2,}/g, ' ').trim();
   }
 
@@ -4346,6 +4379,10 @@
     var so = 0, soMu = 0;
     function lo(o, k) {
       if (!o || !o[k]) return;
+      /* Câu cũ có thể đã được dựng căn/phân số rồi — gỡ về chữ phẳng thì bộ vá số mũ mới
+         nhìn được trọn "10- 4" (đang bị cắt đôi bởi ranh giới thẻ). Câu nào đã chốt LaTeX
+         (có .tex-plain) thì để yên, không gỡ. */
+      if (o[k].indexOf('tex-plain') < 0 && /class="(?:can|ps)"/.test(o[k])) o[k] = mathUndressHtml(o[k]);
       /* Vá số mũ vỡ TRƯỚC: có sửa đúng "10- 4,76" thì bước chốt LaTeX sau đó mới đọc đúng. */
       var d = donSoMu(o[k]);
       if (d.so) { o[k] = d.html; soMu += d.so; }
@@ -9695,6 +9732,8 @@
     + 'CHÚ Ý RIÊNG các ký hiệu kèm chỉ số dưới hay gặp trong Hóa PT: nồng độ C_M (mol), C_N '
     + '(đương lượng); hằng số cân bằng K_a, K_b (điện ly acid/base, có thể nhiều nấc K_a1, '
     + 'K_a2…), K_w (nước), K_sp (tích số tan), K_f, K_d (tạo phức/phân ly phức), và cả pK_a, '
+    + 'pK_b…; NỒNG ĐỘ PHÂN TÍCH viết C_a, C_b (TUYỆT ĐỐI KHÔNG viết "Ca", "Cb" — "Ca" là canxi, '
+    + 'ghi phẳng là đọc thành nguyên tố hoá học, sai hẳn nghĩa). '
     + 'pK_b… — chữ/số nhỏ đứng ngay sau C hoặc K PHẢI giữ đúng chỉ số dưới (VD "C<sub>M</sub>", '
     + '"K<sub>a</sub>", "K<sub>sp</sub>"), TUYỆT ĐỐI KHÔNG viết phẳng liền chữ không có chỉ số '
     + '(SAI: "CM", "Ka", "Ksp"). '
@@ -9736,8 +9775,10 @@
     var html = sanitizeAiHtml(raw);
     html = chemFormatHtml(html);
     if (breakSteps) html = autoBreakSteps(html).replace(/^(?:<br\s*\/?>)+/i, '');   /* không để <br> mở đầu (nhãn đã đứng riêng dòng) */
-    /* Vá số mũ SAU khi dựng công thức: bắt được cả chỗ AI viết sai lẫn chỗ bộ dịch cắt hụt. */
-    return donSoMu(renderTexInHtml(html)).html;
+    /* Vá số mũ TRƯỚC khi dựng căn thức — thứ tự này bắt buộc. Làm ngược lại thì
+       "√3,89 ×10- 4 × 0,250" bị dựng thành "√(3,89 × 10)- 4 × 0,250": số mũ nằm NGOÀI
+       dấu căn, sai hẳn về Toán mà nhìn thoáng qua vẫn tưởng đúng. */
+    return renderTexInHtml(donSoMu(html).html);
   }
 
   function aiItemToBankItem(raw) {
