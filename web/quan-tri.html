@@ -1052,21 +1052,33 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   $('theoList').addEventListener('click', function (e) { var b = e.target.closest('button.noiq'); if (b) moNoiQuy(b); });
 
+  var coQuyXem = true;   /* máy chủ đã có cột quỹ xem / nới riêng chưa */
   async function loadTheo() {
     var box = $('theoList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
+    /* Cột quỹ xem (schema_v16) và phần nới riêng (schema_v17) có thể chưa có — thiếu thì vẫn xem được phần còn lại. */
+    coQuyXem = true;
     var rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no, gioi_han_giay)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
+    if (rs.error && /gioi_han_giay/.test(rs.error.message || '')) {
+      coQuyXem = false;
+      rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
+    }
     if (rs.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rs.error.message) + '</div>'; return; }
     var rr = await sb.from('enrollments').select('student, profiles(full_name, email, role)').eq('class_id', curClass);
     var sv = (rr.data || []).filter(function (e) { return !e.profiles || e.profiles.role === 'student'; });
     var rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress, tong_giay, quy_them').eq('class_id', curClass);
-    if (rv.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rv.error.message) + (/view_events/.test(rv.error.message) ? '<br><small>Chưa chạy file <b>schema_v9_hom_nay.sql</b> trong Supabase.</small>' : '') + '</div>'; return; }
+    if (rv.error && /tong_giay|quy_them/.test(rv.error.message || '')) {
+      coQuyXem = false;
+      rv = await sb.from('view_events').select('user_id, material_id, last_at, opens, progress').eq('class_id', curClass);
+    }
+    if (rv.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(rv.error.message) + (/view_events/.test(rv.error.message || '') ? '<br><small>Chưa chạy file <b>schema_v9_hom_nay.sql</b> trong Supabase.</small>' : '') + '</div>'; return; }
     var xem = {}; (rv.data || []).forEach(function (v) { (xem[v.material_id] = xem[v.material_id] || {})[v.user_id] = v; });
     var ten = {}; sv.forEach(function (e) { ten[e.student] = (e.profiles && e.profiles.full_name) || (e.profiles && e.profiles.email) || e.student.slice(0, 8); });
     var list = rs.data || [];
     if (!list.length) { box.innerHTML = '<div class="empty">Chưa có buổi nào mở cho sinh viên.</div>'; return; }
     if (!sv.length) { box.innerHTML = '<div class="empty">Lớp chưa có sinh viên.</div>'; return; }
-    box.innerHTML = list.map(function (s) {
+    var nhac = coQuyXem ? '' : '<div class="hint" style="margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--accent-soft,#fdeedd)">Chưa bật phần <b>quỹ thời lượng xem video</b> và <b>giờ xem</b>. Chạy một lần file <b>schema_v16_v17_gop.sql</b> trong Supabase → SQL Editor là xong, không phải chạy lại lần sau.</div>';
+    box.innerHTML = nhac + list.map(function (s) {
       var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
       var daMo = {}; mats.forEach(function (m) { Object.keys(xem[m.id] || {}).forEach(function (u) { daMo[u] = true; }); });
       var soMo = sv.filter(function (e) { return daMo[e.student]; }).length;
@@ -1080,7 +1092,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
               var chi = da.map(function (e) {
                 var v = x[e.student], pr = v.progress || {};
                 var t = pr.done ? '✓' : (pr.page ? 'tr.' + pr.page + '/' + (pr.pages || '?') : (pr.seconds ? Math.round(pr.seconds / 60) + 'p' : ''));
-                var quyM = Number(m.gioi_han_giay) || 0;
+                var quyM = coQuyXem ? (Number(m.gioi_han_giay) || 0) : 0;
                 if (!quyM) return esc(ten[e.student]) + (t ? ' <small style="color:var(--muted)">' + t + '</small>' : '');
                 var noi = Number(v.quy_them) || 0, dung = Number(v.tong_giay) || 0, tong = quyM + noi;
                 var het = dung >= tong;

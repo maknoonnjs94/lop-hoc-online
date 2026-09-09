@@ -385,21 +385,26 @@ async function coCot(env, bang, cot) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
     coCot(env, 'profiles', 'gender,major,must_change_pw'),
     coCot(env, 'profiles', 'avatar'),
     coCot(env, 'profiles', 'avatar_path'),
-    coCot(env, 'cau_hinh_he_thong', 'khoa')
+    coCot(env, 'cau_hinh_he_thong', 'khoa'),
+    coCot(env, 'materials', 'gioi_han_giay'),
+    coCot(env, 'view_events', 'tong_giay'),
+    coCot(env, 'view_events', 'quy_them')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
     v10_ho_so: v10,
     v11_giao_dien: v11,
     v12_anh_dai_dien: v12,
-    v14_video: v14
+    v14_video: v14,
+    v16_gioi_han: v16a && v16b,
+    v17_noi_quy: v17
   };
 }
 
