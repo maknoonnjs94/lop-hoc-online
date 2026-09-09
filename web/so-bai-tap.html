@@ -2479,7 +2479,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-16 · đợt 73 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-16 · đợt 75 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2679,6 +2679,10 @@
             .bank-count .mini-btn { padding: 3px 9px; font-size: 11.5px; }
             #bankList mark { background: rgba(250, 204, 21, .55); color: inherit; border-radius: 3px; padding: 0 1px; }
             .bank-pill.where { background: #fff7ed; border-color: #fed7aa; color: #b45309; }
+            .bank-acts-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+            .bank-acts-row .hint { flex: 1; min-width: 220px; }
+            .bank-acts-row .btn { padding: 7px 13px; font-size: 12.5px; }
+            #bankTexN { font-weight: 800; margin-left: 5px; opacity: .85 }
             @media (pointer: coarse) { .bchip { padding: 8px 12px; font-size: 12.5px; } }
           </style>
           <div class="bank-find">
@@ -2699,11 +2703,16 @@
               <button type="button" class="bchip" data-bf="key" data-v="yes">✓ Có đáp án</button>
               <button type="button" class="bchip" data-bf="key" data-v="no">Chưa có đáp án</button>
               <button type="button" class="bchip" data-bf="fig">🖼 Có hình</button>
-              <button type="button" class="bchip" id="bankTexAll" title="Vá số mũ bị vỡ khi bóc PDF (10- 4,76 → 10⁻⁴·⁷⁶) rồi chốt căn thức, phân số thành mã LaTeX. Làm một lần, từ đó phiếu và PDF vẽ đúng.">∑ Chuẩn hoá công thức</button>
-              <button type="button" class="bchip" id="bankTexShow" title="Hiện mã LaTeX thay cho công thức đã dựng, để soát lại cho đúng">⟨⟩ Xem mã</button>
               <button type="button" class="bchip clear" id="bankFindClear" hidden>✕ Bỏ lọc</button>
             </div>
             <div class="bank-count" id="bankCount"></div>
+            <div class="bank-acts-row">
+              <button type="button" class="btn btn-primary" id="bankTexAll"
+                title="Vá số mũ bị vỡ khi bóc PDF (10- 4,76 → 10⁻⁴·⁷⁶) rồi chốt căn thức, phân số thành mã LaTeX. Làm một lượt cho MỌI câu đang hiện.">∑ Chuẩn hoá công thức<b id="bankTexN"></b></button>
+              <button type="button" class="btn btn-ghost" id="bankTexShow"
+                title="Hiện mã LaTeX thay cho công thức đã dựng, để soát lại cho đúng">⟨⟩ Xem mã LaTeX</button>
+              <span class="hint">Làm một lượt cho cả danh sách đang hiện — lọc nhánh hay gõ tìm trước thì chỉ làm đúng số câu đó.</span>
+            </div>
           </div>
           <div id="bankList" style="margin-top:10px"></div>
                     </div>
@@ -4110,8 +4119,14 @@
       if (nd.parentElement && nd.parentElement.closest('.can-kh, sup, sub')) continue;
       ds.push(nd);
     }
+    /* Chừa nguyên phần trong $…$: đó là mã LaTeX, chèn <sup> vào giữa là làm hỏng mã,
+       bộ dựng công thức chạy sau sẽ không nhận ra nữa. Phần đó đã có bộ dịch LaTeX lo. */
+    function ngoaiTex(chuoi, f) {
+      return chuoi.split(/(\$[^$\n]*\$)/).map(function (p, i) { return (i % 2) ? p : f(p); }).join('');
+    }
     ds.forEach(function (nd) {
-      var t = nd.nodeValue, truoc = t;
+      var truoc = nd.nodeValue;
+      var t = ngoaiTex(truoc, function (t) {
       t = t.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')')
            .replace(/\[\s+/g, '[').replace(/\s+\]/g, ']')
            .replace(/\s*×\s*/g, ' × ')
@@ -4122,6 +4137,11 @@
          không phải khoảng giá trị — chỗ này mới cho phép có khoảng trắng trước dấu trừ. */
       t = t.replace(/([×·⋅=(]\s*)10\s+[−\-\u2010-\u2014]\s?(\d+(?:[.,]\d+)?)/g, function (m, tr, e) { so++; return tr + '10<sup>−' + e + '</sup>'; });
       t = t.replace(/\b10[−\-\u2010-\u2014]\s?(\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>−' + e + '</sup>'; });
+      /* Số mũ DƯƠNG cũng bị rời: "4,94 × 10 5" → 4,94 × 10⁵. Chỉ nhận sau dấu nhân,
+         nên "có 10 5 lít" hay "trang 10 5" không bị đụng. */
+      t = t.replace(/([×·⋅]\s*)10\s+(\d{1,3})(?![.,]?\d)/g, function (m, tr, e) { so++; return tr + '10<sup>' + e + '</sup>'; });
+      return t;
+      });
       if (t === truoc) return;
       var holder = document.createElement('span');
       holder.innerHTML = t;
@@ -7209,12 +7229,38 @@
      nhầm ranh giới, đã tự bắt lỗi này lúc test trước khi đưa vào code chính. Loại trừ
      riêng trường hợp dấu chấm đứng ngay sau 1-2 chữ số (VD "Bước 1.") để không bị hiểu
      nhầm thành hết câu, xé đôi mất nhãn bước với nội dung của chính bước đó. */
+  /* Ngắt lời giải thành từng bước. Ba nguồn tín hiệu:
+       1. "Bước 1/2/3…"
+       2. một danh sách từ mở đầu bước (Vậy, Do đó, Thay số, Kiểm tra, Nồng độ…)
+       3. sau dấu chấm/!/? mà tiếp theo là chữ hoa
+       4. SAU DẤU HAI CHẤM — trong lời giải, ":" gần như luôn mở đầu dòng dưới
+          ("…là:" ↵ "Ka = 10⁻⁷·¹⁵", "Thay số:" ↵ "[H⁺] = …"). Trước đây chỉ ngắt khi
+          BẢN GỐC đã có sẵn xuống dòng sau dấu ":", nên chữ bóc từ PDF (dính liền một mạch)
+          thì chạy tràn cả đoạn.
+     Chỉ chạy cho ĐÁP ÁN / LỜI GIẢI (breakSteps), không đụng đề bài. */
+  var BUOC_MO = ['Vậy', 'Do đó', 'Do vậy', 'Vì vậy', 'Suy ra', 'Thay số', 'Thế số', 'Áp dụng',
+    'Ta có', 'Ta được', 'Ta tính', 'Ta thấy', 'Nhận thấy', 'Từ đó', 'Khi đó', 'Sau đó', 'Tiếp theo',
+    'Cuối cùng', 'Mặt khác', 'Tương tự', 'Kết quả', 'Như vậy', 'Kết luận', 'Đề bài cho', 'Gọi',
+    /* thêm ở đợt 75 — mở đầu bước rất hay gặp trong lời giải Hoá phân tích */
+    'Kiểm tra', 'Nồng độ', 'Hằng số', 'Điều kiện', 'Phương trình', 'Trong đó', 'Thay vào',
+    'Rút ra', 'Đặt', 'Xét', 'pH của', 'pOH của'];
   function autoBreakSteps(html) {
-    var re = /(?:\s|<br\s*\/?>)*(?:\bB[uư][ớo]c\s*\d{1,2}\s*[.:)]|(?<!\p{L})(?:Vậy|Do đó|Do vậy|Vì vậy|Suy ra|Thay số|Thế số|Áp dụng|Ta có|Ta được|Ta tính|Ta thấy|Nhận thấy|Từ đó|Khi đó|Sau đó|Tiếp theo|Cuối cùng|Mặt khác|Tương tự|Kết quả|Như vậy|Kết luận|Đề bài cho|Gọi)(?!\p{L})|(?<=[^\d][.!?])\s+(?=\p{Lu}))/gu;
-    return html.replace(re, function (m) {
+    var re = new RegExp('(?:\\s|<br\\s*\\/?>)*(?:\\bB[uư][ớo]c\\s*\\d{1,2}\\s*[.:)]'
+      + '|(?<!\\p{L})(?:' + BUOC_MO.join('|') + ')(?!\\p{L})'
+      + '|(?<=[^\\d][.!?])\\s+(?=\\p{Lu}))', 'gu');
+    html = html.replace(re, function (m) {
       var label = m.replace(/^(?:\s|<br\s*\/?>)+/i, '');
       return label ? '<br>' + label : '<br>';
     });
+    /* Xuống dòng sau dấu ":" — nhưng chừa tỉ lệ 1:2, giờ 10:30 và "http://".
+       Chỉ đụng phần chữ, không thò vào bên trong thẻ. */
+    html = html.split(/(<[^>]+>)/).map(function (p, i) {
+      return (i % 2) ? p : p.replace(/:(?!\s*[\d\/])/g, ':<br>');
+    }).join('');
+    /* gộp <br> trùng, và bỏ <br> ở hai đầu — nhãn đứng đầu đoạn thì không cần ngắt trước nó */
+    return html.replace(/(?:<br\s*\/?>\s*)+/gi, '<br>')
+      .replace(/^(?:<br\s*\/?>)+/i, '')
+      .replace(/(?:<br\s*\/?>)+$/i, '');
   }
 
   function plainToHtml(text, doChem, breakSteps) {
@@ -7232,6 +7278,9 @@
     var html = doChem ? chemFormatText(t) : escapeText(t);
     html = html.replace(/ ?\u0001 ?/g, '<br>');
     if (breakSteps) html = autoBreakSteps(html).replace(/^(?:<br\s*\/?>)+/i, '');   /* không để <br> mở đầu (nhãn đã đứng riêng dòng) */
+    /* Nạp bằng cách dán chữ / đọc nhanh PDF (không qua AI) cũng vỡ số mũ y hệt — vá luôn,
+       và vá TRƯỚC khi dựng công thức, đúng thứ tự như đường AI. */
+    if (doChem) html = donSoMu(html).html;
     return t.indexOf('$') >= 0 ? renderTexInHtml(html) : html;   /* $...$ → công thức */
   }
 
@@ -8439,6 +8488,10 @@
     var found = bankSearchResults();
     var p = found.p, list = found.list;
     bankListNow = list;
+    var texN = document.getElementById('bankTexN');
+    if (texN) texN.textContent = list.length ? ' (' + list.length + ' câu)' : '';
+    var texBtn = document.getElementById('bankTexAll');
+    if (texBtn) texBtn.disabled = !list.length;
     var box = document.getElementById('bankList');
     bankRenderChips();
     var filtering = !!(bankFind.qtype || bankFind.key || bankFind.fig || bankFind.scope);
