@@ -645,6 +645,14 @@
   /* công thức là chữ thật (không phải ảnh) nên không cần style riêng gì nhiều —
      chỉ căn giữa cho công thức để trên dòng riêng ($$...$$) */
   .tex-plain sup, .tex-plain sub { font-size: 75%; }
+  /* Bật "⟨⟩ Xem mã" trong kho: giấu phần đã dựng, hiện thẳng mã LaTeX để soát và sửa. */
+  .hien-tex .tex-plain { font-size: 0; }
+  .hien-tex .tex-plain::after {
+    content: "$" attr(data-tex) "$";
+    font: 12.5px/1.6 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    background: #fff7ed; border: 1px solid #fed7aa; border-radius: 5px;
+    padding: 0 5px; color: #9a3412; white-space: pre-wrap;
+  }
   /* ---- đợt 67: căn thức và phân số dựng bằng CSS — chữ vẫn là chữ ----
      √(…) và (a)/(b) trong nội dung được giữ nguyên làm chữ ẩn (.can-kh) để copy, tìm kiếm,
      xuất Word vẫn ra đúng "√(Ka·C)"; phần nhìn thấy là gạch ngang phủ hết biểu thức và
@@ -2468,7 +2476,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 69 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 70 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2688,6 +2696,8 @@
               <button type="button" class="bchip" data-bf="key" data-v="yes">✓ Có đáp án</button>
               <button type="button" class="bchip" data-bf="key" data-v="no">Chưa có đáp án</button>
               <button type="button" class="bchip" data-bf="fig">🖼 Có hình</button>
+              <button type="button" class="bchip" id="bankTexAll" title="Chốt công thức của mọi câu đang hiện thành mã LaTeX — làm một lần, từ đó phiếu và PDF vẽ đúng cấu trúc">∑ Công thức → LaTeX</button>
+              <button type="button" class="bchip" id="bankTexShow" title="Hiện mã LaTeX thay cho công thức đã dựng, để soát lại cho đúng">⟨⟩ Xem mã</button>
               <button type="button" class="bchip clear" id="bankFindClear" hidden>✕ Bỏ lọc</button>
             </div>
             <div class="bank-count" id="bankCount"></div>
@@ -4140,11 +4150,13 @@
     });
 
     s = s.replace(/\\left|\\right/g, '');
-    for (var i = 0; i < 3; i++) s = s.replace(/\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
-    s = s.replace(/\\[dt]?frac\s*(\S)\s*(\S)/g, '$1/$2');
-    /* căn bậc n: \sqrt[3]{x} → chỉ số nhỏ đứng ngay trước dấu căn; mathDressElement đặt nó lên góc căn */
-    s = s.replace(/\\sqrt\s*\[([^\[\]]*)\]\s*\{([^{}]*)\}/g, '<sup class="can-bac">$1</sup>√($2)');
-    s = s.replace(/\\sqrt\s*\{([^{}]*)\}/g, '√($1)').replace(/\\sqrt\s*(\S)/g, '√$1');
+    /* \sqrt và \frac dựng THẲNG thành căn thức / phân số. Khác hẳn cách cũ (đổi ra chữ
+       "√(…)" rồi để bộ quét DOM đoán lại): ở đây biết CHẮC cái gì nằm dưới căn, cái gì là tử
+       là mẫu, nên không bao giờ ôm hụt hay ôm lố. Chữ gốc vẫn nằm trong .can-kh để copy và
+       xuất Word không đổi. */
+    s = texCauTruc(s);
+    s = s.replace(/\\sqrt\s*(\S)/g, function (m, x) { return texCan('', x); });
+    s = s.replace(/\\[dt]?frac\s*(\S)\s*(\S)/g, function (m, a, b) { return texPs(a, b); });
 
     /* Lệnh lạ (\lg, \log, \sin, \varepsilon…) không có trong bảng ký hiệu thì GIỮ NGUYÊN TÊN CHỮ,
        không được xóa trắng — mất một chữ "lg" hay "log" giữa công thức làm sai cả câu hỏi. */
@@ -4157,6 +4169,124 @@
       s = s.replace(/\^([^\s{}])/g, '<sup>$1</sup>').replace(/_([^\s{}])/g, '<sub>$1</sub>');
     }
     return s.replace(/[{}]/g, '').replace(/ {2,}/g, ' ').trim();
+  }
+
+  /* Một căn thức / phân số dựng bằng thẻ. Chữ gốc ("√(", ")", ")/(") giữ trong .can-kh —
+     mắt không thấy nhưng copy, tìm kiếm và xuất Word vẫn ra đúng như trước. */
+  function texCan(bac, noi) {
+    return '<span class="can">' + (bac ? '<sup class="can-bac">' + bac + '</sup>' : '')
+      + '<span class="can-kh">√(</span><span class="can-duoi">' + noi + '</span><span class="can-kh">)</span></span>';
+  }
+  function texPs(tu, mau) {
+    return '<span class="ps"><span class="can-kh">(</span><span class="ps-tu">' + tu + '</span>'
+      + '<span class="can-kh">)/(</span><span class="ps-mau">' + mau + '</span><span class="can-kh">)</span></span>';
+  }
+  /* Nhóm {...} cân ngoặc bắt đầu tại i. Phải đếm ngoặc chứ không dùng [^{}]* như trước,
+     không thì \sqrt{K_a \times 10^{-5}} đứt ngay ở dấu { của số mũ. */
+  function texNhom(s, i) {
+    var sau = 0;
+    for (var k = i; k < s.length; k++) {
+      if (s.charAt(k) === '{') sau++;
+      else if (s.charAt(k) === '}') { sau--; if (!sau) return { noi: s.slice(i + 1, k), het: k + 1 }; }
+    }
+    return null;
+  }
+  function texCauTruc(s) {
+    var out = '', i = 0;
+    while (i < s.length) {
+      var m = /^\\(sqrt|dfrac|tfrac|frac)/.exec(s.slice(i));
+      if (!m) { out += s.charAt(i); i++; continue; }
+      var j = i + m[0].length, bac = '';
+      while (s.charAt(j) === ' ') j++;
+      if (m[1] === 'sqrt' && s.charAt(j) === '[') {
+        var e = s.indexOf(']', j);
+        if (e > 0) { bac = s.slice(j + 1, e); j = e + 1; while (s.charAt(j) === ' ') j++; }
+      }
+      if (s.charAt(j) !== '{') { out += s.charAt(i); i++; continue; }
+      var g1 = texNhom(s, j);
+      if (!g1) { out += s.charAt(i); i++; continue; }
+      if (m[1] === 'sqrt') { out += texCan(texCauTruc(bac), texCauTruc(g1.noi)); i = g1.het; continue; }
+      var k2 = g1.het; while (s.charAt(k2) === ' ') k2++;
+      if (s.charAt(k2) !== '{') { out += s.charAt(i); i++; continue; }
+      var g2 = texNhom(s, k2);
+      if (!g2) { out += s.charAt(i); i++; continue; }
+      out += texPs(texCauTruc(g1.noi), texCauTruc(g2.noi));
+      i = g2.het;
+    }
+    return out;
+  }
+
+  /* Chiều ngược: đọc cấu trúc đã dựng trên DOM ra lại chuỗi LaTeX. Nhờ đó "chuyển sang
+     LaTeX" ở kho chỉ là dựng cấu trúc một lần rồi ghi lại — dùng đúng bộ quét đã test kỹ,
+     không phải viết thêm một bộ đoán thứ hai. */
+  function texTuCon(node) {
+    var ra = '';
+    if (!node) return ra;
+    [].forEach.call(node.childNodes, function (x) { ra += texTuMot(x); });
+    return ra;
+  }
+  function texTuMot(x) {
+    if (!x) return '';
+    if (x.nodeType === 3) {
+      /* Mã này m đọc và sửa được, nên viết bằng lệnh chuẩn thay vì ký tự lạ.
+         Chiều ngược lại đã có trong TEX_SYMBOLS nên vẫn khứ hồi đúng. */
+      return x.nodeValue.replace(/[{}\\$]/g, '')          /* ký tự này phá cú pháp LaTeX */
+        .replace(/×/g, '\\times ').replace(/[·⋅]/g, '\\cdot ').replace(/−/g, '-');
+    }
+    if (x.nodeType !== 1) return '';
+    var cl = x.classList, con = [].slice.call(x.children);
+    if (cl.contains('can-kh')) return '';
+    if (cl.contains('can')) {
+      var bac = con.filter(function (c) { return c.classList.contains('can-bac'); })[0];
+      var duoi = con.filter(function (c) { return c.classList.contains('can-duoi'); })[0];
+      return '\\sqrt' + (bac ? '[' + texTuCon(bac) + ']' : '') + '{' + texTuCon(duoi) + '}';
+    }
+    if (cl.contains('ps')) {
+      var tu = con.filter(function (c) { return c.classList.contains('ps-tu'); })[0];
+      var mau = con.filter(function (c) { return c.classList.contains('ps-mau'); })[0];
+      return '\\frac{' + texTuCon(tu) + '}{' + texTuCon(mau) + '}';
+    }
+    if (x.tagName === 'SUB') return '_{' + texTuCon(x) + '}';
+    if (x.tagName === 'SUP') return '^{' + texTuCon(x) + '}';
+    if (x.tagName === 'BR') return ' ';
+    return texTuCon(x);
+  }
+
+  /* Chốt công thức trong một đoạn HTML thành LaTeX: dựng cấu trúc, đọc ra mã, rồi thay
+     bằng <span class="tex-plain" data-tex="…"> — từ đó mã LaTeX là bản gốc, xem và sửa được. */
+  function mathSangTex(html) {
+    var box = document.createElement('div');
+    box.innerHTML = html || '';
+    mathDressElement(box);
+    var so = 0;
+    for (var lap = 0; lap < 400; lap++) {
+      var ds = box.querySelectorAll('.can, .ps'), el = null;
+      for (var k = 0; k < ds.length; k++) if (!ds[k].closest('.tex-plain')) { el = ds[k]; break; }
+      if (!el) break;
+      var thay = texSpanHtml(texTuMot(el).replace(/ {2,}/g, ' ').trim());
+      if (!thay) break;
+      var holder = document.createElement('span');
+      holder.innerHTML = thay;
+      while (holder.firstChild) el.parentNode.insertBefore(holder.firstChild, el);
+      el.parentNode.removeChild(el);
+      so++;
+    }
+    return { html: box.innerHTML, so: so };
+  }
+
+  /* Cả một câu trong kho: đề, ý nhỏ, phương án, nhận định, đáp án, lời giải. */
+  function bankSangTex(it) {
+    var so = 0;
+    function lo(o, k) {
+      if (!o || !o[k]) return;
+      var r = mathSangTex(o[k]);
+      if (r.so) { o[k] = r.html; so += r.so; }
+    }
+    ['questionHtml', 'answerHtml', 'solutionHtml'].forEach(function (k) { lo(it, k); });
+    (it.options || []).forEach(function (o) { lo(o, 'html'); });
+    (it.statements || []).forEach(function (s) { lo(s, 'html'); });
+    (it.parts || []).forEach(function (p) { lo(p, 'html'); });
+    return so;
   }
 
   function texSpanHtml(tex) {
@@ -4524,6 +4654,10 @@
         var them = recs[r].addedNodes;
         for (var k = 0; k < them.length; k++) {
           var nd = them[k];
+          if (!nd) continue;
+          /* Gán innerHTML cho ô đang có sẵn thì thứ được thêm là NÚT CHỮ, không phải phần tử
+             — phải dựng ở nút cha, không thì bỏ sót đúng trường hợp hay gặp nhất. */
+          if (nd.nodeType === 3) nd = nd.parentElement;
           if (!nd || nd.nodeType !== 1 || !nd.closest) continue;
           if (nd.closest(MATH_KHONG_VAO + ',.can,.ps')) continue;
           if (dang && dang.isContentEditable && nd.contains(dang)) continue;
@@ -8192,9 +8326,11 @@
     return html;
   }
 
+  var bankListNow = [];   /* danh sách câu đang hiện — cho nút chuyển LaTeX cả nhánh */
   function renderBank() {
     var found = bankSearchResults();
     var p = found.p, list = found.list;
+    bankListNow = list;
     var box = document.getElementById('bankList');
     bankRenderChips();
     var filtering = !!(bankFind.qtype || bankFind.key || bankFind.fig || bankFind.scope);
@@ -8242,6 +8378,8 @@
         + '  <span class="bank-acts">'
         + '    <label class="bank-pick"><input type="checkbox" data-pick="' + it.id + '"' + (bankPicked[it.id] ? ' checked' : '') + '> chọn</label>'
         + '    <button type="button" class="btn btn-ghost" data-bank="edit" data-id="' + it.id + '">✎ Sửa</button>'
+        + '    <button type="button" class="btn btn-ghost" data-bank="tex" data-id="' + it.id + '"'
+        + '      title="Chốt công thức trong câu này thành mã LaTeX. Từ đó phiếu và PDF vẽ đúng cấu trúc, không phải đoán lại từ chữ.">∑ LaTeX</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="insert" data-id="' + it.id + '">Chèn</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="move" data-id="' + it.id + '" title="Đổi dạng bài của câu này sang nhánh đang chọn ở cây bên trái">⇢ Chuyển nhánh</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="del" data-id="' + it.id + '">Xoá</button>'
@@ -10569,6 +10707,37 @@
     if (e.target.id === 'bankScopeAll') { bankFind.scope = true; bankFindSave(); renderBank(); }
   });
 
+  document.getElementById('bankTexShow').addEventListener('click', function () {
+    var box = document.getElementById('bankList');
+    var on = box.classList.toggle('hien-tex');
+    this.classList.toggle('on', on);
+    notify(on ? 'Đang hiện mã LaTeX. Bấm lần nữa để xem lại công thức.' : 'Đã hiện lại công thức.');
+  });
+  document.getElementById('bankTexAll').addEventListener('click', async function () {
+    var ds = bankListNow.slice();
+    if (!ds.length) { notify('Không có câu nào đang hiện.'); return; }
+    var ok = await askConfirm('Chốt công thức thành LaTeX cho ' + ds.length + ' câu đang hiện?',
+      'Căn thức và phân số trong các câu này sẽ được ghi lại thành mã LaTeX. Chữ đọc được vẫn y nguyên — '
+      + 'copy, tìm kiếm và xuất Word không đổi. Từ đó phiếu và PDF vẽ đúng cấu trúc, không phải đoán lại từ chữ.\n\n'
+      + 'Bấm “⟨⟩ Xem mã” sau đó để soát lại. Có nút Hoàn tác.', 'Chốt LaTeX');
+    if (!ok) return;
+    var luu = ds.map(function (it) { return JSON.parse(JSON.stringify(it)); });
+    var soCau = 0, soCt = 0;
+    ds.forEach(function (it) {
+      var k = bankSangTex(it);
+      if (k) { soCau++; soCt += k; persistBankItem(it); }
+    });
+    renderBank();
+    if (!soCt) { notify('Không câu nào có căn thức hay phân số để chốt.'); return; }
+    notify('Đã chốt ' + soCt + ' công thức trong ' + soCau + ' câu.', 'Hoàn tác', function () {
+      ds.forEach(function (it, i) {
+        Object.keys(luu[i]).forEach(function (k) { it[k] = luu[i][k]; });
+        persistBankItem(it);
+      });
+      renderBank();
+    });
+  });
+
   document.getElementById('bankList').addEventListener('click', async function (e) {
     var b = e.target.closest('[data-bank]');
     if (!b) return;
@@ -10582,6 +10751,15 @@
       notify('Đã chèn câu từ kho vào cuối tuần này.');
     } else if (b.dataset.bank === 'edit') {
       openQuestionEditor(it);
+    } else if (b.dataset.bank === 'tex') {
+      var luuTex = JSON.parse(JSON.stringify(it));
+      var soTex = bankSangTex(it);
+      if (!soTex) { notify('Câu này không có công thức nào cần chốt (căn thức hay phân số).'); return; }
+      persistBankItem(it); renderBank();
+      notify('Đã chốt ' + soTex + ' công thức thành LaTeX.', 'Hoàn tác', function () {
+        Object.keys(luuTex).forEach(function (k) { it[k] = luuTex[k]; });
+        persistBankItem(it); renderBank();
+      });
     } else if (b.dataset.bank === 'toggle-correct') {
       it.correct = it.correct === Number(b.dataset.oi) ? null : Number(b.dataset.oi);
       persistBankItem(it);

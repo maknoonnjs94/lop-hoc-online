@@ -40,6 +40,21 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-16 — Chốt công thức thành LaTeX ở kho bài (đợt 70)
+
+**Đã chốt hướng đi:** **PDF vẫn là định dạng cho sinh viên** — không đổi sang Word, nên chuỗi bảo vệ
+(trình xem, dấu chìm, quyền `cho_tai`, ô điền đáp án, máy chấm) giữ nguyên không đụng gì.
+
+Thay vào đó, công thức được chốt thành **mã LaTeX ngay trong Kho bài tập** của Sổ: nạp PDF như cũ →
+bấm *∑ Công thức → LaTeX* → soát bằng *⟨⟩ Xem mã* → pick bài ra phiếu thì PDF vẽ đúng cấu trúc,
+vì đã biết chắc cái gì nằm dưới căn chứ không đoán từ chữ nữa. Chi tiết ở
+`..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` (đợt 70).
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 70** → nút *Giao cho lớp* xuất PDF có công thức đúng.
+- `web/sheet.css` không đổi.
+
+---
+
 ## 2026-09-15 (khuya) — Sửa dáng căn thức (đợt 69)
 
 M báo *"trông tởm quá"*: gạch phủ bị đẩy vọt lên chồng vào dòng trên, ở chỗ biểu thức có `10⁻⁵`.
