@@ -975,22 +975,62 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     }
     return tong;
   }
+  /* Giá Cloudflare Stream: 5 USD / 1 000 phút lưu mỗi tháng, 1 USD / 1 000 phút phát. */
+  var GIA_LUU = 5, GIA_PHAT = 1, TI_GIA = 26000;
+  function tienChu(usd) {
+    var d = usd < 0.01 && usd > 0 ? '<0,01' : usd.toFixed(2);
+    var vnd = usd * TI_GIA;
+    var q = vnd >= 1000000 ? (vnd / 1000000).toFixed(2).replace('.', ',') + ' triệu' : Math.round(vnd / 1000) + 'k';
+    return d + ' USD <span style="opacity:.7">≈ ' + q + ' đ</span>';
+  }
   async function veDungLuong() {
     var box = $('dungLuong'); if (!box) return;
     box.innerHTML = '<div class="dlbox"><h4>Dung lượng</h4><div class="phu">Đang đo…</div></div>';
     var o = '';
-    /* 1. video trên Cloudflare Stream */
+    /* 1. video trên Cloudflare Stream — số phút đang lưu */
+    var phut = 0, byte = 0, coStream = false;
     try {
       var d = await apiGoi('/api/stream/danh-sach', {});
       var vs = d.videos || [];
-      var giay = vs.reduce(function (t, v) { return t + (Number(v.giay) || 0); }, 0);
-      var byte = vs.reduce(function (t, v) { return t + (Number(v.kich_thuoc) || 0); }, 0);
-      var phut = Math.round(giay / 60);
-      var tien = (phut / 1000) * 5;
-      o += oDung('Video · Cloudflare Stream', vs.length + ' video',
-        phut + ' phút lưu · ' + mbChu(byte) + ' · ước tính ' + (tien < 0.01 && phut ? '<0,01' : tien.toFixed(2)) + ' USD/tháng tiền lưu', null);
+      byte = vs.reduce(function (t, v) { return t + (Number(v.kich_thuoc) || 0); }, 0);
+      phut = Math.round(vs.reduce(function (t, v) { return t + (Number(v.giay) || 0); }, 0) / 60);
+      coStream = true;
+      o += oDung('Video đang lưu', vs.length + ' video', phut + ' phút · ' + mbChu(byte) + ' trên Cloudflare Stream', null);
     } catch (e) {
-      o += oDung('Video · Cloudflare Stream', '—', 'Chưa đọc được: ' + esc(String(e.message || e)), null);
+      o += oDung('Video đang lưu', '—', 'Chưa đọc được: ' + esc(String(e.message || e)), null);
+    }
+    /* 2. giờ sinh viên đã xem + ước tính hoá đơn.
+       Cloudflare không cho khoá hiện tại đọc thống kê, nên đếm bằng nhật ký của chính hệ thống. */
+    var nay = new Date();
+    var thangNay = nay.getFullYear() + '-' + ('0' + (nay.getMonth() + 1)).slice(-2);
+    var phatThang = 0, phatTong = 0, cacThang = [], loiThang = null;
+    try {
+      var rt = await sb.from('dung_luong_thang').select('thang, giay_phat').order('thang', { ascending: false });
+      if (rt.error) loiThang = rt.error.message;
+      else {
+        cacThang = rt.data || [];
+        cacThang.forEach(function (r) {
+          var p = Math.round((Number(r.giay_phat) || 0) / 60);
+          phatTong += p;
+          if (r.thang === thangNay) phatThang = p;
+        });
+      }
+    } catch (e) { loiThang = String(e.message || e); }
+    if (loiThang) {
+      o += oDung('Sinh viên đã xem', '—', 'Chưa bật bộ đếm — chạy schema_v18_dung_luong_thang.sql', null);
+    } else {
+      o += oDung('Sinh viên đã xem', phatThang + ' phút',
+        'tháng ' + thangNay.slice(5) + '/' + thangNay.slice(0, 4) + ' · từ trước tới nay: ' + gioChu(phatTong * 60), null);
+      var tienLuu = (phut / 1000) * GIA_LUU;
+      var tienPhat = (phatThang / 1000) * GIA_PHAT;
+      var tongThang = Math.max(GIA_LUU, tienLuu + tienPhat);   /* Cloudflare thu tối thiểu 5 USD/tháng */
+      var cu = cacThang.filter(function (r) { return r.thang !== thangNay; }).slice(0, 3).map(function (r) {
+        return r.thang.slice(5) + '/' + r.thang.slice(0, 4) + ': ' + Math.round((Number(r.giay_phat) || 0) / 60) + ' phút';
+      }).join(' · ');
+      o += oDung('Ước tính phải trả tháng này', tienChu(tongThang),
+        (coStream ? 'lưu ' + phut + ' phút = ' + tienChu(tienLuu) + ' + phát ' + phatThang + ' phút = ' + tienChu(tienPhat) : 'phát ' + phatThang + ' phút = ' + tienChu(tienPhat))
+        + (tienLuu + tienPhat < GIA_LUU ? '<br>Chưa tới mức tối thiểu — Cloudflare vẫn thu 5 USD/tháng.' : '')
+        + (cu ? '<br>Tháng trước: ' + cu : ''), null);
     }
     /* 2. tệp tài liệu + ảnh đại diện trong Supabase (gói miễn phí 1 GB) */
     try {

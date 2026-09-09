@@ -163,17 +163,25 @@ Quản trị → tab **Theo dõi**: mỗi buổi liệt kê từng tài liệu k
 
 Muốn xem Worker đã nối chưa: mở `https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai` — có `"stream": true` là đủ hai secret.
 
-## Xem đang dùng hết bao nhiêu dung lượng
+## Xem đang dùng hết bao nhiêu, đang phải trả bao nhiêu
 
-Quản trị → tab **Kho tệp**, ngay trên danh sách có ba ô số liệu:
+Quản trị → tab **Kho tệp**, ngay trên danh sách là bảng số liệu, đo lại mỗi lần m mở tab:
 
-- **Video · Cloudflare Stream** — bao nhiêu video, tổng số **phút lưu**, dung lượng, và ước tính tiền lưu mỗi tháng. Stream tính tiền theo phút chứ không theo GB: 5 USD cho mỗi 1 000 phút lưu, cộng 1 USD cho mỗi 1 000 phút sinh viên xem.
+- **Video đang lưu** — bao nhiêu video, tổng số **phút lưu**, dung lượng.
+- **Sinh viên đã xem** — số **phút phát** trong tháng này, và tổng số giờ từ trước tới nay. Đây là con số tính tiền phần phát.
+- **Ước tính phải trả tháng này** — cộng hai khoản, quy ra cả tiền Việt:
+  - tiền lưu = số phút lưu ÷ 1 000 × 5 USD
+  - tiền phát = số phút sinh viên xem trong tháng ÷ 1 000 × 1 USD
+  - Cloudflare thu **tối thiểu 5 USD/tháng**, nên khi tổng chưa tới 5 USD ô này vẫn ghi 5 USD và nói rõ lý do.
+  - dòng cuối liệt kê phút phát của 3 tháng trước, để m thấy đang tăng hay giảm.
 - **Tệp tài liệu · Supabase** — PDF, ảnh, bài giảng đã tải lên.
 - **Tổng kho Supabase** — có thanh phần trăm so với 1 GB của gói miễn phí.
 
+Số phút phát do chính hệ thống đếm (mỗi 20 giây trình phát báo về máy chủ, cộng vào bảng `dung_luong_thang` theo từng tháng giờ Việt Nam) — **phải chạy `schema_v18_dung_luong_thang.sql` một lần** thì ô này mới có số; chưa chạy thì nó ghi "Chưa bật bộ đếm". Con số này là **ước tính**: nó đếm thời lượng sinh viên thật sự xem, còn Cloudflare tính theo lượng dữ liệu đã gửi đi, nên hai bên lệch nhau chút ít. Hoá đơn thật luôn nằm ở **Images & Stream → Plans**; phút phát gốc của Cloudflare ở **Stream analytics**.
+
 Video **không** chiếm chỗ trên máy m và cũng không nằm trong 1 GB của Supabase — nó ở hẳn trên Cloudflare. Ổ cứng máy m chỉ giữ bản gốc do chính m quay.
 
-Muốn xem số liệu gốc của Cloudflare: **Images & Stream → Stream analytics** (phút đã phát) và **→ Plans** (hoá đơn).
+Muốn giảm tiền: xoá video cũ không dạy nữa (bớt tiền lưu), và đặt **giới hạn thời lượng xem** cho từng video (bớt tiền phát — xem mục "Giới hạn thời lượng xem" ở trên).
 
 Xoá bớt video cho nhẹ: **Images & Stream → Hosted videos** → chọn video → Delete. Nhớ gỡ tài liệu tương ứng khỏi buổi học, nếu không sinh viên bấm vào sẽ báo không thấy video.
 

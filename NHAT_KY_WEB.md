@@ -25,9 +25,29 @@ M còn phải làm:
 4. `schema_v11_giao_dien.sql` (4 màu + nhân vật), `schema_v12_anh_dai_dien.sql` (kho ảnh đại diện), `schema_v13_nhan_vat.sql` (8 nhân vật) — chưa chạy thì trang vẫn dùng được, chỉ là lựa chọn không lưu lên máy chủ và chưa tải ảnh lên được.
 5. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
 6. **Video**: làm theo `HUONG_DAN_VIDEO.md` phần A (bật Stream, Account ID, API token, 2 lệnh `wrangler secret put`, chạy `schema_v14_video.sql`).
+6b. **Chạy `schema_v18_dung_luong_thang.sql`** (một lần) để tab Kho tệp đếm được phút phát và ước tính tiền phải trả mỗi tháng.
 7. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-10 (chiều) — Giờ xem và ước tính hoá đơn ngay trong Kho tệp
+
+**M hỏi:** "còn thông số giờ xem và ước tính con số phải trả luôn trong kho tệp quản trị đi, t cần biết t đang phải trả bao nhiêu".
+
+**Vướng:** khoá API hiện tại chỉ có quyền Stream · Edit nên Worker không đọc được thống kê phút phát của Cloudflare (muốn đọc phải thêm quyền Analytics và đổi token). Nên đếm bằng nhật ký của chính hệ thống — số giây sinh viên xem vốn đã báo về máy chủ mỗi 20 giây để trừ quỹ xem.
+
+**Đã làm:**
+- `schema_v18_dung_luong_thang.sql` — bảng `dung_luong_thang(thang, giay_phat, cap_nhat)`, mỗi tháng một dòng theo giờ Việt Nam; RLS chỉ giảng viên đọc, không ai ghi trực tiếp. Hàm `ghi_gio_xem` viết lại: ngoài việc cộng vào `view_events` như cũ, cộng luôn số giây vào dòng tháng hiện tại. File cũng gộp sẵn số phút đã xem từ trước vào tháng này để bảng không trống.
+- Tab **Kho tệp** giờ có 5 ô: *Video đang lưu* (số video · phút lưu · dung lượng), **Sinh viên đã xem** (phút phát tháng này + tổng số giờ từ trước tới nay), **Ước tính phải trả tháng này** (tiền lưu + tiền phát, quy ra tiền Việt theo tỉ giá 26 000, nói rõ khi chưa tới mức tối thiểu 5 USD, liệt kê phút phát 3 tháng trước), rồi hai ô kho Supabase như cũ.
+- Phần hoá đơn nằm ngoài `try` của Stream: Stream có lỗi thì vẫn thấy giờ xem. Chưa chạy v18 thì ô ghi "Chưa bật bộ đếm — chạy schema_v18_dung_luong_thang.sql" chứ không hiện lỗi SQL.
+- `/api/trang-thai` kiểm thêm `v18_hoa_don`, để biết đã chạy file chưa mà không phải mở Supabase.
+- `HUONG_DAN_VIDEO.md`: mục dung lượng viết lại thành "Xem đang dùng hết bao nhiêu, đang phải trả bao nhiêu", ghi rõ công thức và rằng đây là ước tính, hoá đơn thật ở Images & Stream → Plans.
+
+**M phải làm:** Supabase → SQL Editor → dán cả file `schema_v18_dung_luong_thang.sql` → Run (một lần).
+
+**Đã test:** `node --check` worker, kiểm cú pháp khối script của quan-tri.html, chạy thử số học ngoài trình duyệt (20 video × 60 phút + 30 SV xem một lượt → 6 USD lưu + 36 USD phát = 42 USD ≈ 1,09 triệu; kho trống → 5 USD ≈ 130k vì mức tối thiểu).
 
 ---
 
