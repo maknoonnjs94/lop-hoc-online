@@ -384,6 +384,21 @@
   .appgate p{ font-size:14.5px; line-height:1.6; color:#4a637b; margin:0 0 14px }
   .appgate small{ display:block; color:#7d92a6; font-size:12.5px; margin-top:12px }
   /* --- nộp bài & hỏi bài dưới mỗi tài liệu --- */
+  /* ô trả lời đặt trên phiếu */
+  .pdfpage{ position:relative; margin:0 auto 14px; width:max-content }
+  .otl{ position:absolute; box-sizing:border-box; border:2px solid #2f86c9; border-radius:5px;
+    background:rgba(255,255,255,.94); font:inherit; font-size:14px; padding:1px 6px; color:#12314f;
+    user-select:text; -webkit-user-select:text; min-width:26px }
+  .otl:focus{ outline:none; border-color:#e07a3f; box-shadow:0 0 0 3px rgba(224,122,63,.22) }
+  .otl.dung{ border-color:#3f8b4f; background:#eaf6ec }
+  .otl.sai{ border-color:#c0392b; background:#fdecea }
+  .otl.gan{ border-color:#c98a2a; background:#fdf5e4 }
+  .odau{ position:absolute; font:800 15px/1 system-ui; pointer-events:none; z-index:2 }
+  .odau.dung{ color:#3f8b4f } .odau.sai{ color:#c0392b } .odau.gan{ color:#c98a2a }
+  .oket{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f1f6fb;
+    border-radius:11px; padding:11px 14px; margin-bottom:10px }
+  .oket b{ font-size:20px; font-weight:900 }
+  .oket .ghi{ font-size:13px; color:#5b7488 }
   /* nhắc hạn nộp trên trang chủ */
   .hancard{ border-left:4px solid #d98324 }
   .hancard.gap{ border-left-color:#c0392b }
@@ -1834,11 +1849,19 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
      ===================================================================== */
   var baiNop = {}, coNopBai = true, coHoiDap = true, dangNop = false;
   var hoiDaTra = [];   /* câu hỏi của chính mình đã được giảng viên trả lời — để đổ chuông */
+  var coOTraLoi = true;   /* schema_v20 đã chạy chưa */
+  /* Phiếu này có ô trả lời đặt sẵn không */
+  function coO(m) { return coOTraLoi && !!(m && m.o_tra_loi && m.o_tra_loi.length); }
 
   async function taiBaiNop() {
     baiNop = {};
     if (!coNopBai || !me) return;
-    var r = await sb.from('bai_nop').select('material_id, nop_luc, loi_nhan, tep, cham_luc, diem, nhan_xet').eq('user_id', me.id);
+    var cot = 'material_id, nop_luc, loi_nhan, tep, cham_luc, diem, nhan_xet, tra_loi, chi_tiet, may_cham';
+    var r = await sb.from('bai_nop').select(cot).eq('user_id', me.id);
+    if (r.error && /tra_loi|chi_tiet|may_cham/.test(r.error.message || '')) {   /* chưa chạy schema_v20 */
+      coOTraLoi = false;
+      r = await sb.from('bai_nop').select('material_id, nop_luc, loi_nhan, tep, cham_luc, diem, nhan_xet').eq('user_id', me.id);
+    }
     if (r.error) { coNopBai = false; return; }
     (r.data || []).forEach(function (b) { baiNop[b.material_id] = b; });
   }
@@ -1921,7 +1944,66 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     return r || 'lỗi không rõ.';
   }
 
+  /* Phiếu có ô trả lời: không tải tệp nữa, gõ thẳng vào phiếu rồi bấm nộp, máy chấm ngay. */
+  function veNopO(m) {
+    var box = $('npBox'), b = baiNop[m.id] || {}, het = quaHan(m);
+    var so = (m.o_tra_loi || []).length;
+    var o = '<h4><span class="ico">' + I.upload + '</span>Điền vào phiếu rồi nộp</h4>';
+    if (m.han_nop) o += '<div class="sub">Hạn nộp ' + fmtWhen(m.han_nop) + (het ? ' — <b>đã quá hạn</b>' : '') + '</div>';
+    if (b.chi_tiet && Object.keys(b.chi_tiet).length) {
+      var ds = Object.keys(b.chi_tiet).length, dg = 0, gan = 0;
+      Object.keys(b.chi_tiet).forEach(function (k) { if (b.chi_tiet[k] === 'dung') dg++; if (b.chi_tiet[k] === 'gan') gan++; });
+      o += '<div class="oket"><b>' + dg + '/' + ds + '</b><span class="ghi">câu đúng'
+        + (gan ? ' · ' + gan + ' câu gần đúng, giảng viên sẽ xem lại' : '')
+        + '<br>Nộp lúc ' + fmtWhen(b.nop_luc) + '</span></div>';
+      o += '<div class="sub">Ô xanh là đúng, vàng là gần đúng, đỏ là sai — xem ngay trên phiếu ở trên.</div>';
+    }
+    if (het && !b.nop_luc) {
+      o += '<div class="sub">Đã quá hạn nộp. Cần nộp muộn thì nhắn giảng viên mở lại giúp.</div>';
+    } else if (b.cham_luc && !b.may_cham) {
+      o += '<div class="sub">Giảng viên đã chấm tay bài này nên không sửa được nữa.</div>';
+    } else if (!het) {
+      o += '<div class="sub">' + (b.nop_luc ? 'Muốn thử lại thì sửa ô trên phiếu rồi bấm Nộp lại — máy chấm lại ngay.' : 'Phiếu này có <b>' + so + ' chỗ trống</b>. Gõ thẳng vào ô trên phiếu ở trên, xong bấm nộp — máy chấm ngay.') + '</div>'
+        + '<div class="nprow"><button type="button" class="btn" id="npGuiO">' + (b.nop_luc ? 'Nộp lại' : 'Nộp bài') + '</button>'
+        + '<span class="sub" id="npTt" style="margin:0"></span></div>';
+    }
+    box.innerHTML = o;
+    if ($('npGuiO')) $('npGuiO').addEventListener('click', function () { guiBaiO(m); });
+  }
+  async function guiBaiO(m) {
+    if (dangNop) return;
+    var nut = $('npGuiO'), tt = $('npTt');
+    var tl = {}, thieu = 0;
+    [].forEach.call($('vBody').querySelectorAll('.otl'), function (el) {
+      var v = String(el.value || '').trim();
+      tl[el.dataset.o] = v;
+      if (!v) thieu++;
+    });
+    if (thieu && !confirm('Còn ' + thieu + ' chỗ chưa điền. Vẫn nộp chứ?')) return;
+    dangNop = true; nut.disabled = true; tt.textContent = 'Đang chấm…';
+    try {
+      var r = await sb.rpc('nop_bai_o', { p_material: m.id, p_tra_loi: tl });
+      if (r.error) throw new Error(r.error.message);
+      if (!r.data || !r.data.ok) throw new Error(loiNop(r.data && r.data.reason));
+      await taiBaiNop();
+      dangNop = false;
+      veNopO(m);
+      /* tô lại màu đúng/sai ngay trên phiếu, khỏi phải mở lại */
+      var ket = (baiNop[m.id] || {}).chi_tiet || {};
+      [].forEach.call($('vBody').querySelectorAll('.pdfpage'), function (kh) {
+        [].forEach.call(kh.querySelectorAll('.otl, .odau'), function (x) { x.remove(); });
+        datOLenTrang(kh, m, Number(kh.dataset.tr || 0) || ([].indexOf.call(kh.parentNode.children, kh) + 1));
+      });
+      renderView();
+      noiMascot(r.data.so_dung + '/' + r.data.so_o + ' câu đúng!');
+    } catch (e) {
+      dangNop = false;
+      if ($('npTt')) $('npTt').textContent = 'Không nộp được: ' + (e && e.message || e);
+      if ($('npGuiO')) $('npGuiO').disabled = false;
+    }
+  }
   function veNopBai(m) {
+    if (coO(m)) return veNopO(m);
     var box = $('npBox'); if (!box) return;
     var b = baiNop[m.id], het = quaHan(m);
     var o = '<h4><span class="ico">' + I.upload + '</span>Nộp bài</h4>';
@@ -2078,10 +2160,40 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var sig = await sb.storage.from('tailieu').createSignedUrl(c.storage_path, 3600);
     if (sig.error) { body.innerHTML = '<div class="vload">Không mở được tệp: ' + esc(sig.error.message) + '</div>'; return; }
     var url = sig.data.signedUrl;
-    if (/\.(png|jpe?g|webp|gif)$/i.test(c.storage_path)) { body.innerHTML = '<div class="vstage"><img src="' + url + '" style="width:100%;border-radius:10px;display:block" alt=""></div>'; watermark(body.querySelector('.vstage')); return; }
-    await renderPdf(url, body);
+    if (/\.(png|jpe?g|webp|gif)$/i.test(c.storage_path)) {
+      body.innerHTML = '<div class="vstage"><div class="pdfpage" style="width:100%"><img src="' + url + '" style="width:100%;border-radius:10px;display:block" alt=""></div></div>';
+      var kh = body.querySelector('.pdfpage'), mA = matById(id);
+      if (mA && coO(mA)) {
+        var im = kh.querySelector('img');
+        if (im.complete) datOLenTrang(kh, mA, 1);
+        else im.addEventListener('load', function () { datOLenTrang(kh, mA, 1); });
+      }
+      watermark(body.querySelector('.vstage')); return;
+    }
+    await renderPdf(url, body, id);
   }
-  async function renderPdf(url, body) {
+  /* Đặt ô nhập lên một trang đã vẽ xong. Toạ độ là phần trăm nên cỡ nào cũng đúng chỗ. */
+  function datOLenTrang(khung, m, trang) {
+    var b = baiNop[m.id] || {}, daNop = b.tra_loi || {}, ket = b.chi_tiet || {};
+    var khoa = !!b.cham_luc && !b.may_cham;   /* máy chấm thì vẫn cho sửa để nộp lại */
+    (m.o_tra_loi || []).filter(function (o) { return Number(o.trang) === trang; }).forEach(function (o) {
+      var el = document.createElement('input');
+      el.className = 'otl' + (ket[o.id] && ket[o.id] !== 'chua' ? ' ' + ket[o.id] : '');
+      el.type = 'text'; el.dataset.o = o.id; el.autocomplete = 'off';
+      el.value = daNop[o.id] || '';
+      el.readOnly = khoa;
+      el.style.cssText = 'left:' + o.x + '%;top:' + o.y + '%;width:' + o.w + '%;height:' + o.h + '%';
+      khung.appendChild(el);
+      if (ket[o.id] === 'dung' || ket[o.id] === 'sai' || ket[o.id] === 'gan') {
+        var d = document.createElement('span');
+        d.className = 'odau ' + ket[o.id];
+        d.textContent = ket[o.id] === 'dung' ? '✓' : (ket[o.id] === 'gan' ? '~' : '✗');
+        d.style.cssText = 'left:calc(' + (o.x + o.w) + '% + 5px);top:' + o.y + '%';
+        khung.appendChild(d);
+      }
+    });
+  }
+  async function renderPdf(url, body, mid) {
     if (!window.pdfjsLib) { body.innerHTML = '<div class="vload">Không tải được bộ đọc PDF.</div>'; return; }
     try {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -2092,7 +2204,10 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         var page = await pdf.getPage(i), vp1 = page.getViewport({ scale: 1 });
         var scale = Math.min(2.6, (maxW / vp1.width) * (window.devicePixelRatio || 1)), vp = page.getViewport({ scale: scale });
         var cv = document.createElement('canvas'); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height); cv.style.width = Math.round(vp.width / (window.devicePixelRatio || 1)) + 'px';
-        stage.appendChild(cv); await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        var khung = document.createElement('div'); khung.className = 'pdfpage'; khung.appendChild(cv);
+        stage.appendChild(khung); await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        var mm = mid ? matById(mid) : null;
+        if (mm && coO(mm)) datOLenTrang(khung, mm, i);
       }
       watermark(stage); theoDoiPdf(stage, pdf.numPages);
     } catch (err) { body.innerHTML = '<div class="vload">Không đọc được tệp này: ' + esc(err && err.message || err) + '</div>'; }

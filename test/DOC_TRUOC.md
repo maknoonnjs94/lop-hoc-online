@@ -37,6 +37,7 @@ Thêm phần sau vào đuôi địa chỉ:
 | `?hoi=trong` | Chưa có câu hỏi nào |
 | `?han=gap` | Còn 2 giờ tới hạn → dải nhắc chuyển màu gấp |
 | `?chuong=1` | Vừa được chấm bài và trả lời câu hỏi → thử chuông báo |
+| `?o=1` | Phiếu buổi 5 có 4 ô trả lời đặt sẵn → gõ thẳng vào phiếu, máy chấm đúng/sai |
 
 Ghép nhiều cái bằng `&`, ví dụ:
 `http://127.0.0.1:8765/_test_index.html?g=nam&het=1`
@@ -65,6 +66,8 @@ Không thử được: tạo tài khoản thật, đổi mật khẩu, tải t�
 - Video bị ẩn khi hết quỹ.
 - **Nộp bài**: chọn tệp thật trên máy, gõ lời nhắn, bấm Nộp — chạy trọn luồng (tệp không đi đâu cả).
 - **Hỏi bài**: gõ câu hỏi và gửi; xem câu đã được trả lời của lớp.
+- **Điền vào phiếu và để máy chấm** (`?o=1`): phiếu mẫu có 4 chỗ trống. Thử gõ `0,08` · `Phenolphtalein` · `H₂SO₄` · `2,03` để thấy đủ ba trạng thái đúng / gần đúng / sai.
+- **Khoanh ô trả lời** ở trang quản trị: Buổi học → nút **◻ Ô trả lời** ở phiếu bài tập buổi 5.
 - **Cửa chặn app**: mở tài liệu video trong trình duyệt sẽ thấy màn hình "chỉ mở trong ứng dụng máy tính" — đúng như sinh viên dùng điện thoại sẽ thấy.
 
 ## Thử phần "thêm vào màn hình chính"
@@ -78,6 +81,7 @@ Vì không có máy chủ thật:
 - **Nội dung tài liệu thật** — mở PDF ra sẽ thấy chữ giả, không phải đề thật.
 - **Phát video Cloudflare Stream** — cần vé ký thật từ Worker; `?st=1` chỉ cho xem khung và luồng, bấm phát sẽ không chạy.
 - Đăng nhập / đổi mật khẩu thật, khoá một thiết bị, dấu chìm gắn tên thật.
+- **Phiếu PDF**: pdf.js treo ở bước vẽ hình trong bản chạy thử tại máy (đã dựng lại độc lập để xác nhận: đọc được tài liệu, `getPage` xong, nhưng `render()` không bao giờ trả về). Vì thế phiếu mẫu của bản thử để dạng **ảnh PNG**. Ô trả lời trên PDF dùng chung đúng một hàm với ảnh, nhưng phải thử trên bản thật mới chắc.
 - Chuông báo tài liệu mới theo thời gian thực.
 - Đếm giờ xem cộng dồn lên máy chủ (ở đây gọi gì cũng trả về "ok").
 

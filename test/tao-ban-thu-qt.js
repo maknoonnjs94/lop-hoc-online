@@ -29,13 +29,13 @@ const stub = `<script>
     ],
     materials: [
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu', order_no:0, open_at:null, created_at:d(-2*864e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
-      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5) },
+      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), o_tra_loi:[] },
       { id:'m2', session_id:'s1', kind:'video', title:'Video: đường cong chuẩn độ', order_no:2, open_at:null, created_at:d(-864e5), gioi_han_giay:3600, nhan_bai:false, han_nop:null },
       { id:'m3', session_id:'s1', kind:'answer', title:'Đáp án phiếu 5', order_no:3, open_at:d(3*864e5), created_at:d(-36e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
       { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, open_at:null, created_at:d(-7*864e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(-864e5) }
     ],
     material_contents: [
-      { material_id:'m1', url:null, storage_path:'s1/phieu5.pdf', body:null },
+      { material_id:'m1', url:null, storage_path:'s1/_test_phieu.png', body:null },
       { material_id:'m2', url:'stream:0123456789abcdef0123456789abcdef', storage_path:null, body:null },
       { material_id:'m3', url:null, storage_path:null, body:'Đáp án thử nghiệm.' },
       { material_id:'m4', url:null, storage_path:'s1/baigiang.pdf', body:null },
@@ -135,6 +135,7 @@ const stub = `<script>
   }
 
   /* ---------------- các hàm RPC ---------------- */
+  var DAPAN = {};
   function rpcChay(ten, a) {
     a = a || {};
     if (ten === 'bang_bai_nop') {
@@ -187,6 +188,13 @@ const stub = `<script>
       if (!DB.enrollments.some(function (e) { return e.class_id === a.p_class && e.student === p2.id; }))
         DB.enrollments.push({ class_id:a.p_class, student:p2.id, joined_at:new Date().toISOString() });
       return { ok:true };
+    }
+    if (ten === 'lay_dap_an_o') { return (DAPAN[a.p_material] || {}); }
+    if (ten === 'dat_o_tra_loi') {
+      var mm = DB.materials.filter(function (x) { return x.id === a.p_material; })[0];
+      if (mm) mm.o_tra_loi = a.p_o || [];
+      DAPAN[a.p_material] = a.p_dap_an || {};
+      return { ok:true, so_o:(a.p_o || []).length };
     }
     if (ten === 'reset_device') { DB.device_bindings = DB.device_bindings.filter(function (x) { return x.user_id !== a.p_user; }); return { ok:true }; }
     if (ten === 'noi_quy_xem') {
@@ -243,7 +251,7 @@ const stub = `<script>
         var k = duong ? kho + '_' + duong : kho;
         return Promise.resolve({ data: KHO[k] || [], error: null });
       },
-      createSignedUrl: function () { return Promise.resolve({ data:null, error:{ message:'bản thử tại máy không có tệp thật' } }); },
+      createSignedUrl: function () { return Promise.resolve(kho === 'tailieu' ? { data:{ signedUrl:'/_test_phieu.png' }, error:null } : { data:null, error:{ message:'bản thử tại máy không có tệp thật' } }); },
       upload: function (p) { return Promise.resolve({ data:{ path:p }, error:null }); },
       remove: function () { return Promise.resolve({ data:[], error:null }); }
     }; } }

@@ -40,6 +40,46 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-12 (chiều) — Sinh viên điền thẳng vào phiếu, máy chấm đúng/sai
+
+**M chọn:** khoanh ô trên PDF (không phải làm lại phiếu dạng web); điểm vào thẳng bảng điểm, ghi rõ máy chấm; câu gần đúng đẩy sang hàng chờ. Giữa chừng m chốt thêm: **chỉ cần đúng/sai, chưa cần điểm cụ thể**.
+
+### Chỗ quan trọng nhất: đáp án không bao giờ rời máy chủ
+
+Trang sinh viên đọc `materials` bằng `select('*, materials(*)')` — nên **không được** để đáp án trong cột của `materials`. Tách làm hai:
+
+- `materials.o_tra_loi` — chỉ **toạ độ** ô (theo phần trăm trang), sinh viên đọc được để vẽ ô.
+- Bảng riêng `dap_an_o` — đáp án, RLS chỉ `is_staff()`. Chấm chạy trong `nop_bai_o()` (security definer) trên máy chủ.
+
+### Chuẩn hoá trước khi so, không thì chấm oan
+
+`chuan_dap()`: bỏ khoảng trắng, về chữ thường, dấu phẩy → dấu chấm, chỉ số dưới ₀₋₉ và số mũ ⁰₋⁹ → số thường. Nhờ vậy `H₂SO₄` khớp `H2SO4`, `0,08` khớp `0.08`. Giảng viên ghi nhiều đáp án chấp nhận được thì ngăn bằng `|`.
+
+Ba mức: **đúng** (khớp, hoặc số nằm trong sai số), **gần** (số lệch dưới 2% hoặc chỉ khác ký tự không phải chữ/số) → đẩy sang `can_xem` cho giảng viên, **sai**.
+
+### Đã làm
+
+- `schema_v20_o_tra_loi.sql`: hai bảng/cột trên, `nop_bai_o`, `dat_o_tra_loi`, `lay_dap_an_o`, và dựng lại `bang_bai_nop` để trả thêm `may_cham` / `can_xem` (đổi cột trả về nên phải `drop function` trước).
+- Quản trị: nút **◻ Ô trả lời**, trình khoanh ô toàn màn hình (pdf.js nạp thêm vào trang này), kéo tạo / kéo dời / kéo góc chỉnh cỡ / xoá, cột phải gõ đáp án và sai số.
+- Sinh viên: ô nhập chồng lên phiếu, nộp → máy chấm → tô xanh/vàng/đỏ kèm dấu ✓ ~ ✗, kết quả "3/4 câu đúng". Máy chấm rồi **vẫn sửa và nộp lại được**; chỉ giảng viên chấm tay mới khoá.
+- Bổ sung luôn: đặt ô trên **phiếu dạng ảnh**, không chỉ PDF.
+
+### Bẫy đã sập, ghi lại cho lần sau
+
+1. **Khai báo sau chỗ dùng.** Khối `?o=1` trong bộ chạy thử đặt *sau* đoạn dựng `sessions`, mà `sessions` lại đọc biến đó → `var` được kéo lên nhưng giá trị vẫn `undefined`, ô không bao giờ hiện. Mất khá lâu mới thấy.
+2. **pdf.js treo ở `render()`** trong bản chạy thử tại máy. Đã dựng lại độc lập ngoài mã của mình để loại trừ: worker tải được (200, 1 MB), `getDocument` ra 1 trang, `getPage` xong, nhưng `render().promise` không trả về trong 3 giây. Không phải lỗi do sửa đổi lần này. Đổi phiếu mẫu sang ảnh PNG để còn thử được luồng; **PDF phải kiểm trên bản thật**.
+3. Script vá chỉ ghi tệp ở dòng cuối, nên khi nó ném lỗi giữa chừng thì tệp thật **chưa bị đụng** — đừng hoảng đi kiểm trạng thái nửa vời.
+
+### Đã test
+
+Trọn vòng trong bản chạy thử: khoanh một ô bằng chuột → gõ đáp án + sai số → Lưu → nút hàng tài liệu đổi thành "◻ Ô trả lời · 1" → mở lại vẫn nhớ đáp án. Phía sinh viên: 4 ô hiện đúng chỗ trống, gõ `0,08` / `Phenolphtalein` / `H₂SO₄` / `2,03` → **3/4 đúng, 1 gần đúng**, đủ bốn kiểu chuẩn hoá; nộp lại sau khi sửa → **4/4**.
+
+### M phải làm
+
+Supabase → SQL Editor → dán cả `schema_v20_o_tra_loi.sql` → Run. Chưa chạy thì nút ◻ Ô trả lời vẫn hiện nhưng lưu sẽ báo lỗi, còn trang sinh viên tự ẩn phần này.
+
+---
+
 ## 2026-09-12 — Bảng điểm cả lớp, nhắc hạn nộp, hồ sơ từng sinh viên
 
 **M nói:** sợ không có thời gian chấm, nhưng cứ xây 1-2-3; và gợi ý hướng **cho sinh viên tự chấm theo đáp án**.

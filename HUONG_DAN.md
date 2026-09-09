@@ -223,6 +223,38 @@ M xem và chấm ở tab **Bài nộp**: mỗi phiếu một bảng, ai nộp ai
 
 Quá hạn thì nút nộp đóng lại. Cần mở thêm cho một bạn thì sửa lại **Hạn nộp** của phiếu.
 
+## Cho sinh viên điền thẳng vào phiếu, máy chấm đúng/sai
+
+Cần chạy một lần `schema_v20_o_tra_loi.sql` trong Supabase.
+
+**M làm một lần cho mỗi phiếu:**
+
+1. Bật **Nhận bài nộp** cho phiếu đó trước (xem mục Nộp bài).
+2. Ở hàng tài liệu bấm nút **◻ Ô trả lời**.
+3. Phiếu hiện ra. **Kéo chuột** khoanh vào từng chỗ trống — mỗi lần kéo tạo một ô.
+4. Bên phải, gõ **đáp án đúng** cho từng ô. Bỏ trống thì máy chỉ thu bài, không chấm ô đó.
+5. Bấm **Lưu ô trả lời**.
+
+Kéo ô để dời, kéo góc dưới phải để chỉnh cỡ, bấm **Xoá ô** để bỏ.
+
+**Cách gõ đáp án cho máy chấm đúng:**
+
+| Muốn gì | Gõ thế nào |
+|---|---|
+| Nhiều cách viết đều đúng | Ngăn bằng dấu `|`: `phenolphtalein|phenolphthalein` |
+| Đáp án là số, cho sai số | Gõ số vào ô **sai số**: đáp án `0,08` sai số `0,001` |
+| Đáp án là công thức | Cứ gõ `H2SO4` — sinh viên gõ `H₂SO₄` vẫn được tính đúng |
+
+Máy tự bỏ khoảng trắng, không phân biệt hoa thường, coi dấu phẩy và dấu chấm thập phân như nhau, và quy chỉ số dưới / số mũ về số thường trước khi so.
+
+**Sinh viên thấy gì:** mở phiếu ra là có ô nhập nằm đúng chỗ trống, gõ vào rồi bấm **Nộp bài**. Máy chấm ngay và tô màu từng ô: **xanh** là đúng, **vàng** là gần đúng, **đỏ** là sai. Kết quả ghi kiểu **3/4 câu đúng**. Máy chấm rồi vẫn sửa và **nộp lại** được — chỉ khi m chấm tay thì mới khoá.
+
+**Câu gần đúng thì máy không dám kết luận** — nó đẩy sang cho m. Trong tab Bài nộp bài đó hiện nhãn **cần xem lại**, trong bảng điểm có dấu **!** bên cạnh. Lệch dưới 2% so với đáp án số, hoặc chỉ khác dấu ngoặc / ký tự lạ, thì tính là gần đúng.
+
+**Phân biệt điểm máy với điểm m:** ô do máy chấm ghi **nghiêng** trong bảng điểm, và cột "Nộp lúc" ghi rõ *máy chấm*. M chấm đè lên thì nó thành điểm của m.
+
+**Chỉ dùng được với phiếu tải lên dạng tệp** (PDF hoặc ảnh). Phiếu là link ngoài hay gõ chữ thì không khoanh ô được.
+
 ## Bảng điểm cả lớp
 
 Quản trị → tab **Bài nộp** → bấm **Bảng điểm** ở thanh trên cùng.

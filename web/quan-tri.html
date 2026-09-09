@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="img/favicon.png">
 <!-- Thêm vào màn hình chính điện thoại (bản quản trị, mở thẳng vào /quan-tri). -->
 <link rel="manifest" href="manifest-quan-tri.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="apple-touch-icon" href="img/app-180.png">
 <meta name="theme-color" content="#0f766e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -201,6 +202,30 @@
     .cols{ grid-template-columns:minmax(0,1fr); gap:14px } .side{ position:static }
     .clist{ display:flex; gap:6px; overflow-x:auto; padding:4px } .citem{ flex:none; width:auto; min-width:180px; margin:0; border-color:var(--line); background:var(--surface) }
   }
+  /* trình khoanh ô trả lời trên phiếu */
+  .oed{ position:fixed; inset:0; z-index:80; background:var(--bg, #f4f7fa); display:none; flex-direction:column }
+  .oed.mo{ display:flex }
+  .oed .dau{ display:flex; align-items:center; gap:10px; padding:10px 16px; background:var(--surface, #fff); border-bottom:1px solid var(--line, #e2e6ea); flex-wrap:wrap }
+  .oed .dau b{ font-size:15.5px } .oed .dau .grow{ flex:1 }
+  .oed .than{ flex:1; display:grid; grid-template-columns:minmax(0,1fr) 320px; overflow:hidden }
+  .oed .giay{ overflow:auto; padding:18px; background:var(--surface-2, #eef1f4) }
+  .oed .ben{ overflow:auto; border-left:1px solid var(--line, #e2e6ea); background:var(--surface, #fff); padding:14px 16px }
+  .oed .trang{ position:relative; margin:0 auto 16px; box-shadow:0 3px 14px rgba(0,0,0,.14); background:#fff; width:max-content }
+  .oed .trang canvas{ display:block; cursor:crosshair }
+  .oed .o{ position:absolute; border:2px solid #2f86c9; background:rgba(47,134,201,.14); border-radius:4px; cursor:move }
+  .oed .o.chon{ border-color:#e07a3f; background:rgba(224,122,63,.20) }
+  .oed .o i{ position:absolute; top:-9px; left:-9px; width:19px; height:19px; border-radius:50%; background:#2f86c9; color:#fff; font:700 11px/19px system-ui; text-align:center; font-style:normal }
+  .oed .o.chon i{ background:#e07a3f }
+  .oed .o u{ position:absolute; right:-7px; bottom:-7px; width:13px; height:13px; background:#fff; border:2px solid #2f86c9; border-radius:3px; cursor:nwse-resize }
+  .oed .ben .oitem{ border:1px solid var(--line, #e2e6ea); border-radius:11px; padding:10px 12px; margin-bottom:9px }
+  .oed .ben .oitem.chon{ border-color:#e07a3f; box-shadow:0 0 0 1px #e07a3f inset }
+  .oed .ben .oitem b{ font-size:12.5px; color:var(--muted) }
+  .oed .ben .oitem input{ width:100%; margin-top:5px; padding:7px 9px; border:1px solid var(--line-2, #d5e0ec); border-radius:8px; font:inherit; font-size:13.5px; background:var(--surface, #fff); color:inherit }
+  .oed .ben .oitem .hang{ display:flex; gap:7px; align-items:center; margin-top:6px }
+  .oed .ben .oitem .hang input{ margin-top:0 }
+  .oed .ben .oitem .hang button{ flex:none }
+  .oed .ben .nho{ font-size:12px; color:var(--muted); line-height:1.5 }
+  @media (max-width:820px){ .oed .than{ grid-template-columns:1fr; grid-template-rows:1fr auto } .oed .ben{ border-left:0; border-top:1px solid var(--line, #e2e6ea); max-height:44vh } }
   /* thanh chuyển Chấm bài / Bảng điểm */
   .seg{ display:inline-flex; background:var(--surface-2, #eef1f4); border-radius:11px; padding:3px; gap:3px; margin-bottom:12px }
   .seg button{ border:0; background:none; font:inherit; font-size:13.5px; font-weight:700; color:var(--muted); padding:6px 14px; border-radius:9px; cursor:pointer }
@@ -416,6 +441,19 @@
   </div>
 </div></div>
 
+  <div class="oed" id="oEd">
+    <div class="dau">
+      <b id="oEdTen">Ô trả lời</b>
+      <span class="grow"></span>
+      <span class="hint" id="oEdDem" style="margin:0"></span>
+      <button class="btn sm" id="oEdDong">Đóng</button>
+      <button class="btn sm primary" id="oEdLuu">Lưu ô trả lời</button>
+    </div>
+    <div class="than">
+      <div class="giay" id="oEdGiay"></div>
+      <div class="ben" id="oEdBen"></div>
+    </div>
+  </div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -712,6 +750,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
               + '<span class="acts">'
               + '<button class="btn sm" data-a="up" data-m="' + m.id + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>'
               + '<button class="btn sm" data-a="down" data-m="' + m.id + '"' + (i === mats.length - 1 ? ' disabled' : '') + '>↓</button>'
+              + (m.nhan_bai && fileKind(m.kind) ? '<button class="btn sm" data-a="dat-o" data-m="' + m.id + '" title="Khoanh ô trả lời lên phiếu để máy chấm đúng/sai">◻ Ô trả lời' + (((m.o_tra_loi || []).length) ? ' · ' + m.o_tra_loi.length : '') + '</button>' : '')
               + '<button class="btn sm" data-a="edit-mat" data-m="' + m.id + '">✎</button>'
               + '<button class="btn sm danger" data-a="del-mat" data-m="' + m.id + '">×</button>'
               + '</span></div>';
@@ -770,6 +809,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     else if (a === 'del-ses') delSession(b.dataset.s);
     else if (a === 'add-mat') addMaterial(b.dataset.s, b.dataset.k);
     else if (a === 'edit-mat') editMaterial(b.dataset.m);
+    else if (a === 'dat-o') moDatO(b.dataset.m);
     else if (a === 'del-mat') delMaterial(b.dataset.m);
     else if (a === 'up' || a === 'down') moveMaterial(b.dataset.m, a === 'up' ? -1 : 1);
   });
@@ -814,6 +854,178 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     return null;
   }
   function fileKind(k) { return k === 'pdf' || k === 'lecture'; }
+
+  /* =====================================================================
+     KHOANH Ô TRẢ LỜI LÊN PHIẾU (schema_v20)
+     Toạ độ lưu theo phần trăm trang nên sinh viên xem ở cỡ nào cũng đúng chỗ.
+     Đáp án đi vào bảng riêng, không bao giờ gửi xuống máy sinh viên.
+     ===================================================================== */
+  var oDs = [], oDap = {}, oMat = null, oChon = null;
+  function oMoiId() { return 'o' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); }
+
+  async function moDatO(id) {
+    var m = matById(id); if (!m) return;
+    oMat = id; oChon = null;
+    oDs = Array.isArray(m.o_tra_loi) ? JSON.parse(JSON.stringify(m.o_tra_loi)) : [];
+    $('oEdTen').textContent = 'Ô trả lời · ' + (m.title || 'Phiếu');
+    $('oEdGiay').innerHTML = '<div class="empty">Đang mở phiếu…</div>';
+    $('oEdBen').innerHTML = '';
+    $('oEd').classList.add('mo');
+
+    var rd = await sb.rpc('lay_dap_an_o', { p_material: id });
+    oDap = (rd && !rd.error && rd.data) ? rd.data : {};
+
+    var rc = await sb.from('material_contents').select('storage_path').eq('material_id', id).maybeSingle();
+    var duong = rc.data && rc.data.storage_path;
+    if (!duong) { $('oEdGiay').innerHTML = '<div class="empty">Tài liệu này không phải tệp trong kho nên chưa khoanh ô được.<br><small>Chỉ dùng với phiếu tải lên dạng PDF hoặc ảnh.</small></div>'; return; }
+    var sg = await sb.storage.from('tailieu').createSignedUrl(duong, 3600);
+    if (sg.error) { $('oEdGiay').innerHTML = '<div class="empty">Không mở được tệp: ' + esc(sg.error.message) + '</div>'; return; }
+    await veGiay(sg.data.signedUrl, duong);
+    veBenO();
+  }
+
+  async function veGiay(url, duong) {
+    var giay = $('oEdGiay');
+    if (/\.(png|jpe?g|webp|gif)$/i.test(duong || '')) {
+      giay.innerHTML = '<div class="trang" data-tr="1"><img src="' + url + '" style="display:block;max-width:900px" draggable="false"></div>';
+      veOTrenTrang(); return;
+    }
+    if (!window.pdfjsLib) { giay.innerHTML = '<div class="empty">Chưa tải được bộ đọc PDF.</div>'; return; }
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      var pdf = await pdfjsLib.getDocument({ url: url }).promise;
+      giay.innerHTML = '';
+      for (var i = 1; i <= pdf.numPages; i++) {
+        var page = await pdf.getPage(i);
+        var vp1 = page.getViewport({ scale: 1 });
+        var rong = Math.min(900, giay.clientWidth - 40);
+        var vp = page.getViewport({ scale: rong / vp1.width });
+        var box = document.createElement('div');
+        box.className = 'trang'; box.dataset.tr = String(i);
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+        box.appendChild(cv); giay.appendChild(box);
+        await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      }
+    } catch (e) { giay.innerHTML = '<div class="empty">Không đọc được tệp: ' + esc(e && e.message || e) + '</div>'; return; }
+    veOTrenTrang();
+  }
+
+  /* Vẽ lại toàn bộ ô lên các trang */
+  function veOTrenTrang() {
+    [].forEach.call($('oEdGiay').querySelectorAll('.o'), function (x) { x.remove(); });
+    oDs.forEach(function (o, i) {
+      var tr = $('oEdGiay').querySelector('.trang[data-tr="' + o.trang + '"]'); if (!tr) return;
+      var el = document.createElement('div');
+      el.className = 'o' + (oChon === o.id ? ' chon' : '');
+      el.dataset.id = o.id;
+      el.style.cssText = 'left:' + o.x + '%;top:' + o.y + '%;width:' + o.w + '%;height:' + o.h + '%';
+      el.innerHTML = '<i>' + (i + 1) + '</i><u></u>';
+      tr.appendChild(el);
+    });
+    $('oEdDem').textContent = oDs.length ? oDs.length + ' ô · ' + Object.keys(oDap).filter(function (k) { return (oDap[k] || {}).dap_an; }).length + ' ô có đáp án' : 'Chưa có ô nào — kéo chuột trên phiếu để tạo';
+  }
+
+  /* Danh sách ô bên phải: gõ đáp án cho từng ô */
+  function veBenO() {
+    var b = $('oEdBen');
+    b.innerHTML = '<p class="nho" style="margin:0 0 12px">Kéo chuột trên phiếu để khoanh một chỗ trống. Gõ đáp án đúng vào ô tương ứng bên dưới — bỏ trống thì máy chỉ thu bài, không chấm ô đó.<br><br>Nhiều đáp án chấp nhận được thì cách nhau bằng dấu <b>|</b> (ví dụ <code>0,1|0.1|0,10</code>). Ô là số thì điền thêm <b>sai số</b> cho phép.</p>'
+      + oDs.map(function (o, i) {
+          var d = oDap[o.id] || {};
+          return '<div class="oitem' + (oChon === o.id ? ' chon' : '') + '" data-oi="' + o.id + '">'
+            + '<b>Ô ' + (i + 1) + ' · trang ' + o.trang + '</b>'
+            + '<input class="oDap" placeholder="Đáp án đúng" value="' + esc(d.dap_an || '') + '">'
+            + '<div class="hang"><input class="oSs" placeholder="sai số (nếu là số)" value="' + esc(d.sai_so == null ? '' : d.sai_so) + '" style="flex:1">'
+            + '<button type="button" class="btn sm danger oXoa">Xoá ô</button></div></div>';
+        }).join('');
+  }
+
+  /* Kéo chuột trên trang để tạo ô mới, kéo ô để dời, kéo góc để chỉnh cỡ */
+  (function () {
+    var giay = null, dang = null;
+    function pct(tr, e) {
+      var r = tr.getBoundingClientRect();
+      return { x: (e.clientX - r.left) / r.width * 100, y: (e.clientY - r.top) / r.height * 100, r: r };
+    }
+    document.addEventListener('pointerdown', function (e) {
+      if (!$('oEd').classList.contains('mo')) return;
+      var oEl = e.target.closest('.oed .o');
+      if (oEl) {
+        var o = oDs.filter(function (x) { return x.id === oEl.dataset.id; })[0]; if (!o) return;
+        oChon = o.id; veOTrenTrang(); veBenO();
+        var tr = oEl.parentElement, p = pct(tr, e);
+        dang = { kieu: e.target.tagName === 'U' ? 'co' : 'doi', o: o, tr: tr, x0: p.x, y0: p.y, ox: o.x, oy: o.y, ow: o.w, oh: o.h };
+        e.preventDefault(); return;
+      }
+      var tr2 = e.target.closest('.oed .trang'); if (!tr2) return;
+      var p2 = pct(tr2, e);
+      var moi = { id: oMoiId(), trang: Number(tr2.dataset.tr), x: p2.x, y: p2.y, w: 0, h: 0 };
+      oDs.push(moi); oChon = moi.id;
+      dang = { kieu: 'tao', o: moi, tr: tr2, x0: p2.x, y0: p2.y };
+      e.preventDefault();
+    });
+    document.addEventListener('pointermove', function (e) {
+      if (!dang) return;
+      var p = pct(dang.tr, e);
+      if (dang.kieu === 'tao') {
+        dang.o.x = Math.min(dang.x0, p.x); dang.o.y = Math.min(dang.y0, p.y);
+        dang.o.w = Math.abs(p.x - dang.x0); dang.o.h = Math.abs(p.y - dang.y0);
+      } else if (dang.kieu === 'co') {
+        dang.o.w = Math.max(1.5, dang.ow + (p.x - dang.x0));
+        dang.o.h = Math.max(1.5, dang.oh + (p.y - dang.y0));
+      } else {
+        dang.o.x = Math.max(0, dang.ox + (p.x - dang.x0));
+        dang.o.y = Math.max(0, dang.oy + (p.y - dang.y0));
+      }
+      veOTrenTrang();
+    });
+    document.addEventListener('pointerup', function () {
+      if (!dang) return;
+      if (dang.kieu === 'tao' && (dang.o.w < 1.5 || dang.o.h < 1.2)) {
+        oDs = oDs.filter(function (x) { return x.id !== dang.o.id; });
+        oChon = null;
+      }
+      dang = null; veOTrenTrang(); veBenO();
+    });
+  })();
+
+  $('oEdBen').addEventListener('input', function (e) {
+    var it = e.target.closest('[data-oi]'); if (!it) return;
+    var id = it.dataset.oi;
+    oDap[id] = oDap[id] || {};
+    if (e.target.classList.contains('oDap')) oDap[id].dap_an = e.target.value;
+    if (e.target.classList.contains('oSs')) oDap[id].sai_so = e.target.value.trim().replace(',', '.');
+  });
+  $('oEdBen').addEventListener('click', function (e) {
+    var it = e.target.closest('[data-oi]'); if (!it) return;
+    var id = it.dataset.oi;
+    if (e.target.closest('.oXoa')) {
+      oDs = oDs.filter(function (x) { return x.id !== id; });
+      delete oDap[id]; oChon = null; veOTrenTrang(); veBenO(); return;
+    }
+    oChon = id; veOTrenTrang(); veBenO();
+  });
+  $('oEdDong').addEventListener('click', function () { $('oEd').classList.remove('mo'); });
+  $('oEdLuu').addEventListener('click', async function () {
+    this.disabled = true;
+    var sach = {};
+    oDs.forEach(function (o) {
+      var d = oDap[o.id]; if (!d || !String(d.dap_an || '').trim()) return;
+      sach[o.id] = { dap_an: String(d.dap_an).trim() };
+      var ss = parseFloat(d.sai_so); if (isFinite(ss)) sach[o.id].sai_so = ss;
+    });
+    var lam = oDs.map(function (o) {
+      return { id: o.id, trang: o.trang,
+        x: Math.round(o.x * 100) / 100, y: Math.round(o.y * 100) / 100,
+        w: Math.round(o.w * 100) / 100, h: Math.round(o.h * 100) / 100 };
+    });
+    var r = await sb.rpc('dat_o_tra_loi', { p_material: oMat, p_o: lam, p_dap_an: sach });
+    this.disabled = false;
+    if (r.error || !r.data || !r.data.ok) { toast('Không lưu được: ' + ((r.error && r.error.message) || (r.data && r.data.reason) || '')); return; }
+    toast('Đã lưu ' + lam.length + ' ô.');
+    $('oEd').classList.remove('mo');
+    await loadSessions();
+  });
 
   /* Quỹ thời gian xem cho MỖI sinh viên. 0 = không giới hạn. */
   function oChonQuy(phutHienTai) {
@@ -1338,7 +1550,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         if (!x.cham_luc) return '<td class="chuacham" title="Đã nộp, chưa chấm">•</td>';
         var v = soDiem(x.diem);
         if (v != null) { tong += v; dem++; }
-        return '<td class="d">' + esc(x.diem || '✓') + '</td>';
+        return '<td class="d"' + (x.may_cham ? ' title="Máy chấm" style="font-style:italic"' : '') + '>' + esc(x.diem || '✓') + (x.can_xem ? ' <span style="color:var(--accent,#b5761f)" title="có câu gần đúng, cần xem lại">!</span>' : '') + '</td>';
       }).join('');
       var tb = dem ? (Math.round(tong / dem * 100) / 100).toString().replace('.', ',') : '–';
       return '<tr><td>' + esc(r.ten) + '</td>' + o2
@@ -1410,7 +1622,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
               return '<button type="button" class="btn sm tepnop" data-p="' + esc(t.path) + '" style="margin:2px 3px 2px 0">' + esc(t.ten || ('Tệp ' + (i + 1))) + '</button>';
             }).join('') || '<span style="color:var(--muted)">không có tệp</span>';
             return '<tr data-bai="' + x.bai_id + '"><td data-l="Sinh viên">' + ten + (x.loi_nhan ? '<br><small style="color:var(--muted)">“' + esc(x.loi_nhan) + '”</small>' : '') + '</td>'
-              + '<td data-l="Nộp lúc">' + fmtWhen(x.nop_luc) + (x.cham_luc ? '<br><small style="color:var(--ok,#2e7d4f)">đã chấm</small>' : '') + '</td>'
+              + '<td data-l="Nộp lúc">' + fmtWhen(x.nop_luc)
+                + (x.cham_luc ? '<br><small style="color:var(--ok,#2e7d4f)">' + (x.may_cham ? 'máy chấm' : 'đã chấm') + '</small>' : '')
+                + (x.can_xem ? '<br><span class="pill" title="Có câu gần đúng — máy không dám chấm sai, m xem lại giúp">cần xem lại</span>' : '') + '</td>'
               + '<td data-l="Bài làm">' + tep + '</td>'
               + '<td data-l="Điểm"><input class="chamD" value="' + esc(x.diem || '') + '" placeholder="8" style="width:64px"></td>'
               + '<td data-l="Nhận xét"><input class="chamN" value="' + esc(x.nhan_xet || '') + '" placeholder="Nhận xét ngắn" style="width:100%;min-width:160px"></td>'
