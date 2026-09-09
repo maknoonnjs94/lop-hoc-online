@@ -1,0 +1,129 @@
+/* =====================================================================
+   sheet.css — kiểu chữ cho PHIẾU đọc trên web
+   Trang học nạp tệp này khi tài liệu là bản đọc web (nội dung mở đầu bằng
+   dấu <!--sbt-sheet--> do Sổ Bài Tập đẩy sang), xem web/index.html.
+   Trước đây tệp này KHÔNG tồn tại: trang thật trả 404, nên phiếu HTML đầu
+   tiên gửi sang sẽ hiện trần trụi không định dạng.
+
+   Nguyên tắc: chỉ lo phần ĐỌC. Mọi nút công cụ soạn thảo lọt sang đều bị ẩn.
+   ===================================================================== */
+
+:root{
+  --muc:#16283c;        /* chữ chính */
+  --nhat:#5b7488;       /* chữ phụ */
+  --ke:#d7e0ea;         /* nét kẻ */
+  --giay:#ffffff;
+  --nen:#eef2f6;
+  --nhan:#1a6098;
+}
+
+*{ box-sizing:border-box }
+
+body.sheet-view{
+  margin:0;
+  background:var(--nen);
+  color:var(--muc);
+  font-family:'Be Vietnam Pro', system-ui, 'Segoe UI', Arial, sans-serif;
+  font-size:15.5px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------------- tờ giấy ---------------- */
+.sheet-view .sheet,
+.sheet-view > .sheet{
+  max-width:820px;
+  margin:0 auto;
+  background:var(--giay);
+  padding:34px 38px 44px;
+  border-radius:12px;
+  box-shadow:0 3px 18px rgba(16,40,64,.10);
+}
+@media (max-width:640px){
+  .sheet-view .sheet{ padding:20px 16px 28px; border-radius:0; box-shadow:none }
+}
+
+/* ---------------- tiêu đề ---------------- */
+.sheet-view h1,
+.sheet-view .ttl{
+  font-size:21px; font-weight:800; line-height:1.25;
+  margin:0 0 6px; text-align:center; letter-spacing:-.01em;
+}
+.sheet-view h2{ font-size:17.5px; font-weight:800; margin:26px 0 8px }
+.sheet-view h3{ font-size:16px;   font-weight:700; margin:20px 0 6px }
+.sheet-view .sub,
+.sheet-view .sheet > p:first-of-type{ color:var(--nhat) }
+
+/* ---------------- từng câu ---------------- */
+.sheet-view .problems{ margin-top:18px }
+.sheet-view .problem{
+  margin:0 0 20px;
+  padding:0 0 4px;
+  break-inside:avoid; page-break-inside:avoid;
+}
+.sheet-view .problem + .problem{ border-top:1px solid var(--ke); padding-top:16px }
+.sheet-view .problem-head{ display:flex; gap:9px; align-items:baseline }
+.sheet-view .problem-num{
+  flex:none; font-weight:800; color:var(--nhan); min-width:2.4em;
+}
+.sheet-view .problem p{ margin:0 0 8px }
+
+/* ---------------- hình và bảng ---------------- */
+.sheet-view img,
+.sheet-view .figure img,
+.sheet-view .qadd-fig img{ max-width:100%; height:auto; display:block }
+.sheet-view .figure,
+.sheet-view .qadd-figs{ margin:12px 0; text-align:center }
+.sheet-view .qadd-figs{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center }
+.sheet-view .qadd-label{ font-size:13px; color:var(--nhat); margin-top:4px }
+
+.sheet-view table{
+  border-collapse:collapse; width:100%; margin:12px 0; font-size:14.5px;
+}
+.sheet-view th, .sheet-view td{
+  border:1px solid var(--ke); padding:7px 10px; text-align:left; vertical-align:top;
+}
+.sheet-view th{ background:#f4f8fb; font-weight:700 }
+/* bảng rộng thì cuộn trong khung, đừng đẩy cả phiếu tràn ngang */
+.sheet-view .docs-table-wrap,
+.sheet-view .bang-cuon{ overflow-x:auto; -webkit-overflow-scrolling:touch }
+
+/* ---------------- chỗ trống để điền ---------------- */
+.sheet-view .cho-trong,
+.sheet-view .blank{
+  display:inline-block; min-width:120px;
+  border-bottom:1px solid var(--muc); height:1.3em; vertical-align:baseline;
+}
+
+/* ---------------- công thức, mã ---------------- */
+.sheet-view code, .sheet-view kbd{
+  font-family:ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size:.92em; background:#eef4f9; border-radius:4px; padding:1px 5px;
+}
+.sheet-view sub, .sheet-view sup{ line-height:0 }
+
+/* ---------------- ẨN mọi nút của trình soạn ----------------
+   Phiếu được cắt thẳng từ Sổ Bài Tập nên có thể mang theo nút sửa, nút xoá,
+   thanh công cụ. Sinh viên tuyệt đối không được thấy những thứ đó.          */
+.sheet-view .problem-tools,
+.sheet-view .figure-tools,
+.sheet-view .qadd-box,
+.sheet-view .docs-head-actions,
+.sheet-view .docs-tabs,
+.sheet-view [contenteditable],
+.sheet-view button,
+.sheet-view .btn,
+.sheet-view .tool,
+.sheet-view .toolbar,
+.sheet-view [data-tool],
+.sheet-view [data-act]{ display:none !important }
+
+/* chữ đang sửa thì bỏ viền nhấp nháy nếu lọt sang */
+.sheet-view [contenteditable="true"]{ outline:none }
+
+/* ---------------- in ra giấy ---------------- */
+@media print{
+  body.sheet-view{ background:#fff }
+  .sheet-view .sheet{ box-shadow:none; border-radius:0; max-width:none; padding:0 }
+  .sheet-view .problem{ break-inside:avoid }
+}
