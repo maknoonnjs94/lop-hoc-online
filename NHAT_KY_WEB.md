@@ -15,7 +15,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 Đang chạy trên web:
 - Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
 - Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau` (secret `SUPABASE_SERVICE_ROLE_KEY`, đã có) và `/api/stream/*` cho video (cần thêm `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN` — chưa có).
+- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
 - App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
 M còn phải làm:
@@ -28,6 +28,19 @@ M còn phải làm:
 7. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-10 — Bảng dung lượng trong tab Kho tệp
+
+**M hỏi:** video up lên lưu trên cloud đúng không, xem dung lượng ở đâu?
+
+**Đã làm:** tab **Kho tệp** thêm ba ô số liệu, đo trực tiếp mỗi lần mở tab:
+- Video · Cloudflare Stream: gọi `/api/stream/danh-sach`, cộng `giay` và `kich_thuoc` → số video, tổng phút lưu, dung lượng, ước tính USD/tháng (5 USD / 1 000 phút lưu).
+- Tệp tài liệu · Supabase: đệ quy `storage.from("tailieu").list()` (thư mục con theo id buổi), cộng `metadata.size`.
+- Ảnh đại diện · Supabase + ô tổng có thanh phần trăm so với 1 GB gói miễn phí.
+
+**Trạng thái SQL:** `/api/trang-thai` báo v9, v10, v11, v12, v14, v16, v17 đều đã chạy — không còn file nào chờ.
 
 ---
 

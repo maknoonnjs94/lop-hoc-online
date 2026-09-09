@@ -198,6 +198,14 @@
   .strow:hover{ border-color:var(--primary) } .strow.on{ border-color:var(--primary); box-shadow:inset 0 0 0 1px var(--primary) } .strow:disabled{ opacity:.55; cursor:default }
   .strow img,.strow .noanh{ width:72px; height:40px; border-radius:8px; object-fit:cover; background:var(--surface-2, #eee); flex:none }
   .strow b{ display:block; font-size:13.5px } .strow small{ color:var(--muted); font-size:12px }
+  /* bảng dung lượng */
+  .dlgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-bottom:6px }
+  .dlbox{ border:1px solid var(--line, #e2e6ea); border-radius:16px; padding:14px 16px; background:var(--surface, #fff) }
+  .dlbox h4{ margin:0 0 6px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted) }
+  .dlbox .so{ font-size:24px; font-weight:800; line-height:1.15 }
+  .dlbox .phu{ color:var(--muted); font-size:12.5px; margin-top:3px }
+  .dlbar{ height:8px; border-radius:99px; background:var(--surface-2, #eef1f4); overflow:hidden; margin-top:9px }
+  .dlbar i{ display:block; height:100%; border-radius:99px; background:var(--primary) }
   .uptien{ margin:8px 0 4px } .uptien .bar{ height:10px; border-radius:99px; background:var(--surface-2, #eee); overflow:hidden }
   .uptien .bar i{ display:block; height:100%; width:0; border-radius:99px; background:var(--primary); transition:width .3s }
   .uptien .chu{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:5px }
@@ -260,6 +268,7 @@
             <span class="grow"></span>
             <input id="khoFind" class="search" placeholder="Tìm theo tên tệp hoặc buổi…">
           </div>
+          <div class="dlgrid" id="dungLuong"></div>
           <div class="card" id="khoList"></div>
           <p class="hint" style="margin-top:10px">
             Kho gom tệp của mọi lớp. Mỗi tệp chỉ nằm một bản: “Dùng lại” gắn đúng tệp đó sang buổi khác mà không phải tải lên lần nữa.
@@ -937,9 +946,70 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ---------------- kho tệp ---------------- */
   var khoRows = [];
   var justOpenSes = null;
+  /* ---------------- Dung lượng đang dùng ----------------
+     Video nằm trên Cloudflare Stream (tính tiền theo PHÚT lưu, không theo GB).
+     Tệp tài liệu và ảnh đại diện nằm trong kho Supabase (tính theo GB). */
+  function mbChu(byte) {
+    byte = Number(byte) || 0;
+    if (byte >= 1073741824) return (byte / 1073741824).toFixed(2) + ' GB';
+    if (byte >= 1048576) return Math.round(byte / 1048576) + ' MB';
+    return Math.max(1, Math.round(byte / 1024)) + ' KB';
+  }
+  function oDung(ten, so, phu, pct) {
+    return '<div class="dlbox"><h4>' + ten + '</h4><div class="so">' + so + '</div><div class="phu">' + phu + '</div>'
+      + (pct == null ? '' : '<div class="dlbar"><i style="width:' + Math.min(100, Math.max(2, pct)) + '%"></i></div>') + '</div>';
+  }
+  /* đếm đệ quy một kho Supabase (thư mục con theo id buổi học) */
+  async function doKho(ten, duong, sau) {
+    var tong = { so: 0, byte: 0 };
+    var r = await sb.storage.from(ten).list(duong || '', { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+    if (r.error) return tong;
+    for (var i = 0; i < (r.data || []).length; i++) {
+      var it = r.data[i];
+      if (it.id === null || (!it.metadata && (sau || 0) < 2)) {
+        var con = await doKho(ten, (duong ? duong + '/' : '') + it.name, (sau || 0) + 1);
+        tong.so += con.so; tong.byte += con.byte;
+      } else if (it.metadata) {
+        tong.so++; tong.byte += Number(it.metadata.size) || 0;
+      }
+    }
+    return tong;
+  }
+  async function veDungLuong() {
+    var box = $('dungLuong'); if (!box) return;
+    box.innerHTML = '<div class="dlbox"><h4>Dung lượng</h4><div class="phu">Đang đo…</div></div>';
+    var o = '';
+    /* 1. video trên Cloudflare Stream */
+    try {
+      var d = await apiGoi('/api/stream/danh-sach', {});
+      var vs = d.videos || [];
+      var giay = vs.reduce(function (t, v) { return t + (Number(v.giay) || 0); }, 0);
+      var byte = vs.reduce(function (t, v) { return t + (Number(v.kich_thuoc) || 0); }, 0);
+      var phut = Math.round(giay / 60);
+      var tien = (phut / 1000) * 5;
+      o += oDung('Video · Cloudflare Stream', vs.length + ' video',
+        phut + ' phút lưu · ' + mbChu(byte) + ' · ước tính ' + (tien < 0.01 && phut ? '<0,01' : tien.toFixed(2)) + ' USD/tháng tiền lưu', null);
+    } catch (e) {
+      o += oDung('Video · Cloudflare Stream', '—', 'Chưa đọc được: ' + esc(String(e.message || e)), null);
+    }
+    /* 2. tệp tài liệu + ảnh đại diện trong Supabase (gói miễn phí 1 GB) */
+    try {
+      var tl = await doKho('tailieu', '', 0);
+      var av = await doKho('avatars', '', 0);
+      var tongByte = tl.byte + av.byte;
+      o += oDung('Tệp tài liệu · Supabase', mbChu(tl.byte), tl.so + ' tệp (PDF, ảnh, bài giảng)', null);
+      o += oDung('Ảnh đại diện · Supabase', mbChu(av.byte), av.so + ' ảnh', null);
+      o += oDung('Tổng kho Supabase', mbChu(tongByte), 'Gói miễn phí cho 1 GB — đang dùng ' + Math.round(1000 * tongByte / 1073741824) / 10 + '%', 100 * tongByte / 1073741824);
+    } catch (e) {
+      o += oDung('Kho Supabase', '—', 'Chưa đọc được: ' + esc(String(e.message || e)), null);
+    }
+    box.innerHTML = o;
+  }
+
   async function loadKho() {
     var box = $('khoList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
+    veDungLuong();
     var r = await sb.from('materials')
       .select('id, title, kind, session_id, material_contents(storage_path), sessions(no, title, class_id, classes(name))');
     if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }

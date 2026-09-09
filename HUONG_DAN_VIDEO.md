@@ -163,6 +163,20 @@ Quản trị → tab **Theo dõi**: mỗi buổi liệt kê từng tài liệu k
 
 Muốn xem Worker đã nối chưa: mở `https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai` — có `"stream": true` là đủ hai secret.
 
+## Xem đang dùng hết bao nhiêu dung lượng
+
+Quản trị → tab **Kho tệp**, ngay trên danh sách có ba ô số liệu:
+
+- **Video · Cloudflare Stream** — bao nhiêu video, tổng số **phút lưu**, dung lượng, và ước tính tiền lưu mỗi tháng. Stream tính tiền theo phút chứ không theo GB: 5 USD cho mỗi 1 000 phút lưu, cộng 1 USD cho mỗi 1 000 phút sinh viên xem.
+- **Tệp tài liệu · Supabase** — PDF, ảnh, bài giảng đã tải lên.
+- **Tổng kho Supabase** — có thanh phần trăm so với 1 GB của gói miễn phí.
+
+Video **không** chiếm chỗ trên máy m và cũng không nằm trong 1 GB của Supabase — nó ở hẳn trên Cloudflare. Ổ cứng máy m chỉ giữ bản gốc do chính m quay.
+
+Muốn xem số liệu gốc của Cloudflare: **Images & Stream → Stream analytics** (phút đã phát) và **→ Plans** (hoá đơn).
+
+Xoá bớt video cho nhẹ: **Images & Stream → Hosted videos** → chọn video → Delete. Nhớ gỡ tài liệu tương ứng khỏi buổi học, nếu không sinh viên bấm vào sẽ báo không thấy video.
+
 ## Những gì Stream KHÔNG chặn được
 
 Quay màn hình bằng điện thoại, hoặc quay bằng phần mềm trên máy không cài app lớp học. Với app máy tính, cửa sổ hiện đen khi quay; dấu chìm tên hiện trong mọi trường hợp để lần được nguồn rò rỉ. Không có nền tảng nào (kể cả Netflix) chặn được máy quay ngoài.
