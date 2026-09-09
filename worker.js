@@ -399,8 +399,16 @@ async function coKho(env, ten) {
     return r.ok;
   } catch (e) { return false; }
 }
+/* Hàm RPC đã có chưa — gọi thử với tham số rỗng, chỉ cần KHÔNG phải lỗi "không tìm thấy hàm". */
+async function coHam(env, ten) {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + ten, {
+      method: 'POST', headers: adminHeaders(env), body: '{}' });
+    return r.status !== 404;
+  } catch (e) { return false; }
+}
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -418,7 +426,8 @@ async function kiemSchema(env) {
     coKho(env, 'bainop'),
     coCot(env, 'materials', 'o_tra_loi'),
     coCot(env, 'dap_an_o', 'dap_an'),
-    coCot(env, 'materials', 'cho_tai')
+    coCot(env, 'materials', 'cho_tai'),
+    coHam(env, 'thong_ke_o')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -432,7 +441,8 @@ async function kiemSchema(env) {
     v19_nop_bai: v19a && v19b && v19c,
     v19_kho_bai_nop: v19d,
     v20_o_tra_loi: v20a && v20b,
-    v21_cho_tai: v21
+    v21_cho_tai: v21,
+    v22_xem_bai: v22
   };
 }
 

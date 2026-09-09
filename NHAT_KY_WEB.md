@@ -40,6 +40,28 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-13 (chiều) — Xem bài đã điền, sửa kết luận của máy, thống kê câu hay sai
+
+**Vá lỗ hổng t để lại:** máy chấm xong chỉ hiện "3/4", giảng viên **không mở ra xem được sinh viên gõ chữ gì** — nên cái nhãn *cần xem lại* ở câu gần đúng hoàn toàn vô dụng. Nêu hai lượt trước, giờ mới làm.
+
+**`schema_v22_xem_bai_thong_ke.sql`** — ba hàm:
+
+- `xem_bai_o(bai)` — từng ô: sinh viên gõ gì, đáp án đúng, máy kết luận gì. Dùng `jsonb_array_elements … with ordinality` để giữ đúng thứ tự câu.
+- `sua_o_cham(bai, o, trạng thái)` — giảng viên đổi kết luận một ô; tự tính lại `diem` và tắt `can_xem` khi hết câu lửng lơ.
+- `thong_ke_o(lớp)` — cộng cả lớp theo từng ô: bao nhiêu đúng / gần / sai.
+
+**Quản trị:** nút **Xem bài** ở hàng bài điền trên phiếu → bảng chi tiết, câu gần đúng tô hồng, mỗi dòng có ba nút đổi kết luận. Thanh chuyển của tab Bài nộp thêm mục thứ ba **Câu hay sai**: mỗi phiếu một bảng kèm thanh màu, tiêu đề ghi câu khó nhất, dòng quá nửa lớp sai thì tô hồng.
+
+Sửa luôn chữ nghĩa: bài điền trên phiếu trước ghi "không có tệp", giờ ghi **"điền trên phiếu"**.
+
+`/api/trang-thai` thêm `v22_xem_bai`. Lần này kiểm bằng **hàm** chứ không phải cột, nên viết thêm `coHam()` — gọi RPC với thân rỗng, chỉ cần không trả 404 là hàm đã tồn tại.
+
+**Đã test** trong bản chạy thử quản trị: mở bài của Nguyễn Minh Anh ra đúng "2/4 câu đúng · 1 câu gần đúng", bảng liệt kê đủ bốn câu kèm đáp án; bấm đổi câu 4 từ *gần đúng* sang *đúng* → thành **3/4**, hàng tô hồng biến mất, bảng chấm ngoài cập nhật theo. Tab Câu hay sai ra "khó nhất: câu 2", câu 2 có 0 đúng / 2 sai và bị tô hồng.
+
+**M phải làm:** chạy `schema_v22_xem_bai_thong_ke.sql` trong Supabase.
+
+---
+
 ## 2026-09-13 — Quyền tải về từng tệp
 
 **M chọn:** làm quyền tải trước, để tuần này còn in phiếu phát cho sinh viên; chuyện phiếu web gõ trực tiếp tính sau.

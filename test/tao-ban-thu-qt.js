@@ -29,7 +29,7 @@ const stub = `<script>
     ],
     materials: [
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu', order_no:0, open_at:null, created_at:d(-2*864e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
-      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), o_tra_loi:[], cho_tai:false },
+      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), cho_tai:false, o_tra_loi:[{ id:'oa', trang:1, x:29.3, y:18, w:18.2, h:2.4 },{ id:'ob', trang:1, x:15, y:25.9, w:18.2, h:2.4 },{ id:'oc', trang:1, x:15, y:33.8, w:11.4, h:2.4 },{ id:'od', trang:1, x:15, y:41.7, w:11.4, h:2.4 }] },
       { id:'m2', session_id:'s1', kind:'video', title:'Video: đường cong chuẩn độ', order_no:2, open_at:null, created_at:d(-864e5), gioi_han_giay:3600, nhan_bai:false, han_nop:null },
       { id:'m3', session_id:'s1', kind:'answer', title:'Đáp án phiếu 5', order_no:3, open_at:d(3*864e5), created_at:d(-36e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
       { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, open_at:null, created_at:d(-7*864e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(-864e5), cho_tai:true }
@@ -57,9 +57,16 @@ const stub = `<script>
     device_bindings: [{ user_id:'u1', device_id:'app:abc123', bound_at:d(-10*864e5) }],
     dung_luong_thang: [{ thang: new Date().toISOString().slice(0,7), giay_phat: 74000 }],
     bai_nop: [
-      { id:'b1', material_id:'m1', user_id:'u1', loi_nhan:'Em chưa chắc câu 4 ạ.', tep:[{ path:'m1/u1/bai-lam.jpg', ten:'bai-lam.jpg', co:820000 }], nop_luc:d(-2*36e5), cham_luc:null, diem:null, nhan_xet:'' },
+      { id:'b1', material_id:'m1', user_id:'u1', loi_nhan:'', tep:[], nop_luc:d(-2*36e5), cham_luc:d(-2*36e5), diem:'2/4', nhan_xet:'',
+        may_cham:true, can_xem:true,
+        tra_loi:{ oa:'0,08', ob:'metyl da cam', oc:'H₂SO₄', od:'2,03' },
+        chi_tiet:{ oa:'dung', ob:'sai', oc:'dung', od:'gan' } },
       { id:'b2', material_id:'m1', user_id:'u2', loi_nhan:'', tep:[{ path:'m1/u2/trang1.jpg', ten:'trang1.jpg', co:640000 },{ path:'m1/u2/trang2.jpg', ten:'trang2.jpg', co:610000 }], nop_luc:d(-5*36e5), cham_luc:d(-36e5), diem:'9', nhan_xet:'Trình bày sạch, chuẩn.' },
-      { id:'b3', material_id:'m5', user_id:'u2', loi_nhan:'Em nộp muộn ạ.', tep:[{ path:'m5/u2/bai4.pdf', ten:'bai4.pdf', co:1200000 }], nop_luc:d(-3*864e5), cham_luc:null, diem:null, nhan_xet:'' }
+      { id:'b3', material_id:'m5', user_id:'u2', loi_nhan:'Em nộp muộn ạ.', tep:[{ path:'m5/u2/bai4.pdf', ten:'bai4.pdf', co:1200000 }], nop_luc:d(-3*864e5), cham_luc:null, diem:null, nhan_xet:'' },
+      { id:'b4', material_id:'m1', user_id:'u3', loi_nhan:'', tep:[], nop_luc:d(-36e5), cham_luc:d(-36e5), diem:'1/4', nhan_xet:'',
+        may_cham:true, can_xem:false,
+        tra_loi:{ oa:'0,1', ob:'quy tim', oc:'H2SO4', od:'1' },
+        chi_tiet:{ oa:'sai', ob:'sai', oc:'dung', od:'sai' } }
     ],
     cau_hoi: [
       { id:'q1', material_id:'m1', user_id:'u1', noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5), tra_loi:null, tra_luc:null, an:false },
@@ -135,7 +142,7 @@ const stub = `<script>
   }
 
   /* ---------------- các hàm RPC ---------------- */
-  var DAPAN = {};
+  var DAPAN = { m1: { oa:{ dap_an:'0,08', sai_so:0.001 }, ob:{ dap_an:'phenolphtalein|phenolphthalein' }, oc:{ dap_an:'H2SO4' }, od:{ dap_an:'2' } } };
   function rpcChay(ten, a) {
     a = a || {};
     if (ten === 'bang_bai_nop') {
@@ -148,7 +155,8 @@ const stub = `<script>
           ra.push({ material_id:m.id, tai_lieu:m.title, session_no:s.no, buoi:s.title || ('Buổi ' + s.no), han_nop:m.han_nop,
             user_id:p.id, ho_ten:p.full_name, email:p.email,
             bai_id: b ? b.id : null, nop_luc: b ? b.nop_luc : null, loi_nhan: b ? b.loi_nhan : null, tep: b ? b.tep : null,
-            cham_luc: b ? b.cham_luc : null, diem: b ? b.diem : null, nhan_xet: b ? b.nhan_xet : null });
+            cham_luc: b ? b.cham_luc : null, diem: b ? b.diem : null, nhan_xet: b ? b.nhan_xet : null,
+            may_cham: !!(b && b.may_cham), can_xem: !!(b && b.can_xem), so_o: (m.o_tra_loi || []).length });
         });
       });
       return ra;
@@ -195,6 +203,50 @@ const stub = `<script>
       if (mm) mm.o_tra_loi = a.p_o || [];
       DAPAN[a.p_material] = a.p_dap_an || {};
       return { ok:true, so_o:(a.p_o || []).length };
+    }
+    if (ten === 'xem_bai_o') {
+      var b = DB.bai_nop.filter(function (x) { return x.id === a.p_bai; })[0];
+      if (!b) return [];
+      var m = DB.materials.filter(function (x) { return x.id === b.material_id; })[0] || {};
+      var da = DAPAN[b.material_id] || {};
+      return (m.o_tra_loi || []).map(function (o, i) {
+        return { o_id:o.id, thu_tu:i + 1, sv_go:(b.tra_loi || {})[o.id] || '',
+          dap_an:(da[o.id] || {}).dap_an || '', trang_thai:(b.chi_tiet || {})[o.id] || 'chua' };
+      });
+    }
+    if (ten === 'sua_o_cham') {
+      var b2 = DB.bai_nop.filter(function (x) { return x.id === a.p_bai; })[0];
+      if (!b2) return { ok:false, reason:'khong_thay' };
+      var m2 = DB.materials.filter(function (x) { return x.id === b2.material_id; })[0] || {};
+      b2.chi_tiet = b2.chi_tiet || {};
+      b2.chi_tiet[a.p_o] = a.p_trang_thai;
+      var soO = (m2.o_tra_loi || []).length;
+      var dg = 0, gan = 0;
+      Object.keys(b2.chi_tiet).forEach(function (k) { if (b2.chi_tiet[k] === 'dung') dg++; if (b2.chi_tiet[k] === 'gan') gan++; });
+      b2.diem = dg + '/' + soO; b2.can_xem = gan > 0; b2.cham_luc = new Date().toISOString();
+      return { ok:true, so_dung:dg, so_gan:gan, so_o:soO };
+    }
+    if (ten === 'thong_ke_o') {
+      var ra = [];
+      DB.materials.filter(function (m) { return (m.o_tra_loi || []).length; }).forEach(function (m) {
+        var s = DB.sessions.filter(function (x) { return x.id === m.session_id; })[0] || {};
+        if (s.class_id !== a.p_class) return;
+        var da = DAPAN[m.id] || {};
+        var bs = DB.bai_nop.filter(function (b) { return b.material_id === m.id && b.chi_tiet; });
+        m.o_tra_loi.forEach(function (o, i) {
+          var d = 0, g = 0, s2 = 0, np = 0;
+          bs.forEach(function (b) {
+            var t = (b.chi_tiet || {})[o.id];
+            if (t == null) return;
+            np++;
+            if (t === 'dung') d++; else if (t === 'gan') g++; else if (t === 'sai') s2++;
+          });
+          ra.push({ material_id:m.id, tai_lieu:m.title, buoi:s.title || ('Buổi ' + s.no),
+            o_id:o.id, thu_tu:i + 1, dap_an:(da[o.id] || {}).dap_an || '',
+            so_dung:d, so_gan:g, so_sai:s2, so_nop:np });
+        });
+      });
+      return ra;
     }
     if (ten === 'reset_device') { DB.device_bindings = DB.device_bindings.filter(function (x) { return x.user_id !== a.p_user; }); return { ok:true }; }
     if (ten === 'noi_quy_xem') {

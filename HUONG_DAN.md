@@ -269,6 +269,22 @@ Máy tự bỏ khoảng trắng, không phân biệt hoa thường, coi dấu ph
 
 **Chỉ dùng được với phiếu tải lên dạng tệp** (PDF hoặc ảnh). Phiếu là link ngoài hay gõ chữ thì không khoanh ô được.
 
+## Xem sinh viên đã điền gì, và sửa kết luận của máy
+
+Cần chạy một lần `schema_v22_xem_bai_thong_ke.sql`.
+
+Tab **Bài nộp** → bài nào điền trên phiếu sẽ có nút **Xem bài**. Mở ra là một bảng từng câu: **sinh viên gõ gì · đáp án đúng là gì · máy chấm ra sao**. Câu máy đánh dấu *gần đúng* được tô hồng để m nhìn thấy ngay.
+
+Mỗi dòng có sẵn nút đổi kết luận: **đúng · gần đúng · sai**. Bấm một cái là điểm tự tính lại và nhãn *cần xem lại* biến mất nếu không còn câu nào lửng lơ.
+
+Dùng khi máy chấm quá nghiêm — ví dụ em ấy viết `2,03` mà đáp án là `2`, hoặc viết đúng ý nhưng khác chữ.
+
+## Câu nào cả lớp sai nhiều nhất
+
+Tab **Bài nộp** → bấm **Câu hay sai** ở thanh trên.
+
+Mỗi phiếu một bảng: từng câu bao nhiêu em đúng / gần đúng / sai, kèm thanh màu nhìn phát biết. Tiêu đề ghi luôn **câu khó nhất**. Dòng nào quá nửa lớp chưa làm đúng thì tô hồng — đó chính là chỗ đáng giảng lại buổi sau.
+
 ## Bảng điểm cả lớp
 
 Quản trị → tab **Bài nộp** → bấm **Bảng điểm** ở thanh trên cùng.
