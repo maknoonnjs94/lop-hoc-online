@@ -107,16 +107,21 @@ body.sheet-view{
    √(…) và (a)/(b) trong nội dung được giữ nguyên làm chữ ẩn (.can-kh) để copy, tìm kiếm,
    xuất Word vẫn ra đúng "√(Ka·C)"; phần nhìn thấy là gạch ngang phủ hết biểu thức và
    dấu căn kéo dài theo chiều cao của nó. Phân số (tử)/(mẫu) xếp hai tầng, gạch ở giữa. */
-.can { position: relative; display: inline-flex; align-items: stretch; white-space: nowrap; vertical-align: baseline; margin: 0 .05em 0 .04em; padding-left: .7em; }
+.can { position: relative; display: inline-flex; align-items: stretch; white-space: nowrap;
+  vertical-align: baseline; margin: 0 .06em; padding-left: .62em; }
 /* dấu căn = hai nét vẽ bằng gradient theo phần trăm (không ảnh, không calc):
-   html2canvas lúc xuất PDF vẽ được y hệt; nét dài luôn nối vào gạch phủ dù biểu thức cao thấp thế nào */
-.can::before { content: ""; position: absolute; left: .24em; top: 0; bottom: 0; width: .48em;
-  background: linear-gradient(to top right, transparent 46%, #152f4d 46%, #152f4d 54%, transparent 54%);
+   html2canvas lúc xuất PDF vẽ được y hệt. .can-duoi phải stretch (không baseline) thì mép
+   trên của nó mới trùng mép trên của .can — nét chéo nối liền vào gạch phủ, không hở. */
+.can::before { content: ""; position: absolute; left: .2em; top: 0; bottom: 0; width: .44em;
+  background: linear-gradient(to top right, transparent 43%, #152f4d 43%, #152f4d 57%, transparent 57%);
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.can::after { content: ""; position: absolute; left: .04em; bottom: 0; width: .2em; height: .5em;
+.can::after { content: ""; position: absolute; left: 0; bottom: .16em; width: .23em; height: .36em;
   background: linear-gradient(to bottom right, transparent 36%, #152f4d 36%, #152f4d 64%, transparent 64%);
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.can-duoi { align-self: baseline; border-top: .085em solid currentColor; padding: .1em .14em 0 .1em; line-height: 1.2; }
+.can-duoi { align-self: stretch; border-top: .075em solid #152f4d; padding: .1em .16em 0 .05em; line-height: 1.25; }
+/* Chỉ số trên/dưới làm PHỒNG hộp dòng, đẩy gạch phủ vọt lên gần một dòng
+   ("√1,35 × 10⁻⁵ × 0,0800" là ví dụ rõ nhất) — line-height:0 để chúng không tính vào chiều cao. */
+.can sub, .can sup, .ps sub, .ps sup { line-height: 0; }
 .can-bac { position: absolute; left: .02em; top: -.32em; font-size: 60%; line-height: 1; vertical-align: baseline; }
 .can-kh { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; color: transparent; white-space: nowrap; pointer-events: none; }
 .ps { position: relative; display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle;

@@ -40,6 +40,21 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-15 (khuya) — Sửa dáng căn thức (đợt 69)
+
+M báo *"trông tởm quá"*: gạch phủ bị đẩy vọt lên chồng vào dòng trên, ở chỗ biểu thức có `10⁻⁵`.
+Hai lỗi CSS: `<sup>/<sub>` làm phồng hộp dòng (thiếu `line-height: 0`), và `.can-duoi` để
+`align-self: baseline` nên nét căn hở khỏi gạch phủ (phải là `stretch`).
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 69**.
+- `web/sheet.css` sửa cùng hai chỗ đó.
+
+Đang treo quyết định của m: có chuyển định dạng SV nhận từ **PDF sang Word** không.
+Word vẽ công thức đẹp hơn hẳn, nhưng .docx **phá chuỗi bảo vệ** (sửa được, chép được, không dấu chìm,
+không qua trình xem) — trái với yêu cầu "bảo lưu quy trình bảo mật" m đã chốt trước đó.
+
+---
+
 ## 2026-09-15 (tối) — Căn thức: vá nốt phần không ngoặc, và dựng ở mọi màn hình
 
 Đợt 67 mới lo được `√(…)` có ngoặc và chỉ dựng ở phiếu. M báo vẫn lỗi:
