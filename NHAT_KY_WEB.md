@@ -40,6 +40,32 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-13 — Quyền tải về từng tệp
+
+**M chọn:** làm quyền tải trước, để tuần này còn in phiếu phát cho sinh viên; chuyện phiếu web gõ trực tiếp tính sau.
+
+**Đã làm:** `schema_v21_cho_tai.sql` thêm một cột `materials.cho_tai` (mặc định `false`).
+
+- Quản trị: ô **Cho tải về** trong hộp thêm/sửa tài liệu (pdf · bài giảng · đáp án), hàng tài liệu hiện nhãn **⤓ cho tải**.
+- Sinh viên: nút **Tải về để in** ở cuối tài liệu, chỉ hiện khi cờ bật. Lấy link ký 5 phút kèm `{ download: tên }` để trình duyệt tải xuống thay vì mở tab.
+- `/api/trang-thai` kiểm thêm `v21_cho_tai`.
+
+**Nói thẳng giới hạn** (đã ghi vào cả tệp SQL lẫn hướng dẫn): cờ này **không phải hàng rào mật mã**. Trình duyệt bắt buộc phải tải được nội dung về mới vẽ được phiếu — không tránh được. Cờ chỉ quyết định có nút Tải về hay không. Bảo vệ thật vẫn là dấu chìm, khoá một thiết bị, và app chặn chụp/quay. **Tệp đã cho tải thì không có dấu chìm.**
+
+**Đã test** trong hai bản chạy thử: bật ô rồi Lưu → mở lại vẫn nhớ → hàng hiện nhãn ⤓ cho tải; phía sinh viên tài liệu bật cờ có nút Tải về, tài liệu không bật thì **không** có nút.
+
+### Đã tư vấn cho m về hướng "phiếu soạn ở Sổ, sinh viên gõ thẳng"
+
+Đọc mã cả hai bên rồi kết luận: **làm được, mà còn dễ hơn khoanh ô trên PDF.** Phiếu ở Sổ vốn đã là HTML; `doSend` hiện đi vòng — bấm nút in của sổ, bắt lấy PDF, tải lên kho. Gửi thẳng HTML thì chỗ trống thành ô nhập thật, không cần toạ độ, không cần pdf.js, tự co giãn trên điện thoại, và **tái dùng được gần hết máy chấm đã xây** (chỉ đổi khoá từ id ô sang id câu).
+
+Ba mảnh: (1) `doSend` gửi HTML + viết `web/sheet.css` (đang thiếu, trang thật trả 404); (2) ô trả lời mỗi câu; (3) bộ gõ công thức ra Unicode thuần.
+
+Chỗ chưa chắc: phiếu **dựng bằng JS lúc chạy** nên nhìn mã tĩnh không biết mỗi câu được đánh dấu bằng thẻ gì — phải mở sổ soi DOM thật rồi mới dám hứa mảnh 2. Mảnh 1 thì chắc chắn làm được.
+
+Đề xuất chia ba bước, bước nào cũng dùng được ngay, để không phải đánh cược cả cục.
+
+---
+
 ## 2026-09-12 (tối) — PDF treo khi ẩn tab: LỖI THẬT của bản chính, đã sửa
 
 **M báo:** phiếu PDF trong bản thử nhìn xấu, muốn dùng giao diện PDF như Sổ Bài Tập, và mở bài lên trễ.

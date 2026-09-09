@@ -689,9 +689,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     /* gioi_han_giay phải nạp cùng, nếu không hộp Sửa sẽ hiện 'Không giới hạn' rồi ghi đè mất quỹ xem. */
     var r = await sb.from('sessions')
-      .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay, nhan_bai, han_nop)')
+      .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay, nhan_bai, han_nop, cho_tai)')
       .eq('class_id', curClass).order('no', { ascending: false });
-    if (r.error && /nhan_bai|han_nop/.test(r.error.message || '')) {
+    if (r.error && /nhan_bai|han_nop|cho_tai/.test(r.error.message || '')) {
       coNopBai = false;
       r = await sb.from('sessions')
         .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay)')
@@ -750,6 +750,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
               + '<span class="acts">'
               + '<button class="btn sm" data-a="up" data-m="' + m.id + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>'
               + '<button class="btn sm" data-a="down" data-m="' + m.id + '"' + (i === mats.length - 1 ? ' disabled' : '') + '>↓</button>'
+              + (m.cho_tai ? '<span class="pill" title="Sinh viên tải được tệp gốc của tài liệu này" style="margin-right:4px">⤓ cho tải</span>' : '')
               + (m.nhan_bai && fileKind(m.kind) ? '<button class="btn sm" data-a="dat-o" data-m="' + m.id + '" title="Khoanh ô trả lời lên phiếu để máy chấm đúng/sai">◻ Ô trả lời' + (((m.o_tra_loi || []).length) ? ' · ' + m.o_tra_loi.length : '') + '</button>' : '')
               + '<button class="btn sm" data-a="edit-mat" data-m="' + m.id + '">✎</button>'
               + '<button class="btn sm danger" data-a="del-mat" data-m="' + m.id + '">×</button>'
@@ -1037,6 +1038,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   /* Bật nhận bài nộp cho một tài liệu (thường là phiếu bài tập). */
   var coNopBai = true;
+  /* Cho tải về: mặc định tắt. Bật thì sinh viên có nút Tải về ở tài liệu đó. */
+  function oChoTai(bat) {
+    return '<label class="f" style="display:flex;gap:9px;align-items:flex-start">'
+      + '<input type="checkbox" id="fTai"' + (bat ? ' checked' : '') + ' style="width:auto;margin-top:4px">'
+      + '<span>Cho tải về<small style="display:block;font-weight:400">Sinh viên thấy nút <b>Tải về</b> ở tài liệu này — dùng cho phiếu cần in ra làm tay.'
+      + ' Tệp tải về là <b>bản gốc, không có dấu chìm</b>, nên đừng bật cho đề thi và đáp án.</small></span></label>';
+  }
   function oNhanBai(bat, hanISO) {
     if (!coNopBai) return '';
     return '<label class="f" style="display:flex;gap:9px;align-items:flex-start">'
@@ -1069,6 +1077,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<small>Trước giờ này sinh viên thấy tên tài liệu kèm ổ khoá, máy chủ từ chối trả nội dung.</small></label>';
     }
     if (kind === 'pdf' || kind === 'lecture') body += oNhanBai(false, null);
+    if (kind === 'pdf' || kind === 'lecture' || kind === 'answer') body += oChoTai(false);
     dialog('Thêm ' + k.name, body, async function () {
       return saveMaterial(null, sesId, kind);
     }, 'Thêm');
@@ -1193,6 +1202,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if (m.kind === 'video') body += oChonQuy(Math.round((Number(m.gioi_han_giay) || 0) / 60));
       body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local" value="' + toLocalInput(m.open_at) + '"></label>';
       if (m.kind === 'pdf' || m.kind === 'lecture') body += oNhanBai(!!m.nhan_bai, m.han_nop);
+      if (m.kind === 'pdf' || m.kind === 'lecture' || m.kind === 'answer') body += oChoTai(!!m.cho_tai);
       dialog('Sửa ' + k.name, body, async function () { return saveMaterial(id, m._ses.id, m.kind); });
     });
   }
@@ -1205,6 +1215,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var quyGiay = $('fQuy') ? (Number(val('fQuy')) || 0) * 60 : null;
     var nhanBai = $('fNhan') ? $('fNhan').checked : null;
     var hanNop = $('fHan') ? fromLocalInput(val('fHan')) : null;
+    var choTai = $('fTai') ? $('fTai').checked : null;
     var textBody = $('fBody') ? $('fBody').value : null;
 
     if (!id && !file && !url && !textBody) { msg($('dlgMsg'), 'Chưa có nội dung: chọn tệp, dán link hoặc gõ chữ.'); return false; }
@@ -1225,6 +1236,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var thay = { title: title, open_at: openAt };
       if (quyGiay != null) thay.gioi_han_giay = quyGiay;
       if (nhanBai != null) { thay.nhan_bai = nhanBai; thay.han_nop = hanNop; }
+      if (choTai != null) thay.cho_tai = choTai;
       var u = await sb.from('materials').update(thay).eq('id', id);
       if (u.error) { msg($('dlgMsg'), u.error.message); return false; }
     } else {
@@ -1233,6 +1245,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var dong = { session_id: sesId, kind: kind, title: title || (KIND[kind] || {}).name || '', open_at: openAt, order_no: order };
       if (quyGiay != null) dong.gioi_han_giay = quyGiay;
       if (nhanBai != null) { dong.nhan_bai = nhanBai; dong.han_nop = hanNop; }
+      if (choTai != null) dong.cho_tai = choTai;
       var ins = await sb.from('materials').insert(dong).select('id').single();
       if (ins.error) { msg($('dlgMsg'), ins.error.message); return false; }
       matId = ins.data.id;

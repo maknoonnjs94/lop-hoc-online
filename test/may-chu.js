@@ -43,6 +43,7 @@ http.createServer(function (req, res) {
   console.log('    ?hoi=trong    chưa có câu hỏi nào');
   console.log('    ?chuong=1     vừa được chấm bài và trả lời câu hỏi → thử chuông báo');
   console.log('    ?o=1          phiếu có 4 ô trả lời trên PDF → gõ thẳng vào phiếu, máy chấm đúng/sai');
+  console.log('    ?tai=1        phiếu được bật cho tải về → hiện nút Tải về để in');
   console.log('  Ghép nhiều cái bằng dấu &, ví dụ: ' + trang + '?g=nam&het=1');
   console.log('');
   console.log('  Trang quản trị (bản thử):  http://127.0.0.1:' + cong + '/_test_quan-tri.html');

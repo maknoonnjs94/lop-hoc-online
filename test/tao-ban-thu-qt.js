@@ -29,10 +29,10 @@ const stub = `<script>
     ],
     materials: [
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu', order_no:0, open_at:null, created_at:d(-2*864e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
-      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), o_tra_loi:[] },
+      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), o_tra_loi:[], cho_tai:false },
       { id:'m2', session_id:'s1', kind:'video', title:'Video: đường cong chuẩn độ', order_no:2, open_at:null, created_at:d(-864e5), gioi_han_giay:3600, nhan_bai:false, han_nop:null },
       { id:'m3', session_id:'s1', kind:'answer', title:'Đáp án phiếu 5', order_no:3, open_at:d(3*864e5), created_at:d(-36e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
-      { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, open_at:null, created_at:d(-7*864e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(-864e5) }
+      { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, open_at:null, created_at:d(-7*864e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(-864e5), cho_tai:true }
     ],
     material_contents: [
       { material_id:'m1', url:null, storage_path:'s1/_test_phieu.png', body:null },

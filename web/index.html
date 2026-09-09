@@ -384,6 +384,10 @@
   .appgate p{ font-size:14.5px; line-height:1.6; color:#4a637b; margin:0 0 14px }
   .appgate small{ display:block; color:#7d92a6; font-size:12.5px; margin-top:12px }
   /* --- nộp bài & hỏi bài dưới mỗi tài liệu --- */
+  /* nút tải về, chỉ hiện ở tài liệu giảng viên cho phép */
+  .vtai{ display:flex; justify-content:center; margin:14px auto 0; max-width:1040px }
+  .vtai button{ display:inline-flex; align-items:center; gap:8px }
+  .vtai .ghi{ display:block; font-size:12px; color:#9fb3c8; text-align:center; margin-top:7px }
   /* ô trả lời đặt trên phiếu */
   .pdfpage{ position:relative; margin:0 auto 16px; background:#fff; border-radius:10px;
     box-shadow:0 3px 16px rgba(0,0,0,.22); overflow:hidden }
@@ -2112,9 +2116,39 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
 
   /* Vẽ phần nộp bài + hỏi bài xuống dưới nội dung tài liệu. */
+  /* Nút tải về bản gốc — chỉ khi giảng viên bật cho tài liệu đó. */
+  function veNutTai(m) {
+    if (!m || !m.cho_tai) return;
+    var d = document.createElement('div');
+    d.className = 'vtai';
+    d.innerHTML = '<div><button type="button" class="btn" id="nutTai"><span class="ico">' + I.file + '</span>Tải về để in</button>'
+      + '<span class="ghi">Bản gốc, không có dấu chìm. Của riêng bạn — đừng chia sẻ lại.</span></div>';
+    $('vBody').appendChild(d);
+    $('nutTai').addEventListener('click', function () { taiTepVe(m, this); });
+  }
+  async function taiTepVe(m, nut) {
+    var cu = nut.textContent; nut.disabled = true; nut.textContent = 'Đang lấy tệp…';
+    try {
+      var r = await sb.from('material_contents').select('storage_path').eq('material_id', m.id).maybeSingle();
+      var duong = r.data && r.data.storage_path;
+      if (!duong) throw new Error('tài liệu này không phải tệp trong kho');
+      var ten = String(duong).split('/').pop().replace(/^\d+_/, '');
+      var sg = await sb.storage.from('tailieu').createSignedUrl(duong, 300, { download: ten });
+      if (sg.error) throw new Error(sg.error.message);
+      var a = document.createElement('a');
+      a.href = sg.data.signedUrl; a.download = ten;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { a.remove(); }, 2000);
+      nut.textContent = cu; nut.disabled = false;
+    } catch (e) {
+      nut.textContent = cu; nut.disabled = false;
+      alert('Không tải được: ' + (e && e.message || e));
+    }
+  }
   async function veTuongTac(id) {
     var m = matById(id); if (!m) return;
     if (!curMat || curMat.id !== id) return;
+    veNutTai(m);
     if (!nhanBai(m) && !coHoiDap) return;
     var wrap = document.createElement('div');
     wrap.className = 'vfoot';

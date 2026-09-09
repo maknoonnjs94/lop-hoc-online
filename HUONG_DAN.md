@@ -223,6 +223,20 @@ M xem và chấm ở tab **Bài nộp**: mỗi phiếu một bảng, ai nộp ai
 
 Quá hạn thì nút nộp đóng lại. Cần mở thêm cho một bạn thì sửa lại **Hạn nộp** của phiếu.
 
+## Cho sinh viên tải phiếu về để in
+
+Cần chạy một lần `schema_v21_cho_tai.sql`.
+
+Mặc định **mọi tài liệu đều không cho tải** — sinh viên chỉ đọc trên trang. Muốn mở cho tệp nào: tab **Buổi học** → ✎ Sửa tài liệu đó → tích **Cho tải về** → Lưu. Hàng tài liệu sẽ hiện nhãn **⤓ cho tải** để m nhìn là biết.
+
+Sinh viên mở tài liệu ra sẽ thấy nút **Tải về để in** ở cuối trang.
+
+**Cân nhắc trước khi bật:**
+
+- Tệp tải về là **bản gốc: không có dấu chìm, không có bảo vệ gì**. Ra khỏi máy sinh viên là m mất quyền kiểm soát nó.
+- Hợp lý cho **phiếu bài tập** cần in ra làm tay. **Đừng bật cho đề thi và đáp án.**
+- Cờ này quyết định *có nút hay không*, chứ không phải hàng rào mật mã: để vẽ được phiếu ra màn hình thì trình duyệt bắt buộc phải tải nội dung về, đó là cách web hoạt động. Tắt cờ thì muốn lấy tệp phải biết mở công cụ nhà phát triển; bật thì ai cũng lấy được bằng một cú bấm.
+
 ## Cho sinh viên điền thẳng vào phiếu, máy chấm đúng/sai
 
 Cần chạy một lần `schema_v20_o_tra_loi.sql` trong Supabase.

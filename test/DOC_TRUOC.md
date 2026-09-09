@@ -38,6 +38,7 @@ Thêm phần sau vào đuôi địa chỉ:
 | `?han=gap` | Còn 2 giờ tới hạn → dải nhắc chuyển màu gấp |
 | `?chuong=1` | Vừa được chấm bài và trả lời câu hỏi → thử chuông báo |
 | `?o=1` | Phiếu buổi 5 có 4 ô trả lời đặt sẵn → gõ thẳng vào phiếu, máy chấm đúng/sai |
+| `?tai=1` | Phiếu buổi 5 được bật cho tải về → hiện nút **Tải về để in** |
 
 Ghép nhiều cái bằng `&`, ví dụ:
 `http://127.0.0.1:8765/_test_index.html?g=nam&het=1`
