@@ -645,6 +645,26 @@
   /* công thức là chữ thật (không phải ảnh) nên không cần style riêng gì nhiều —
      chỉ căn giữa cho công thức để trên dòng riêng ($$...$$) */
   .tex-plain sup, .tex-plain sub { font-size: 75%; }
+  /* ---- đợt 67: căn thức và phân số dựng bằng CSS — chữ vẫn là chữ ----
+     √(…) và (a)/(b) trong nội dung được giữ nguyên làm chữ ẩn (.can-kh) để copy, tìm kiếm,
+     xuất Word vẫn ra đúng "√(Ka·C)"; phần nhìn thấy là gạch ngang phủ hết biểu thức và
+     dấu căn kéo dài theo chiều cao của nó. Phân số (tử)/(mẫu) xếp hai tầng, gạch ở giữa. */
+  .can { position: relative; display: inline-flex; align-items: stretch; white-space: nowrap; vertical-align: baseline; margin: 0 .05em 0 .04em; padding-left: .7em; }
+  /* dấu căn = hai nét vẽ bằng gradient theo phần trăm (không ảnh, không calc):
+     html2canvas lúc xuất PDF vẽ được y hệt; nét dài luôn nối vào gạch phủ dù biểu thức cao thấp thế nào */
+  .can::before { content: ""; position: absolute; left: .24em; top: 0; bottom: 0; width: .48em;
+    background: linear-gradient(to top right, transparent 46%, #152f4d 46%, #152f4d 54%, transparent 54%);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .can::after { content: ""; position: absolute; left: .04em; bottom: 0; width: .2em; height: .5em;
+    background: linear-gradient(to bottom right, transparent 36%, #152f4d 36%, #152f4d 64%, transparent 64%);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .can-duoi { align-self: baseline; border-top: .085em solid currentColor; padding: .1em .14em 0 .1em; line-height: 1.2; }
+  .can-bac { position: absolute; left: .02em; top: -.32em; font-size: 60%; line-height: 1; vertical-align: baseline; }
+  .can-kh { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; color: transparent; white-space: nowrap; pointer-events: none; }
+  .ps { position: relative; display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle;
+    text-align: center; line-height: 1.2; margin: 0 .1em; white-space: nowrap; }
+  .ps-tu { padding: 0 .22em .06em; border-bottom: .085em solid currentColor; }
+  .ps-mau { padding: .06em .22em 0; }
   .tex-block-plain { display: block; margin: 8px auto; text-align: center; }
   .theory-body .tex-block-plain { margin: 10px auto; }
 
@@ -2443,7 +2463,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-14 · đợt 66 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 67 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -4115,8 +4135,10 @@
     });
 
     s = s.replace(/\\left|\\right/g, '');
-    for (var i = 0; i < 3; i++) s = s.replace(/\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
-    s = s.replace(/\\frac\s*(\S)\s*(\S)/g, '$1/$2');
+    for (var i = 0; i < 3; i++) s = s.replace(/\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
+    s = s.replace(/\\[dt]?frac\s*(\S)\s*(\S)/g, '$1/$2');
+    /* căn bậc n: \sqrt[3]{x} → chỉ số nhỏ đứng ngay trước dấu căn; mathDressElement đặt nó lên góc căn */
+    s = s.replace(/\\sqrt\s*\[([^\[\]]*)\]\s*\{([^{}]*)\}/g, '<sup class="can-bac">$1</sup>√($2)');
     s = s.replace(/\\sqrt\s*\{([^{}]*)\}/g, '√($1)').replace(/\\sqrt\s*(\S)/g, '√$1');
 
     /* Lệnh lạ (\lg, \log, \sin, \varepsilon…) không có trong bảng ký hiệu thì GIỮ NGUYÊN TÊN CHỮ,
@@ -4219,8 +4241,214 @@
     var box = document.createElement('div');
     box.innerHTML = html;
     renderTexInElement(box);
+    mathDressElement(box);
     return box.innerHTML;
   }
+
+  /* ============ đợt 67: căn thức và phân số dựng bằng CSS ============
+     Vẫn giữ triết lý "công thức là chữ": √(…) và (a)/(b) không bị đổi thành ảnh, chỉ được
+     BỌC thêm thẻ để CSS vẽ gạch ngang phủ hết biểu thức và dấu căn cao bằng biểu thức;
+     phân số (tử)/(mẫu) xếp thành hai tầng. Các ký tự gốc "√(", ")", ")/(" vẫn nằm trong
+     .can-kh — ẩn khỏi mắt, KHÔNG ẩn khỏi copy / tìm kiếm / xuất Word — nên textContent của
+     câu không đổi một ký tự nào so với trước.
+     Chạy nhiều lần trên cùng đoạn cũng không bọc chồng (chữ gốc đã nằm trong .can-kh thì
+     không được quét nữa); chạy được ngay trên phần tử đang soạn — lưu lại thì innerHTML
+     đã mang sẵn bọc. Phần tử là "nguyên khối" khi đếm ngoặc; gặp <br> thì bỏ cuộc. */
+  var MATH_KHONG_VAO = 'script,style,svg,textarea,input,.can-kh';
+
+  function mathDressElement(root) {
+    if (!root || root.nodeType !== 1) return;
+    [].slice.call(root.children).forEach(function (c) {
+      if (!c.matches(MATH_KHONG_VAO)) mathDressElement(c);
+    });
+    for (var i = 0; i < 300; i++) {
+      if (!mathBocMotCan(root) && !mathBocMotPhanSo(root)) break;
+    }
+  }
+  function mathDressHtml(html) {
+    var box = document.createElement('div');
+    box.innerHTML = html || '';
+    mathDressElement(box);
+    return box.innerHTML;
+  }
+  /* Gỡ bọc: trả về đúng HTML chữ thường như trước khi bọc (đi từ trong ra ngoài). */
+  function mathUndressHtml(html) {
+    var box = document.createElement('div');
+    box.innerHTML = html || '';
+    for (var lap = 0; lap < 1000; lap++) {
+      var ds = box.querySelectorAll('.can, .ps'), el = null;
+      for (var k = 0; k < ds.length; k++) if (!ds[k].querySelector('.can, .ps')) { el = ds[k]; break; }
+      if (!el) break;
+      var ra = '';
+      [].slice.call(el.childNodes).forEach(function (x) {
+        if (x.nodeType === 3) { ra += escapeText(x.nodeValue); return; }
+        if (x.nodeType !== 1) return;
+        if (x.classList.contains('can-kh')) ra += escapeText(x.textContent);
+        else if (/^(can-duoi|ps-tu|ps-mau)$/.test(x.className)) ra += x.innerHTML;
+        else ra += x.outerHTML;
+      });
+      var holder = document.createElement('span');
+      holder.innerHTML = ra;
+      while (holder.firstChild) el.parentNode.insertBefore(holder.firstChild, el);
+      el.parentNode.removeChild(el);
+    }
+    return box.innerHTML;
+  }
+
+  /* Tìm dấu ")" khớp — quét xuôi từ (node, tu) với độ sâu đã là 1, qua các nút anh em cùng cha. */
+  function mathTimDong(node, tu) {
+    var sau = 1, x = node, i = tu;
+    while (x) {
+      if (x.nodeType === 3) {
+        var s = x.nodeValue;
+        for (; i < s.length; i++) {
+          var c = s.charAt(i);
+          if (c === '(') sau++;
+          else if (c === ')') { sau--; if (!sau) return { node: x, i: i }; }
+        }
+      } else if (x.nodeType === 1 && x.tagName === 'BR') return null;
+      x = x.nextSibling; i = 0;
+    }
+    return null;
+  }
+  /* Tìm dấu "(" khớp — quét ngược từ (node, tu - 1). */
+  function mathTimMo(node, tu) {
+    var sau = 1, x = node, i = tu - 1;
+    while (x) {
+      if (x.nodeType === 3) {
+        var s = x.nodeValue;
+        for (; i >= 0; i--) {
+          var c = s.charAt(i);
+          if (c === ')') sau++;
+          else if (c === '(') { sau--; if (!sau) return { node: x, i: i }; }
+        }
+      } else if (x.nodeType === 1 && x.tagName === 'BR') return null;
+      x = x.previousSibling;
+      i = (x && x.nodeType === 3) ? x.nodeValue.length - 1 : 0;
+    }
+    return null;
+  }
+  /* Giữa (a, ia) và (b, ib) có gì ngoài khoảng trắng không? */
+  function mathCoGi(a, ia, b, ib) {
+    if (a === b) return /\S/.test(a.nodeValue.slice(ia, ib));
+    if (/\S/.test(a.nodeValue.slice(ia))) return true;
+    for (var x = a.nextSibling; x && x !== b; x = x.nextSibling) {
+      if (x.nodeType === 1 || (x.nodeType === 3 && /\S/.test(x.nodeValue))) return true;
+    }
+    return /\S/.test(b.nodeValue.slice(0, ib));
+  }
+  function mathKh(textNode) {
+    var k = document.createElement('span');
+    k.className = 'can-kh';
+    k.appendChild(textNode);
+    return k;
+  }
+
+  function mathBocMotCan(P) {
+    for (var x = P.firstChild; x; x = x.nextSibling) {
+      if (x.nodeType !== 3) continue;
+      var s = x.nodeValue, i = s.indexOf('√');
+      while (i >= 0) {
+        if (mathBocCanTai(P, x, i)) return true;
+        i = s.indexOf('√', i + 1);
+      }
+    }
+    return false;
+  }
+  function mathBocCanTai(P, nut, i) {
+    var s = nut.nodeValue, j = i + 1;
+    while (j < s.length && s.charAt(j) === ' ') j++;
+    var mo, dong = null, ds = [];
+    if (s.charAt(j) === '(') {
+      var het = mathTimDong(nut, j + 1);
+      if (!het || !mathCoGi(nut, j + 1, het.node, het.i)) return false;
+      /* cắt nút chữ từ CUỐI về ĐẦU, để chỉ số phía đầu không bị xê dịch */
+      if (het.i + 1 < het.node.nodeValue.length) het.node.splitText(het.i + 1);
+      dong = het.node.splitText(het.i);            /* nút chỉ chứa ")" */
+      nut.splitText(j + 1);                           /* phần đầu biểu thức dưới căn */
+      mo = nut.splitText(i);                          /* nút chỉ chứa "√(" */
+      for (var a = mo.nextSibling; a && a !== dong; a = a.nextSibling) ds.push(a);
+    } else {
+      /* √x không ngoặc: lấy một cụm chữ/số liền sau, kèm chỉ số dính liền (√K<sub>a</sub>) */
+      var m = /^[A-Za-z0-9₀-₉⁰-⁹·.,]+/.exec(s.slice(j));
+      var run = m ? m[0].replace(/[.,]+$/, '') : '';
+      if (!run) return false;
+      var cuoi = j + run.length, denCuoi = cuoi === s.length;
+      if (!denCuoi) nut.splitText(cuoi);
+      var rad = nut.splitText(j);
+      mo = nut.splitText(i);                          /* nút chỉ chứa "√" */
+      ds.push(rad);
+      if (denCuoi) for (var b = rad.nextSibling; b && b.nodeType === 1 && /^(SUB|SUP)$/.test(b.tagName); b = b.nextSibling) ds.push(b);
+    }
+    /* chỉ số bậc (từ \sqrt[n]{…}) đứng ngay trước dấu căn thì kéo vào trong */
+    var truoc = mo.previousSibling;
+    if (truoc && truoc.nodeType === 3 && !truoc.nodeValue) truoc = truoc.previousSibling;
+    var bac = (truoc && truoc.nodeType === 1 && truoc.classList.contains('can-bac')) ? truoc : null;
+
+    var wrap = document.createElement('span'); wrap.className = 'can';
+    var duoi = document.createElement('span'); duoi.className = 'can-duoi';
+    P.insertBefore(wrap, mo);
+    if (bac) wrap.appendChild(bac);
+    wrap.appendChild(mathKh(mo));
+    ds.forEach(function (x) { duoi.appendChild(x); });
+    wrap.appendChild(duoi);
+    if (dong) wrap.appendChild(mathKh(dong));
+    mathDressElement(duoi);                          /* căn lồng căn, phân số dưới căn */
+    return true;
+  }
+
+  function mathBocMotPhanSo(P) {
+    var re = /\)\s*\/\s*\(/g;
+    for (var x = P.firstChild; x; x = x.nextSibling) {
+      if (x.nodeType !== 3) continue;
+      re.lastIndex = 0;
+      var m;
+      while ((m = re.exec(x.nodeValue))) {
+        if (mathBocPhanSoTai(P, x, m.index, m.index + m[0].length - 1)) return true;
+      }
+    }
+    return false;
+  }
+  /* nut chứa ")/("; iDong = vị trí ")", iMo = vị trí "(" sau dấu "/" */
+  function mathBocPhanSoTai(P, nut, iDong, iMo) {
+    var mo = mathTimMo(nut, iDong), dong = mathTimDong(nut, iMo + 1);
+    if (!mo || !dong) return false;
+    if (!mathCoGi(mo.node, mo.i + 1, nut, iDong) || !mathCoGi(nut, iMo + 1, dong.node, dong.i)) return false;
+    /* cắt từ cuối về đầu: vị trí cắt giảm dần nên các chỉ số trước đó vẫn đúng */
+    if (dong.i + 1 < dong.node.nodeValue.length) dong.node.splitText(dong.i + 1);
+    var nutDong = dong.node.splitText(dong.i);       /* ")" */
+    nut.splitText(iMo + 1);                            /* đầu mẫu số */
+    var giua = nut.splitText(iDong);                   /* ")/(" */
+    mo.node.splitText(mo.i + 1);                       /* đầu tử số */
+    var nutMo = mo.node.splitText(mo.i);               /* "(" */
+    var dsTu = [], dsMau = [];
+    for (var a = nutMo.nextSibling; a && a !== giua; a = a.nextSibling) dsTu.push(a);
+    for (var b = giua.nextSibling; b && b !== nutDong; b = b.nextSibling) dsMau.push(b);
+    var wrap = document.createElement('span'); wrap.className = 'ps';
+    var tu = document.createElement('span'); tu.className = 'ps-tu';
+    var mau = document.createElement('span'); mau.className = 'ps-mau';
+    P.insertBefore(wrap, nutMo);
+    wrap.appendChild(mathKh(nutMo));
+    dsTu.forEach(function (x) { tu.appendChild(x); });
+    wrap.appendChild(tu);
+    wrap.appendChild(mathKh(giua));
+    dsMau.forEach(function (x) { mau.appendChild(x); });
+    wrap.appendChild(mau);
+    wrap.appendChild(mathKh(nutDong));
+    mathDressElement(tu); mathDressElement(mau);
+    return true;
+  }
+
+  /* Gõ tay "√(…)" hay "(a)/(b)" vào ô đang soạn: rời ô là được dựng ngay, không phải chờ vẽ
+     lại phiếu. Không dựng trong lúc đang gõ — đổi cấu trúc DOM giữa chừng làm nhảy con trỏ. */
+  document.addEventListener('focusout', function (e) {
+    var el = e.target;
+    if (!el || el.nodeType !== 1 || !el.isContentEditable || !el.dataset || !el.dataset.path) return;
+    if (!/√|\)\s*\/\s*\(/.test(el.textContent)) return;
+    var truoc = el.innerHTML;
+    mathDressElement(el);
+    if (el.innerHTML !== truoc) el.dispatchEvent(new Event('input', { bubbles: true }));   /* lưu bản đã bọc */
+  });
 
   /* ============ 1.3 dán từ Word không kéo theo rác định dạng ============ */
 
@@ -5256,6 +5484,7 @@
     html += '</div>';
 
     sheetEl.innerHTML = html;
+    mathDressElement(sheetEl);   /* đợt 67: √(…) và (a)/(b) → căn thức, phân số thật */
     hydrateImages();
     schedulePageMarks();
     inkAfterRender();   /* đợt 52: bảng giảng phủ lại lớp vẽ */
@@ -6497,6 +6726,7 @@
     }
     var before = el.innerHTML;
     var n = renderTexInElement(el);
+    mathDressElement(el);   /* đợt 67: căn, phân số dựng bằng CSS */
     if (!n) { notify('Không dựng được công thức nào — kiểm tra lại cú pháp.'); return; }
     el.dispatchEvent(new Event('input', { bubbles: true }));
     notify('Đã chuyển ' + n + ' công thức thành chữ thường.', 'Hoàn tác', function () {
@@ -12044,7 +12274,7 @@
   function htmlToDocxRuns(html, base) {
     var D = window.docx, runs = [];
     var box = document.createElement('div');
-    box.innerHTML = html || '';
+    box.innerHTML = mathUndressHtml(html || '');   /* đợt 67: Word nhận lại đúng chữ √(…), (a)/(b) */
     function walk(node, st) {
       for (var n = node.firstChild; n; n = n.nextSibling) {
         if (n.nodeType === 3) {

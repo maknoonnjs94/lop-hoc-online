@@ -40,6 +40,26 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-15 (chiều) — Căn thức và phân số hiển thị chuẩn trong phiếu đẩy lên lớp
+
+**M báo:** bài tính pH có căn bậc hai, đẩy lên lớp thì *"không hiển thị toàn bộ căn"* — chỉ có dấu √, không có gạch phủ.
+
+Gốc rễ nằm ở Sổ Bài Tập (đợt 67, xem `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md`): Sổ dịch `\sqrt{x}` thành chữ `√(x)`,
+"Giao cho lớp" xuất PDF bằng html2canvas chụp đúng phiếu đang hiện, nên PDF cũng chỉ có ký hiệu √.
+Giờ Sổ bọc `√(…)` và `(a)/(b)` bằng thẻ để CSS vẽ căn thức thật (gạch phủ hết biểu thức, dấu căn cao bằng biểu thức)
+và phân số hai tầng — vẫn là chữ, copy/tìm/Word không đổi.
+
+Bên web:
+- `web/so-bai-tap.html` dựng lại ở đợt 67 → nút **Giao cho lớp** từ nay xuất PDF có căn đúng.
+- `web/sheet.css` mang cùng CSS `.can / .ps`, để phiếu HTML (đường `<!--sbt-sheet-->`) đọc trên trang học cũng giống hệt.
+
+Đã kiểm bằng html2canvas ngay trong trang: dấu căn, gạch phủ, gạch phân số đều có trong ảnh chụp.
+**Lưu ý:** SVG nền và `calc()` trong gradient thì html2canvas KHÔNG vẽ (căn biến mất / thành khối đen) — phải dùng gradient mốc phần trăm.
+
+**M còn phải làm:** phiếu pH đã đẩy lên trước đó là PDF cũ — mở Sổ (bản web hoặc artifact đã publish lại) và **Giao cho lớp** lại phiếu đó.
+
+---
+
 ## 2026-09-15 — Mục HỎI ĐÁP riêng, mở đầu bằng Câu hỏi thường gặp
 
 **M chốt:** *"trước mắt sẽ là mục C (câu hỏi thường gặp, m thiết kế cái đó trước), sau đó là câu hỏi gom

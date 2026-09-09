@@ -102,6 +102,28 @@ body.sheet-view{
 }
 .sheet-view sub, .sheet-view sup{ line-height:0 }
 
+/* ---------------- căn thức, phân số (cùng CSS với Sổ Bài Tập) ---------------- */
+/* ---- đợt 67: căn thức và phân số dựng bằng CSS — chữ vẫn là chữ ----
+   √(…) và (a)/(b) trong nội dung được giữ nguyên làm chữ ẩn (.can-kh) để copy, tìm kiếm,
+   xuất Word vẫn ra đúng "√(Ka·C)"; phần nhìn thấy là gạch ngang phủ hết biểu thức và
+   dấu căn kéo dài theo chiều cao của nó. Phân số (tử)/(mẫu) xếp hai tầng, gạch ở giữa. */
+.can { position: relative; display: inline-flex; align-items: stretch; white-space: nowrap; vertical-align: baseline; margin: 0 .05em 0 .04em; padding-left: .7em; }
+/* dấu căn = hai nét vẽ bằng gradient theo phần trăm (không ảnh, không calc):
+   html2canvas lúc xuất PDF vẽ được y hệt; nét dài luôn nối vào gạch phủ dù biểu thức cao thấp thế nào */
+.can::before { content: ""; position: absolute; left: .24em; top: 0; bottom: 0; width: .48em;
+  background: linear-gradient(to top right, transparent 46%, #152f4d 46%, #152f4d 54%, transparent 54%);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.can::after { content: ""; position: absolute; left: .04em; bottom: 0; width: .2em; height: .5em;
+  background: linear-gradient(to bottom right, transparent 36%, #152f4d 36%, #152f4d 64%, transparent 64%);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.can-duoi { align-self: baseline; border-top: .085em solid currentColor; padding: .1em .14em 0 .1em; line-height: 1.2; }
+.can-bac { position: absolute; left: .02em; top: -.32em; font-size: 60%; line-height: 1; vertical-align: baseline; }
+.can-kh { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; color: transparent; white-space: nowrap; pointer-events: none; }
+.ps { position: relative; display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle;
+  text-align: center; line-height: 1.2; margin: 0 .1em; white-space: nowrap; }
+.ps-tu { padding: 0 .22em .06em; border-bottom: .085em solid currentColor; }
+.ps-mau { padding: .06em .22em 0; }
+
 /* ---------------- ẨN mọi nút của trình soạn ----------------
    Phiếu được cắt thẳng từ Sổ Bài Tập nên có thể mang theo nút sửa, nút xoá,
    thanh công cụ. Sinh viên tuyệt đối không được thấy những thứ đó.          */
