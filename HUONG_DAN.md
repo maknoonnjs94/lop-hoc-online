@@ -152,6 +152,22 @@ Trước giờ đó sinh viên thấy dòng "Đáp án và lời giải · Mở 
 
 ---
 
+## Trên điện thoại: thêm vào màn hình chính
+
+**Không có app điện thoại trên kho ứng dụng.** Nhưng trang web thêm được vào màn hình chính, sau đó nó có icon logo, có tên, mở toàn màn hình không thanh địa chỉ — nhìn và dùng y như một app.
+
+- **Android (Chrome):** mở trang → menu ba chấm → *Thêm vào Màn hình chính*. Nhiều máy tự hiện lời mời cài.
+- **iPhone (bắt buộc Safari):** mở trang → nút Chia sẻ → *Thêm vào Màn hình chính*. Chrome trên iPhone **không làm được**, phải Safari.
+
+Sinh viên thêm trang học, m thêm trang quản trị — hai cái là hai icon riêng, tên riêng, mở thẳng vào đúng trang của mình.
+
+Hai điều cần nói rõ với sinh viên:
+
+- **Video bài giảng vẫn không xem được trên điện thoại.** Icon ngoài màn hình chính không phải là ứng dụng máy tính; nó vẫn là trình duyệt nên vẫn bị chặn theo `BAT_BUOC_APP`. Phiếu, đề, đáp án, nộp bài, hỏi bài thì dùng bình thường.
+- **Trên điện thoại không có chống chụp màn hình.** Cửa sổ chỉ được hệ điều hành che khi chạy trong app máy tính. Dấu chìm tên thì vẫn có ở mọi nơi.
+
+Muốn đổi icon hay tên hiển thị: sửa `web/manifest.json` (trang học) và `web/manifest-quan-tri.json` (quản trị); ảnh nằm ở `web/img/app-*.png`.
+
 ## Ai phải dùng ứng dụng máy tính
 
 Đặt ở đầu tệp `web/index.html`, dòng `BAT_BUOC_APP`:

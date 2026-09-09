@@ -65,6 +65,10 @@ Không thử được: tạo tài khoản thật, đổi mật khẩu, tải t�
 - **Hỏi bài**: gõ câu hỏi và gửi; xem câu đã được trả lời của lớp.
 - **Cửa chặn app**: mở tài liệu video trong trình duyệt sẽ thấy màn hình "chỉ mở trong ứng dụng máy tính" — đúng như sinh viên dùng điện thoại sẽ thấy.
 
+## Thử phần "thêm vào màn hình chính"
+
+Bản chạy thử tại máy có đủ manifest và icon, nhưng **iPhone và Android chỉ cho thêm vào màn hình chính với trang chạy qua HTTPS** (hoặc `localhost` ngay trên chính máy đó). Muốn thử thật thì mở bản trên mạng bằng điện thoại.
+
 ## Không thử được ở bản này
 
 Vì không có máy chủ thật:

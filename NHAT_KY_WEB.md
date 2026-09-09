@@ -40,6 +40,26 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-11 (tối) — Thêm được vào màn hình chính điện thoại
+
+**M hỏi:** "app trên điện thoại à, có logo này nọ không?"
+
+**Trả lời thẳng:** không có app điện thoại; app Electron chỉ có Windows/macOS. Cái sửa hôm nay là trang web mở bằng trình duyệt điện thoại. **Nhưng** kiểm ra thì cả hai trang đều thiếu sạch manifest, apple-touch-icon và theme-color — thêm vào màn hình chính sẽ ra một ô trắng không tên. Đã vá.
+
+**Đã làm:**
+
+- Dựng bộ icon từ `logo.png` (400×400) bằng System.Drawing trong PowerShell: `app-192`, `app-512`, `app-180` (apple-touch, nền trắng vì iOS không ưa nền trong suốt), và `app-mask-512` — bản *maskable*, logo thu còn **74%** đặt giữa nền `#eef6fd` để Android cắt tròn hay bo góc đều không phạm vào chữ.
+- `web/manifest.json` (trang học, `start_url ./`, tên ngắn "Giảng đường") và `web/manifest-quan-tri.json` (`start_url quan-tri`, tên ngắn "Quản trị"). Hai tệp riêng vì một manifest chỉ có một `start_url` — dùng chung thì icon quản trị sẽ mở nhầm sang trang sinh viên.
+- Đặt đuôi `.json` chứ không `.webmanifest`, cho chắc chuyện kiểu MIME ở cả Worker lẫn máy chủ thử tại máy.
+- Thẻ `<head>` hai trang: manifest, apple-touch-icon, theme-color, `apple-mobile-web-app-*`.
+- `mauThanhTrangThai(skin)` trong `apSkin`: đổi giao diện thì thẻ `theme-color` đổi theo màu `THEMES[skin].b`, không thì viền trên của điện thoại lệch tông với trang.
+
+**Đã test** (khổ 375px trong pane trình duyệt): manifest trả 200, cả bốn icon 200 kèm `image/png`; trang học đọc đúng tên "Giảng đường Hóa học" / "Giảng đường" / `standalone`; thẻ theme-color đang là `#f7d9c8` (Peach) chứ không phải giá trị mint tĩnh trong HTML → xác nhận phần đổi màu động chạy. Trang quản trị đọc đúng manifest riêng, `start_url quan-tri`.
+
+**Giới hạn phải nói với sinh viên:** icon ngoài màn hình chính **không phải** ứng dụng máy tính — video bài giảng vẫn bị chặn, và trên điện thoại không có chống chụp màn hình (chỉ app Electron mới có).
+
+---
+
 ## 2026-09-11 (chiều) — Bộ chạy thử quản trị, chuông rộng hơn, quản trị dùng được trên điện thoại
 
 **M nói:** chưa có thời gian ngồi test, bảo t làm trước những việc không cần m.

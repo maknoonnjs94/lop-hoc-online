@@ -6,6 +6,14 @@
 <meta name="color-scheme" content="light">
 <title>Giảng đường Hóa học</title>
 <link rel="icon" type="image/png" href="img/favicon.png">
+<!-- Thêm vào màn hình chính điện thoại: có icon, có tên, mở toàn màn hình không thanh địa chỉ. -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/app-180.png">
+<meta name="theme-color" content="#c6ebdd">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Giảng đường">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
@@ -809,10 +817,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   };
 
   /* ---------------- bốn giao diện + hai avatar ---------------- */
+  /* Khi thêm trang vào màn hình chính, thanh trạng thái điện thoại lấy màu từ thẻ theme-color.
+     Đổi giao diện thì đổi luôn cho khớp, không thì viền trên lệch tông. */
+  function mauThanhTrangThai(skin) {
+    var t = THEMES[skin] || THEMES.mint;
+    var el = document.querySelector('meta[name="theme-color"]');
+    if (el) el.setAttribute('content', t.b);
+  }
   function apSkin(skin, avatar) {
     skin = THEMES[skin] ? skin : 'mint';
     var nv = chuanNhanVat(avatar); if (nv) avatarNay = nv;
     document.documentElement.dataset.skin = skin;
+    mauThanhTrangThai(skin);
     capNhatLic(skin);
     var art = document.querySelector('.hero .art'); if (art) art.innerHTML = anhCanh('hoc', 'Bạn đang học bài');
     var hc = document.querySelector('.hero'); if (hc) hc.classList.toggle('trai', avatarNay.indexOf('boy') === 0);
