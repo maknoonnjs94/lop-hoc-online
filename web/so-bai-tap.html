@@ -658,17 +658,20 @@
      xuất Word vẫn ra đúng "√(Ka·C)"; phần nhìn thấy là gạch ngang phủ hết biểu thức và
      dấu căn kéo dài theo chiều cao của nó. Phân số (tử)/(mẫu) xếp hai tầng, gạch ở giữa. */
   .can { position: relative; display: inline-flex; align-items: stretch; white-space: nowrap;
-    vertical-align: baseline; margin: 0 .06em; padding-left: .62em; }
-  /* dấu căn = hai nét vẽ bằng gradient theo phần trăm (không ảnh, không calc):
-     html2canvas lúc xuất PDF vẽ được y hệt. .can-duoi phải stretch (không baseline) thì mép
-     trên của nó mới trùng mép trên của .can — nét chéo nối liền vào gạch phủ, không hở. */
-  .can::before { content: ""; position: absolute; left: .2em; top: 0; bottom: 0; width: .44em;
-    background: linear-gradient(to top right, transparent 43%, #152f4d 43%, #152f4d 57%, transparent 57%);
-    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .can::after { content: ""; position: absolute; left: 0; bottom: .16em; width: .23em; height: .36em;
-    background: linear-gradient(to bottom right, transparent 36%, #152f4d 36%, #152f4d 64%, transparent 64%);
-    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .can-duoi { align-self: stretch; border-top: .075em solid #152f4d; padding: .1em .16em 0 .05em; line-height: 1.25; }
+    vertical-align: baseline; margin: 0 .06em; padding-left: .60em; }
+  /* Dấu căn dùng CHÍNH KÝ TỰ √ của phông, kéo cao bằng scaleY. Trước đây vẽ bằng hai nét
+     gradient: ở cỡ chữ thật của thẻ trong kho (13,5 px) mỗi nét chỉ còn vài điểm ảnh nên
+     trông như vết bẩn. Ký tự thì cỡ nào cũng đúng dáng, và html2canvas vẽ chữ + transform
+     y hệt màn hình nên PDF không lệch. */
+  .can::before {
+    content: "√"; position: absolute; left: 0; bottom: -.06em;
+    font-size: 1em; line-height: 1; color: #152f4d;
+    transform: scaleY(1.45); transform-origin: left bottom;
+  }
+  /* Căn ôm phân số (hay ôm một căn khác) cao gấp đôi — kéo dấu căn cho kịp. */
+  .can.cao { padding-left: .74em; }
+  .can.cao::before { transform: scaleY(2.75); }
+  .can-duoi { align-self: stretch; border-top: .075em solid #152f4d; padding: .09em .16em 0 .02em; line-height: 1.25; }
   /* Chỉ số trên/dưới làm PHỒNG hộp dòng, đẩy gạch phủ vọt lên gần một dòng
      ("√1,35 × 10⁻⁵ × 0,0800" là ví dụ rõ nhất) — line-height:0 để chúng không tính vào chiều cao. */
   .can sub, .can sup, .ps sub, .ps sup { line-height: 0; }
@@ -2476,7 +2479,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 70 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-16 · đợt 71 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2696,7 +2699,7 @@
               <button type="button" class="bchip" data-bf="key" data-v="yes">✓ Có đáp án</button>
               <button type="button" class="bchip" data-bf="key" data-v="no">Chưa có đáp án</button>
               <button type="button" class="bchip" data-bf="fig">🖼 Có hình</button>
-              <button type="button" class="bchip" id="bankTexAll" title="Chốt công thức của mọi câu đang hiện thành mã LaTeX — làm một lần, từ đó phiếu và PDF vẽ đúng cấu trúc">∑ Công thức → LaTeX</button>
+              <button type="button" class="bchip" id="bankTexAll" title="Vá số mũ bị vỡ khi bóc PDF (10- 4,76 → 10⁻⁴·⁷⁶) rồi chốt căn thức, phân số thành mã LaTeX. Làm một lần, từ đó phiếu và PDF vẽ đúng.">∑ Chuẩn hoá công thức</button>
               <button type="button" class="bchip" id="bankTexShow" title="Hiện mã LaTeX thay cho công thức đã dựng, để soát lại cho đúng">⟨⟩ Xem mã</button>
               <button type="button" class="bchip clear" id="bankFindClear" hidden>✕ Bỏ lọc</button>
             </div>
@@ -4087,6 +4090,58 @@
     }).join('');
   }
 
+  /* ================= vá số mũ bị vỡ khi bóc PDF =================
+     Bộ bóc AI hay cắt số mũ làm đôi. Ba kiểu gặp thật, lấy từ bài của m:
+       "K_a = 10<sup>−3</sup>,75"   phần thập phân rơi xuống dòng
+       "K_a = 10- 4,76"             số mũ mất hẳn, còn dấu trừ nằm ngang
+       "1,78 × 10^-4"               có dấu ^ nhưng không bọc ngoặc
+     Vá luôn khoảng trắng thừa quanh ngoặc và dấu = ("pH=- log [H⁺ ]").
+     KHÔNG đụng vào .can-kh — chữ ẩn ở đó phải giữ nguyên để copy không đổi. */
+  function donSoMu(html) {
+    var box = document.createElement('div');
+    box.innerHTML = html || '';
+    var so = 0;
+
+    /* (a) chữ trần: 10^-4,76 · 10-4,76 · 10- 4  →  số mũ thật.
+       Đòi dấu trừ đứng SÁT sau "10" (hoặc có dấu ^), nên "từ 10 - 4 ml" không bị đụng. */
+    var can = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null), ds = [];
+    while (can.nextNode()) {
+      var nd = can.currentNode;
+      if (nd.parentElement && nd.parentElement.closest('.can-kh, sup, sub')) continue;
+      ds.push(nd);
+    }
+    ds.forEach(function (nd) {
+      var t = nd.nodeValue, truoc = t;
+      t = t.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')')
+           .replace(/\[\s+/g, '[').replace(/\s+\]/g, ']')
+           .replace(/\s*×\s*/g, ' × ')
+           /* nới dấu = ra, nhưng chừa liên kết đôi/ba trong công thức cấu tạo: C=O, C=C */
+           .replace(/\s*=\s*/g, ' = ').replace(/([A-Z]) = ([A-Z])/g, '$1=$2');
+      t = t.replace(/\b10\s*\^\s*(-?\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>' + e.replace(/-/g, '−') + '</sup>'; });
+      t = t.replace(/\b10[−-]\s?(\d+(?:[.,]\d+)?)/g, function (m, e) { so++; return '10<sup>−' + e + '</sup>'; });
+      if (t === truoc) return;
+      var holder = document.createElement('span');
+      holder.innerHTML = t;
+      while (holder.firstChild) nd.parentNode.insertBefore(holder.firstChild, nd);
+      nd.parentNode.removeChild(nd);
+    });
+
+    /* (b) số mũ bị cắt: <sup>−3</sup> rồi ",75" — kéo phần rơi xuống dòng trở lại. */
+    [].slice.call(box.querySelectorAll('sup')).forEach(function (sp) {
+      var noi = sp.textContent.trim();
+      if (!/^[−+-]?\d*$/.test(noi) || !noi) return;      /* chỉ gộp cho số mũ dạng SỐ */
+      var t = sp.nextSibling;
+      if (!t || t.nodeType !== 3) return;
+      var m = /^(,\d+)/.exec(t.nodeValue);
+      if (!m) return;
+      sp.textContent = noi + m[1];
+      t.nodeValue = t.nodeValue.slice(m[1].length);
+      so++;
+    });
+
+    return { html: box.innerHTML, so: so };
+  }
+
   function chemFormatHtml(html) {
     var box = document.createElement('div');
     box.innerHTML = html;
@@ -4166,6 +4221,10 @@
 
     for (var j = 0; j < 3; j++) {
       s = s.replace(/\^\{([^{}]*)\}/g, '<sup>$1</sup>').replace(/_\{([^{}]*)\}/g, '<sub>$1</sub>');
+      /* Không bọc ngoặc thì lấy TRỌN cụm, không phải một ký tự: "10^-4,76" phải ra 10⁻⁴·⁷⁶
+         chứ không phải 10⁻ rồi "4,76" rơi xuống dòng; "K_sp" phải ra K_sp chứ không phải K_s rồi "p". */
+      s = s.replace(/\^(-?\d+(?:[.,]\d+)?)/g, '<sup>$1</sup>')
+           .replace(/_(\d+(?:[.,]\d+)?|[A-Za-z]+\d?)/g, '<sub>$1</sub>');
       s = s.replace(/\^([^\s{}])/g, '<sup>$1</sup>').replace(/_([^\s{}])/g, '<sub>$1</sub>');
     }
     return s.replace(/[{}]/g, '').replace(/ {2,}/g, ' ').trim();
@@ -4174,7 +4233,9 @@
   /* Một căn thức / phân số dựng bằng thẻ. Chữ gốc ("√(", ")", ")/(") giữ trong .can-kh —
      mắt không thấy nhưng copy, tìm kiếm và xuất Word vẫn ra đúng như trước. */
   function texCan(bac, noi) {
-    return '<span class="can">' + (bac ? '<sup class="can-bac">' + bac + '</sup>' : '')
+    /* biểu thức dưới căn có phân số hay căn lồng thì cao gấp đôi — báo cho CSS bằng lớp "cao" */
+    var cao = /class="(?:ps|can)(?: cao)?"/.test(noi) ? ' cao' : '';
+    return '<span class="can' + cao + '">' + (bac ? '<sup class="can-bac">' + bac + '</sup>' : '')
       + '<span class="can-kh">√(</span><span class="can-duoi">' + noi + '</span><span class="can-kh">)</span></span>';
   }
   function texPs(tu, mau) {
@@ -4275,10 +4336,19 @@
   }
 
   /* Cả một câu trong kho: đề, ý nhỏ, phương án, nhận định, đáp án, lời giải. */
+  function loiChuanHoa(kq) {
+    var p = [];
+    if (kq.mu) p.push('vá ' + kq.mu + ' số mũ vỡ');
+    if (kq.ct) p.push('chốt ' + kq.ct + ' công thức thành LaTeX');
+    return 'Đã ' + p.join(', ') + '.';
+  }
   function bankSangTex(it) {
-    var so = 0;
+    var so = 0, soMu = 0;
     function lo(o, k) {
       if (!o || !o[k]) return;
+      /* Vá số mũ vỡ TRƯỚC: có sửa đúng "10- 4,76" thì bước chốt LaTeX sau đó mới đọc đúng. */
+      var d = donSoMu(o[k]);
+      if (d.so) { o[k] = d.html; soMu += d.so; }
       var r = mathSangTex(o[k]);
       if (r.so) { o[k] = r.html; so += r.so; }
     }
@@ -4286,7 +4356,7 @@
     (it.options || []).forEach(function (o) { lo(o, 'html'); });
     (it.statements || []).forEach(function (s) { lo(s, 'html'); });
     (it.parts || []).forEach(function (p) { lo(p, 'html'); });
-    return so;
+    return { ct: so, mu: soMu };
   }
 
   function texSpanHtml(tex) {
@@ -4626,6 +4696,7 @@
     wrap.appendChild(duoi);
     if (nutDong) wrap.appendChild(mathKh(nutDong));
     mathDressElement(duoi);             /* căn lồng căn, phân số dưới căn */
+    if (duoi.querySelector('.ps, .can')) wrap.classList.add('cao');   /* hai tầng thì dấu căn phải cao gấp đôi */
     return true;
   }
 
@@ -8379,7 +8450,7 @@
         + '    <label class="bank-pick"><input type="checkbox" data-pick="' + it.id + '"' + (bankPicked[it.id] ? ' checked' : '') + '> chọn</label>'
         + '    <button type="button" class="btn btn-ghost" data-bank="edit" data-id="' + it.id + '">✎ Sửa</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="tex" data-id="' + it.id + '"'
-        + '      title="Chốt công thức trong câu này thành mã LaTeX. Từ đó phiếu và PDF vẽ đúng cấu trúc, không phải đoán lại từ chữ.">∑ LaTeX</button>'
+        + '      title="Vá số mũ bị vỡ khi bóc PDF rồi chốt công thức thành mã LaTeX.">∑ Chuẩn hoá</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="insert" data-id="' + it.id + '">Chèn</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="move" data-id="' + it.id + '" title="Đổi dạng bài của câu này sang nhánh đang chọn ở cây bên trái">⇢ Chuyển nhánh</button>'
         + '    <button type="button" class="btn btn-ghost" data-bank="del" data-id="' + it.id + '">Xoá</button>'
@@ -9618,6 +9689,9 @@
     + '"H<sub>2</sub>SO<sub>4</sub>" lẫn "M(H<sub>2</sub>SO<sub>4</sub>)" đều phải có <sub>, không viết trần H2SO4 ở bất kỳ chỗ nào). '
     + 'Công thức toán (phân số, luỹ thừa, căn, biến có chỉ số như nồng độ C_M...) viết theo cú pháp LaTeX trong cặp $...$ '
     + '(VD: $pH = 7 + \\\\frac{pK_a + \\\\lg C}{2}$, $C_M$, $10^{-3}$). '
+    + 'SỐ MŨ PHẢI NẰM TRỌN TRONG NGOẶC NHỌN, kể cả phần thập phân và dấu âm: đúng là '
+    + '$10^{-4,76}$ và $1,74 \\\\times 10^{-5}$; SAI là $10^{-4},76$, 10^-4,76, "10- 4,76", '
+    + '"10<sup>-4</sup>,76" — kiểu sai này làm vỡ công thức khi in ra. '
     + 'CHÚ Ý RIÊNG các ký hiệu kèm chỉ số dưới hay gặp trong Hóa PT: nồng độ C_M (mol), C_N '
     + '(đương lượng); hằng số cân bằng K_a, K_b (điện ly acid/base, có thể nhiều nấc K_a1, '
     + 'K_a2…), K_w (nước), K_sp (tích số tan), K_f, K_d (tạo phức/phân ly phức), và cả pK_a, '
@@ -9662,7 +9736,8 @@
     var html = sanitizeAiHtml(raw);
     html = chemFormatHtml(html);
     if (breakSteps) html = autoBreakSteps(html).replace(/^(?:<br\s*\/?>)+/i, '');   /* không để <br> mở đầu (nhãn đã đứng riêng dòng) */
-    return renderTexInHtml(html);
+    /* Vá số mũ SAU khi dựng công thức: bắt được cả chỗ AI viết sai lẫn chỗ bộ dịch cắt hụt. */
+    return donSoMu(renderTexInHtml(html)).html;
   }
 
   function aiItemToBankItem(raw) {
@@ -10723,13 +10798,14 @@
     if (!ok) return;
     var luu = ds.map(function (it) { return JSON.parse(JSON.stringify(it)); });
     var soCau = 0, soCt = 0;
+    var soMu = 0;
     ds.forEach(function (it) {
       var k = bankSangTex(it);
-      if (k) { soCau++; soCt += k; persistBankItem(it); }
+      if (k.ct || k.mu) { soCau++; soCt += k.ct; soMu += k.mu; persistBankItem(it); }
     });
     renderBank();
-    if (!soCt) { notify('Không câu nào có căn thức hay phân số để chốt.'); return; }
-    notify('Đã chốt ' + soCt + ' công thức trong ' + soCau + ' câu.', 'Hoàn tác', function () {
+    if (!soCt && !soMu) { notify('Không câu nào cần sửa.'); return; }
+    notify(loiChuanHoa({ ct: soCt, mu: soMu }) + ' trong ' + soCau + ' câu.', 'Hoàn tác', function () {
       ds.forEach(function (it, i) {
         Object.keys(luu[i]).forEach(function (k) { it[k] = luu[i][k]; });
         persistBankItem(it);
@@ -10753,10 +10829,10 @@
       openQuestionEditor(it);
     } else if (b.dataset.bank === 'tex') {
       var luuTex = JSON.parse(JSON.stringify(it));
-      var soTex = bankSangTex(it);
-      if (!soTex) { notify('Câu này không có công thức nào cần chốt (căn thức hay phân số).'); return; }
+      var kq = bankSangTex(it);
+      if (!kq.ct && !kq.mu) { notify('Câu này không có gì cần sửa — không có số mũ vỡ, căn thức hay phân số.'); return; }
       persistBankItem(it); renderBank();
-      notify('Đã chốt ' + soTex + ' công thức thành LaTeX.', 'Hoàn tác', function () {
+      notify(loiChuanHoa(kq), 'Hoàn tác', function () {
         Object.keys(luuTex).forEach(function (k) { it[k] = luuTex[k]; });
         persistBankItem(it); renderBank();
       });

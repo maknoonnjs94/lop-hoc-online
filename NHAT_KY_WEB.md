@@ -40,6 +40,23 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-16 (chiều) — Vá số mũ vỡ khi bóc PDF (đợt 71)
+
+M báo chữ bóc bằng AI ra sai công thức: `K_a=10- 4,76`, `10⁻³,75`, `pH=- log [H⁺ ]`.
+Đây là **chữ đã vỡ từ đầu vào**, không phải lỗi vẽ. Đợt 71 vá ở ba tầng: bộ dịch LaTeX lấy trọn
+cụm sau `^`/`_` (trước chỉ lấy một ký tự), hàm `donSoMu()` vá chữ đã vỡ, và lời nhắc AI bắt số mũ
+nằm trọn trong ngoặc nhọn. Nút ở kho đổi thành **∑ Chuẩn hoá** vì giờ vá số mũ trước rồi mới chốt LaTeX.
+
+Dấu căn bỏ cách vẽ bằng gradient, dùng **chính ký tự √ của phông** kéo cao bằng `scaleY` — ở cỡ chữ
+nhỏ nét gradient chỉ còn vài điểm ảnh nên trông như vết bẩn.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 71**.
+- `web/sheet.css` đổi khối `.can` theo cùng cách vẽ.
+
+Chi tiết ở `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` (đợt 71).
+
+---
+
 ## 2026-09-16 — Chốt công thức thành LaTeX ở kho bài (đợt 70)
 
 **Đã chốt hướng đi:** **PDF vẫn là định dạng cho sinh viên** — không đổi sang Word, nên chuỗi bảo vệ
