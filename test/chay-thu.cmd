@@ -14,6 +14,8 @@ if errorlevel 1 (
 
 echo.
 echo   Dang dung hai ban thu (trang hoc + quan tri) ...
+node ra-soat.js
+if errorlevel 1 echo   (co canh bao o tren, van chay tiep)
 node tao-phieu-thu.js
 node tao-ban-thu.js
 if errorlevel 1 goto :loi
