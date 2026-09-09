@@ -40,6 +40,50 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-12 (tối) — PDF treo khi ẩn tab: LỖI THẬT của bản chính, đã sửa
+
+**M báo:** phiếu PDF trong bản thử nhìn xấu, muốn dùng giao diện PDF như Sổ Bài Tập, và mở bài lên trễ.
+
+### Sửa lại chẩn đoán hôm qua
+
+Hôm qua t ghi "pdf.js treo ở `render()` — chuyện của môi trường chạy thử". **Sai.** Đó là **lỗi thật của bản chính**: sinh viên mở phiếu rồi chuyển sang tab khác là trang treo vĩnh viễn, không bao giờ vẽ xong.
+
+Nguyên nhân và lời giải đều nằm sẵn trong Sổ Bài Tập, ghi rõ trong chính mã của nó:
+
+```
+/* intent print: không dùng requestAnimationFrame nên vẫn chạy khi tab bị ẩn */
+page.render({ canvasContext: ctx, viewport: vp, intent: 'print' }).promise
+```
+
+Kiểu vẽ mặc định của pdf.js bám `requestAnimationFrame`, mà trình duyệt bóp cái đó khi thẻ bị ẩn → lời hứa không bao giờ hoàn thành. Sổ Bài Tập còn bọc thêm `Promise.race` hết giờ 20 giây để hỏng thì báo chứ đừng treo. **Mượn cả hai.**
+
+Bài học: gặp chuyện lạ thì tìm trong dự án anh em trước khi kết luận là lỗi môi trường — Sổ Bài Tập đã đụng và đã giải từ đợt 42.
+
+### Mở bài nhanh hơn
+
+Trước: vẽ **tuần tự hết mọi trang** ở tỉ lệ tới 2,6× rồi mới hiện gì cả. Phiếu 10 trang là ngồi nhìn màn hình trống rất lâu.
+
+Giờ:
+
+1. Dựng ngay **khung đúng tỉ lệ cho mọi trang** (và đặt luôn ô trả lời lên) — thấy được, cuộn được liền, có vệt sáng chạy báo đang vẽ.
+2. Vẽ **trang 1 trước**, hiện ngay.
+3. Các trang sau **cuộn tới đâu vẽ tới đó** bằng `IntersectionObserver` (đệm trước 900px). Không có API đó thì lùi về vẽ tuần tự.
+4. Hạ trần tỉ lệ **2,6 → 2,0**: vẫn nét trên màn hình 2×, mà bớt khoảng 40% số điểm ảnh phải vẽ.
+
+### Nhìn cho tử tế
+
+Mỗi trang thành một thẻ giấy trắng bo góc có bóng đổ, cách nhau 16px — thay vì mấy tấm canvas trần dính nhau.
+
+### Mẹo đo toạ độ ô
+
+Toạ độ ô trong bản thử đang tính theo ảnh PNG nên lệch khi đổi sang PDF (lề in khác). Thay vì đoán: **quét điểm ảnh của trang đã vẽ, tìm những hàng có vệt đen dài** — chính là nét gạch chân chỗ trống — rồi quy ra phần trăm. Ra đúng bốn nét, đặt ô lên là khớp ngay.
+
+### Đã test
+
+Bản thử quay lại dùng **phiếu PDF thật**: 1 trang vẽ xong, không còn `cho` hay `loi` treo lại, 4 ô trả lời nằm đúng trên bốn nét gạch (chụp màn hình xác nhận).
+
+---
+
 ## 2026-09-12 (chiều) — Sinh viên điền thẳng vào phiếu, máy chấm đúng/sai
 
 **M chọn:** khoanh ô trên PDF (không phải làm lại phiếu dạng web); điểm vào thẳng bảng điểm, ghi rõ máy chấm; câu gần đúng đẩy sang hàng chờ. Giữa chừng m chốt thêm: **chỉ cần đúng/sai, chưa cần điểm cụ thể**.

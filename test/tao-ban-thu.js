@@ -15,7 +15,8 @@ const stub = `<script>
   /* ?o=1 — phiếu buổi 5 có sẵn 4 ô trả lời đặt trên PDF, máy chấm đúng/sai */
   var coO = P.get('o') === '1';
   /* toạ độ khoanh trên phiếu mẫu web/_test_phieu.png (794×1123) */
-  var O_PHIEU = [{ id:'oa', trang:1, x:22.2, y:12.4, w:17.6, h:2.2 },{ id:'ob', trang:1, x:7.8, y:20.2, w:17.8, h:2.2 },{ id:'oc', trang:1, x:7.8, y:28.0, w:10.8, h:2.2 },{ id:'od', trang:1, x:7.8, y:35.9, w:10.8, h:2.2 }];
+  /* Đo thẳng trên trang PDF đã vẽ: quét các nét gạch chân rồi quy ra phần trăm. */
+  var O_PHIEU = [{ id:'oa', trang:1, x:29.3, y:18.0, w:18.2, h:2.4 },{ id:'ob', trang:1, x:15.0, y:25.9, w:18.2, h:2.4 },{ id:'oc', trang:1, x:15.0, y:33.8, w:11.4, h:2.4 },{ id:'od', trang:1, x:15.0, y:41.7, w:11.4, h:2.4 }];
   var DAP_AN = { oa:{ dap_an:'0,08', sai_so:0.001 }, ob:{ dap_an:'phenolphtalein|phenolphthalein' }, oc:{ dap_an:'H2SO4' }, od:{ dap_an:'2' } };
   function chuanDap(s) {
     return String(s == null ? '' : s).toLowerCase()
@@ -75,7 +76,7 @@ const stub = `<script>
   function q(data){ var o = {}; ['select','eq','order','maybeSingle','upsert','update','insert','not','is','in','limit','single'].forEach(function(k){ o[k] = function(){ return o; }; }); o.then = function(a, b){ return Promise.resolve({ data:data, error:null }).then(a, b); }; return o; }
   window.supabase = { createClient: function(){ return {
     auth: { getSession: function(){ return Promise.resolve({ data:{ session:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } } } }); }, onAuthStateChange: function(){}, signOut: function(){ alert('Đây là bản thử — thật thì sẽ đăng xuất.'); return Promise.resolve({}); }, signInWithPassword: function(){ return Promise.resolve({ data:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } }, error:null }); }, updateUser: function(){ return Promise.resolve({ data:{}, error:null }); }, resetPasswordForEmail: function(){ return Promise.resolve({ error:null }); } },
-    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return q(cauHoi); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.png' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
+    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return q(cauHoi); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
     rpc: function(name, a){ if (name === 'hoan_tat_ho_so') { Object.assign(profile, { full_name:a.p_full_name, gender:a.p_gender, birth_year:a.p_birth_year, major:a.p_major, onboarded_at:new Date().toISOString(), theme: a.p_gender === 'nu' ? 'peach' : 'mint' }); } if (name === 'da_doi_mat_khau') profile.must_change_pw = false; if (name === 'dat_anh_dai_dien') profile.avatar_path = a.p_path;
       if (name === 'nop_bai') { baiNop = [{ material_id:a.p_material, nop_luc:new Date().toISOString(), loi_nhan:a.p_loi_nhan, tep:a.p_tep, cham_luc:null, diem:null, nhan_xet:'' }]; }
       if (name === 'rut_bai') baiNop = [];
@@ -93,7 +94,7 @@ const stub = `<script>
         return Promise.resolve({ data:{ ok:true, so_o:soO, so_dung:dg, so_gan:gan, chi_tiet:ket }, error:null });
       } return Promise.resolve({ data:{ ok:true }, error:null }); },
     channel: function(){ var c = { on: function(){ return c; }, subscribe: function(){ return c; } }; return c; }, removeChannel: function(){},
-    storage: { from: function(ten){ return { createSignedUrl: function(){ return Promise.resolve(ten === 'bainop' ? { data:null, error:{ message:'bản thử không có tệp thật' } } : (ten === 'tailieu' ? { data:{ signedUrl:'/_test_phieu.png' }, error:null } : { data:{ signedUrl: window.__anh || '' }, error:null })); }, upload: function(p, b){ window.__anh = URL.createObjectURL(b); return Promise.resolve({ data:{ path:p }, error:null }); }, remove: function(){ window.__anh = ''; return Promise.resolve({ data:[], error:null }); } }; } }
+    storage: { from: function(ten){ return { createSignedUrl: function(){ return Promise.resolve(ten === 'bainop' ? { data:null, error:{ message:'bản thử không có tệp thật' } } : (ten === 'tailieu' ? { data:{ signedUrl:'/_test_phieu.pdf' }, error:null } : { data:{ signedUrl: window.__anh || '' }, error:null })); }, upload: function(p, b){ window.__anh = URL.createObjectURL(b); return Promise.resolve({ data:{ path:p }, error:null }); }, remove: function(){ window.__anh = ''; return Promise.resolve({ data:[], error:null }); } }; } }
   }; } };
   /* dải nhắc nhỏ ở góc, để khỏi nhầm bản thử với bản thật; không chặn thao tác */
   document.addEventListener('DOMContentLoaded', function () {
