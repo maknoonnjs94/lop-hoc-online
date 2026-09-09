@@ -2463,7 +2463,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 67 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 68 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -4265,12 +4265,6 @@
       if (!mathBocMotCan(root) && !mathBocMotPhanSo(root)) break;
     }
   }
-  function mathDressHtml(html) {
-    var box = document.createElement('div');
-    box.innerHTML = html || '';
-    mathDressElement(box);
-    return box.innerHTML;
-  }
   /* Gỡ bọc: trả về đúng HTML chữ thường như trước khi bọc (đi từ trong ra ngoài). */
   function mathUndressHtml(html) {
     var box = document.createElement('div');
@@ -4295,7 +4289,10 @@
     return box.innerHTML;
   }
 
-  /* Tìm dấu ")" khớp — quét xuôi từ (node, tu) với độ sâu đã là 1, qua các nút anh em cùng cha. */
+  /* ---- quét ngoặc cho PHÂN SỐ (a)/(b) ----
+     Dạng này do bộ dịch LaTeX sinh ra nên ngoặc luôn cân; chỉ cần đi xuôi/ngược tìm dấu khớp
+     qua các nút anh em cùng cha, không cần bộ quét chuỗi nhân như phần căn thức. */
+  /* Tìm dấu ")" khớp — quét xuôi từ (node, tu) với độ sâu đã là 1. */
   function mathTimDong(node, tu) {
     var sau = 1, x = node, i = tu;
     while (x) {
@@ -4337,6 +4334,7 @@
     }
     return /\S/.test(b.nodeValue.slice(0, ib));
   }
+
   function mathKh(textNode) {
     var k = document.createElement('span');
     k.className = 'can-kh';
@@ -4344,42 +4342,141 @@
     return k;
   }
 
+  /* ---- con trỏ chạy trên dãy nút anh em: {k, i} = nút thứ k, ký tự thứ i ----
+     Biểu thức dưới căn hay bị cắt vụn thành nhiều nút (chữ, <sub>, <sup>), nên phải quét
+     xuyên qua chúng chứ không thể làm việc trên một chuỗi phẳng. */
+  function mathChuan(ds, c) {
+    while (c.k < ds.length && ds[c.k].nodeType === 3 && c.i >= ds[c.k].nodeValue.length) { c.k++; c.i = 0; }
+    return c;
+  }
+  function mathXem(ds, c) {           /* ký tự đang đứng, null nếu là phần tử hoặc đã hết */
+    mathChuan(ds, c);
+    var x = ds[c.k];
+    return (x && x.nodeType === 3) ? x.nodeValue.charAt(c.i) : null;
+  }
+  function mathPtu(ds, c) {           /* phần tử đang đứng, null nếu là chữ hoặc đã hết */
+    mathChuan(ds, c);
+    var x = ds[c.k];
+    return (x && x.nodeType === 1) ? x : null;
+  }
+  function mathTien(ds, c) {
+    mathChuan(ds, c);
+    var x = ds[c.k];
+    if (!x) return { k: c.k, i: c.i };
+    if (x.nodeType === 3) return mathChuan(ds, { k: c.k, i: c.i + 1 });
+    return mathChuan(ds, { k: c.k + 1, i: 0 });
+  }
+  function mathCoChu(ds, a0, b) {     /* giữa a0 và b có gì ngoài khoảng trắng không? */
+    var c = { k: a0.k, i: a0.i };
+    for (var v = 0; v < 20000; v++) {
+      mathChuan(ds, c); mathChuan(ds, b);
+      if (c.k > b.k || (c.k === b.k && c.i >= b.i)) return false;
+      if (mathPtu(ds, c)) return true;
+      var ch = mathXem(ds, c);
+      if (ch !== null && /\S/.test(ch)) return true;
+      c = mathTien(ds, c);
+    }
+    return false;
+  }
+
+  /* Tìm dấu ")" khớp, bắt đầu từ ngay sau dấu "(" (độ sâu đang là 1). */
+  function mathQuetNgoac(ds, c0) {
+    var c = { k: c0.k, i: c0.i }, sau = 1;
+    for (var v = 0; v < 20000; v++) {
+      var pt = mathPtu(ds, c);
+      if (pt) { if (pt.tagName === 'BR') return null; c = { k: c.k + 1, i: 0 }; continue; }
+      var ch = mathXem(ds, c);
+      if (ch === null) return null;
+      if (ch === '(') sau++;
+      else if (ch === ')') { sau--; if (!sau) return c; }
+      c = mathTien(ds, c);
+    }
+    return null;
+  }
+
+  /* Không có ngoặc thì biểu thức dưới căn kéo dài hết CHUỖI NHÂN, đúng cách viết trong bài:
+       [H⁺] = √Kₐ × Ca            → gạch phủ "Kₐ × Ca"
+       [H⁺] = √1,74 × 10⁻⁵ × 0,100 = 1,32 × 10⁻³   → gạch phủ tới trước dấu "="
+     Dừng ở "=", "+", "−", dấu chấm phẩy, ngoặc đóng, xuống dòng, hay bất cứ thứ gì không phải
+     thừa số. Dấu phẩy chỉ đi tiếp khi là phẩy thập phân (giữa hai chữ số) — "1,74" là một số,
+     còn "a, b" là hai thứ. Một dấu căn khác không phải thừa số nên "√2 · √Kₐ" vẫn ra hai căn rời.
+     Muốn chỉ định rõ ràng thì viết ngoặc: √(Kₐ × Ca), hoặc $\sqrt{K_a C}$. */
+  var MATH_CHU = /[A-Za-z0-9\u00C0-\u024F\u0370-\u03FF\u1E00-\u1EFF\u2080-\u209C\u2070-\u207F]/;
+  var MATH_NHAN = /[\u00D7\u00B7\u22C5*]/;   /* × · ⋅ * */
+  function mathQuetCan(ds, c0) {
+    var c = { k: c0.k, i: c0.i }, het = null;
+    for (var vong = 0; vong < 40; vong++) {
+      while (mathXem(ds, c) === ' ') c = mathTien(ds, c);
+      var doc = false, ch, pt;
+      for (var b = 0; b < 500; b++) {
+        ch = mathXem(ds, c);
+        if (ch !== null && MATH_CHU.test(ch)) { doc = true; c = mathTien(ds, c); continue; }
+        if (ch !== null && (ch === ',' || ch === '.') && doc) {
+          var sau = mathXem(ds, mathTien(ds, { k: c.k, i: c.i }));
+          if (sau !== null && /[0-9]/.test(sau)) { c = mathTien(ds, c); continue; }
+        }
+        pt = mathPtu(ds, c);
+        if (pt && /^(SUB|SUP)$/.test(pt.tagName) && !pt.classList.contains('can-bac')) {
+          doc = true; c = { k: c.k + 1, i: 0 }; continue;
+        }
+        break;
+      }
+      if (!doc) break;
+      het = { k: c.k, i: c.i };
+      var luu = { k: c.k, i: c.i };
+      while (mathXem(ds, c) === ' ') c = mathTien(ds, c);
+      var op = mathXem(ds, c);
+      if (op !== null && MATH_NHAN.test(op)) { c = mathTien(ds, c); continue; }
+      c = luu; break;
+    }
+    return het;
+  }
+
   function mathBocMotCan(P) {
     for (var x = P.firstChild; x; x = x.nextSibling) {
       if (x.nodeType !== 3) continue;
-      var s = x.nodeValue, i = s.indexOf('√');
+      var i = x.nodeValue.indexOf('\u221A');
       while (i >= 0) {
         if (mathBocCanTai(P, x, i)) return true;
-        i = s.indexOf('√', i + 1);
+        if (i + 1 >= x.nodeValue.length) break;      /* nodeValue có thể vừa bị cắt ngắn */
+        i = x.nodeValue.indexOf('\u221A', i + 1);
       }
     }
     return false;
   }
+
   function mathBocCanTai(P, nut, i) {
+    var ds = [];
+    for (var x = nut; x; x = x.nextSibling) ds.push(x);
     var s = nut.nodeValue, j = i + 1;
     while (j < s.length && s.charAt(j) === ' ') j++;
-    var mo, dong = null, ds = [];
-    if (s.charAt(j) === '(') {
-      var het = mathTimDong(nut, j + 1);
-      if (!het || !mathCoGi(nut, j + 1, het.node, het.i)) return false;
-      /* cắt nút chữ từ CUỐI về ĐẦU, để chỉ số phía đầu không bị xê dịch */
-      if (het.i + 1 < het.node.nodeValue.length) het.node.splitText(het.i + 1);
-      dong = het.node.splitText(het.i);            /* nút chỉ chứa ")" */
-      nut.splitText(j + 1);                           /* phần đầu biểu thức dưới căn */
-      mo = nut.splitText(i);                          /* nút chỉ chứa "√(" */
-      for (var a = mo.nextSibling; a && a !== dong; a = a.nextSibling) ds.push(a);
+    var coNgoac = s.charAt(j) === '(';
+    var dau = { k: 0, i: coNgoac ? j + 1 : j };
+    var het = coNgoac ? mathQuetNgoac(ds, dau) : mathQuetCan(ds, dau);
+    if (!het) return false;
+    if (!mathCoChu(ds, dau, { k: het.k, i: het.i })) return false;
+
+    /* Cắt nút chữ từ CUỐI về ĐẦU: vị trí cắt giảm dần nên các chỉ số trước đó vẫn đúng. */
+    var nutDong = null, nutSau = null;
+    if (coNgoac) {
+      var nc = ds[het.k];                                  /* nút chứa dấu ")" */
+      nutDong = het.i > 0 ? nc.splitText(het.i) : nc;
+      if (nutDong.nodeValue.length > 1) nutDong.splitText(1);
+      nut.splitText(j + 1);
     } else {
-      /* √x không ngoặc: lấy một cụm chữ/số liền sau, kèm chỉ số dính liền (√K<sub>a</sub>) */
-      var m = /^[A-Za-z0-9₀-₉⁰-⁹·.,]+/.exec(s.slice(j));
-      var run = m ? m[0].replace(/[.,]+$/, '') : '';
-      if (!run) return false;
-      var cuoi = j + run.length, denCuoi = cuoi === s.length;
-      if (!denCuoi) nut.splitText(cuoi);
-      var rad = nut.splitText(j);
-      mo = nut.splitText(i);                          /* nút chỉ chứa "√" */
-      ds.push(rad);
-      if (denCuoi) for (var b = rad.nextSibling; b && b.nodeType === 1 && /^(SUB|SUP)$/.test(b.tagName); b = b.nextSibling) ds.push(b);
+      mathChuan(ds, het);
+      if (het.k < ds.length) {
+        var ne = ds[het.k];
+        nutSau = (ne.nodeType === 3 && het.i > 0) ? ne.splitText(het.i) : ne;
+      }
+      nut.splitText(j);
     }
+    var mo = nut.splitText(i);          /* nút chứa "√" (kèm khoảng trắng và "(" nếu có) */
+    var cuoi = coNgoac ? nutDong : nutSau;
+    var duoiDs = [];
+    for (var a = mo.nextSibling; a && a !== cuoi; a = a.nextSibling) duoiDs.push(a);
+    if (!duoiDs.length) return false;
+
     /* chỉ số bậc (từ \sqrt[n]{…}) đứng ngay trước dấu căn thì kéo vào trong */
     var truoc = mo.previousSibling;
     if (truoc && truoc.nodeType === 3 && !truoc.nodeValue) truoc = truoc.previousSibling;
@@ -4390,12 +4487,50 @@
     P.insertBefore(wrap, mo);
     if (bac) wrap.appendChild(bac);
     wrap.appendChild(mathKh(mo));
-    ds.forEach(function (x) { duoi.appendChild(x); });
+    duoiDs.forEach(function (x) { duoi.appendChild(x); });
     wrap.appendChild(duoi);
-    if (dong) wrap.appendChild(mathKh(dong));
-    mathDressElement(duoi);                          /* căn lồng căn, phân số dưới căn */
+    if (nutDong) wrap.appendChild(mathKh(nutDong));
+    mathDressElement(duoi);             /* căn lồng căn, phân số dưới căn */
     return true;
   }
+
+  /* ---- lưới an toàn: dựng ở MỌI màn hình, không chỉ ở phiếu ----
+     Chữ có công thức còn hiện ở bảng soát khi nạp đề, thẻ trong kho bài tập, khung xem thử…
+     Đi vá từng chỗ thì chắc chắn sót, nên theo dõi thẳng DOM: khung nào vừa được đổ chữ có
+     "√" hoặc ")/(" thì dựng lại khung đó. Bỏ qua khung đang gõ dở — đổi cấu trúc giữa chừng
+     làm nhảy con trỏ. Phần đã dựng nằm trong .can/.ps nên không bị quét lại thành vòng lặp. */
+  var mathHang = [], mathHen = null;
+  function mathXepHang(el) {
+    if (mathHang.indexOf(el) < 0) mathHang.push(el);
+    if (mathHen) return;
+    /* setTimeout chứ KHÔNG requestAnimationFrame: rAF bị treo khi tab ẩn, tab nền dựng lại
+       nội dung thì căn thức không được vẽ, và xuất PDF từ tab nền sẽ ra bản thiếu căn. */
+    mathHen = setTimeout(function () {
+      mathHen = null;
+      var ds = mathHang; mathHang = [];
+      ds.forEach(function (x) { if (x.isConnected) mathDressElement(x); });
+    }, 0);
+  }
+  function mathBatTheoDoi() {
+    if (!window.MutationObserver || !document.body) return;
+    new MutationObserver(function (recs) {
+      var dang = document.activeElement;
+      for (var r = 0; r < recs.length; r++) {
+        var them = recs[r].addedNodes;
+        for (var k = 0; k < them.length; k++) {
+          var nd = them[k];
+          if (!nd || nd.nodeType !== 1 || !nd.closest) continue;
+          if (nd.closest(MATH_KHONG_VAO + ',.can,.ps')) continue;
+          if (dang && dang.isContentEditable && nd.contains(dang)) continue;
+          var t = nd.textContent;
+          if (!t || (t.indexOf('\u221A') < 0 && !/\)\s*\/\s*\(/.test(t))) continue;
+          mathXepHang(nd);
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mathBatTheoDoi);
+  else mathBatTheoDoi();
 
   function mathBocMotPhanSo(P) {
     var re = /\)\s*\/\s*\(/g;

@@ -40,6 +40,24 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-15 (tối) — Căn thức: vá nốt phần không ngoặc, và dựng ở mọi màn hình
+
+Đợt 67 mới lo được `√(…)` có ngoặc và chỉ dựng ở phiếu. M báo vẫn lỗi:
+bài thật viết `√Kₐ × Ca` (không ngoặc), và màn hình m đang xem là **bảng soát khi nạp đề**, chưa được vá.
+
+Đợt 68 (chi tiết ở `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md`): căn không ngoặc kéo hết **chuỗi nhân**
+(dừng ở `=`, `+`, `−`…), và một **MutationObserver** dựng lại bất cứ khung nào vừa nhận chữ có `√` hay `)/(`.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 68** → nút *Giao cho lớp* xuất PDF có căn đúng.
+- `web/sheet.css` không đổi (CSS `.can/.ps` đã đủ từ đợt 67).
+
+**Bẫy:** `requestAnimationFrame` không chạy khi tab ẩn (đúng bẫy pdf.js cũ) → dùng `setTimeout`,
+không thì xuất PDF từ tab nền ra bản thiếu căn.
+
+**M còn phải làm:** phiếu pH đã đẩy lên lớp là PDF cũ — mở Sổ và **Giao cho lớp** lại phiếu đó.
+
+---
+
 ## 2026-09-15 (chiều) — Căn thức và phân số hiển thị chuẩn trong phiếu đẩy lên lớp
 
 **M báo:** bài tính pH có căn bậc hai, đẩy lên lớp thì *"không hiển thị toàn bộ căn"* — chỉ có dấu √, không có gạch phủ.
