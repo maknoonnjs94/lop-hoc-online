@@ -369,6 +369,33 @@
   .vpaper{ max-width:860px } .vpaper iframe{ aspect-ratio:auto; min-height:72vh; background:#fff; border-radius:8px }
   .vtext{ max-width:760px; margin:0 auto; background:#fff; color:#182e53; padding:24px 26px; border-radius:12px; white-space:pre-wrap; line-height:1.65 }
   .vload{ color:#9fb3c8; text-align:center; padding:48px 12px; font-size:14px }
+  /* --- cửa chặn khi tài liệu đòi ứng dụng máy tính --- */
+  .appgate{ max-width:520px; margin:24px auto; background:#fff; color:#182e53; border-radius:16px; padding:28px 26px; text-align:center }
+  .appgate img{ width:96px; height:96px; margin-bottom:8px }
+  .appgate h3{ font-size:19px; margin:6px 0 8px }
+  .appgate p{ font-size:14.5px; line-height:1.6; color:#4a637b; margin:0 0 14px }
+  .appgate small{ display:block; color:#7d92a6; font-size:12.5px; margin-top:12px }
+  /* --- nộp bài & hỏi bài dưới mỗi tài liệu --- */
+  .vfoot{ max-width:1040px; margin:22px auto 0; display:grid; gap:14px }
+  .vpanel{ background:#fff; color:#182e53; border-radius:14px; padding:16px 18px }
+  .vpanel h4{ display:flex; align-items:center; gap:8px; font-size:15.5px; margin:0 0 8px }
+  .vpanel h4 .ico{ width:18px; height:18px }
+  .vpanel .sub{ color:#5b7488; font-size:13px; line-height:1.5; margin:0 0 8px }
+  .vpanel textarea{ width:100%; border:1px solid #d5e0ec; border-radius:10px; padding:10px 12px; font:inherit; font-size:14px; resize:vertical; min-height:62px; color:inherit; background:#fff }
+  .vpanel textarea, .vpanel input{ user-select:text; -webkit-user-select:text }
+  .vpanel input[type=file]{ font-size:13px; max-width:100% }
+  .nprow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .npfile{ display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 }
+  .npfile button{ background:#eef3f9; border:1px solid #dbe6f1; border-radius:9px; padding:6px 11px; font:inherit; font-size:12.5px; color:#1a6098; cursor:pointer }
+  .npfile button:hover{ background:#e2edf7 }
+  .qitem{ border-top:1px solid #eef2f7; padding:12px 0 2px }
+  .qlist{ margin-top:14px }
+  .qq{ font-size:14.5px; line-height:1.55; white-space:pre-wrap }
+  .qwho{ color:#7d92a6; font-size:12px; margin-top:4px }
+  .qwait{ color:#a07a2a; background:#fdf5e4; border-radius:8px; padding:6px 10px; font-size:12.5px; margin-top:7px; display:inline-block }
+  .qa{ background:#f1f7f3; border-left:3px solid #4c9a63; border-radius:0 9px 9px 0; padding:10px 13px; margin-top:8px; font-size:14.5px; line-height:1.55; white-space:pre-wrap }
+  .qa b{ display:block; font-size:12px; color:#3d7d50; margin-bottom:4px; font-weight:800 }
+  .qa.cham{ background:#f0f5fd; border-left-color:#2f86c9 } .qa.cham b{ color:#1a6098 }
   .vhint{ color:#9fb3c8; font-size:12.5px; text-align:center; margin:12px 0 0 }
   .wmgrid{ position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:5; user-select:none }
   .wmgrid span{ position:absolute; font-size:12px; font-weight:700; white-space:nowrap; letter-spacing:.02em; color:rgba(255,255,255,.34); mix-blend-mode:difference; transform:rotate(-22deg); transform-origin:left top }
@@ -665,8 +692,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var sessions = [], curSes = null, view = 'home';
   var views = {}, lanTruoc = 0, classNotice = '', rtChan = null, daNhacBuoi = {};
   var matList = [], matIdx = -1, tienDo = { timer: null, save: null };
-  /* Ứng dụng máy tính gắn LopHocApp/ vào user agent. REQUIRE_APP = true → sinh viên bắt buộc dùng app. */
-  var REQUIRE_APP = false;
+  /* Ứng dụng máy tính gắn LopHocApp/ vào user agent.
+     BAT_BUOC_APP quyết định thứ gì phải mở trong app:
+       'khong'  — không bắt buộc gì, mọi thứ mở được trên trình duyệt và điện thoại
+       'video'  — chỉ video bài giảng phải mở trong app; phiếu, đề, đáp án vẫn xem trên điện thoại  ← đang dùng
+       'tat_ca' — khoá sạch: không có app thì không vào được (kể cả điện thoại, máy tính bảng)
+     Giảng viên và quản trị luôn được miễn. */
+  var BAT_BUOC_APP = 'video';
+  var REQUIRE_APP = BAT_BUOC_APP === 'tat_ca';
   var APP_URL = 'https://lop-hoc-online.giangduonghoahoc.workers.dev/tai-app.html';
   var TRONG_APP = /LopHocApp\//.test(navigator.userAgent) || !!window.lopHocApp;
 
@@ -1201,6 +1234,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       return d || ((b.no || 0) - (a.no || 0));
     });
     await taiLuotXem();
+    await taiBaiNop();
     if (sessions.length && !(curSes && sessions.some(function (s) { return s.id === curSes; }))) {
       var ghim = sessions.filter(function (s) { return s.pinned; })[0];
       curSes = (ghim || sessions[0]).id;
@@ -1337,6 +1371,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var st = locked ? 'Mở ' + fmtWhen(m.open_at) : (done ? '<span class="st"><span class="ico">' + I.check + '</span>Đã xem xong · ' + k.name + '</span>' : (seen ? '<span class="st">' + esc(tienDoChu(m)) + ' · ' + k.name + '</span>' : k.name));
       var cl = locked ? null : conLaiGiay(m);
       if (cl != null) st += ' · <span class="st">còn ' + phutChu(cl) + ' xem</span>';
+      if (!locked && nhanBai(m)) st += ' · <span class="st">' + chuNop(m) + '</span>';
       return '<button type="button" class="mat ' + cls + '"' + (locked ? ' disabled' : '') + ' data-m="' + m.id + '" data-kind="' + esc(m.kind) + '" data-title="' + esc(m.title || k.name) + '">'
         + '<span class="mi ico">' + I[locked ? 'lock' : (done ? 'check' : k.ic)] + '</span>'
         + '<span class="mt"><b>' + esc(m.title || k.name) + (moi && !locked ? '<span class="pillnew">MỚI</span>' : '') + '</b><span>' + st + '</span></span>'
@@ -1374,7 +1409,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       return '<div class="pcard"><h2><span class="ico">' + I.clipboard + '</span>' + esc(tenBuoi(g.s)) + '</h2>' + g.ms.map(function (m) {
         var k = KIND[m.kind] || KIND.link, locked = !moKhoa(m, now), v = views[m.id], x = { m: m, s: g.s };
         return '<div class="prow ' + (locked ? 'k-lock' : k.cls) + '"><span class="fi"><span class="ico">' + I[locked ? 'lock' : k.ic] + '</span></span><span class="grow"><strong>' + esc(m.title || k.name) + '</strong><small>' + k.name + (locked ? ' · ' + demNguoc(m.open_at) + ' (' + fmtWhen(m.open_at) + ')' : (v ? ' · ' + esc(tienDoChu(m)) : '')) + '</small></span>'
-          + (locked ? '<span class="ppill">Khoá</span>' : (xemXong(m) ? '<span class="ppill doing"><span class="ico">' + I.check + '</span>Xong</span>' : (laMoi(m) ? '<span class="ppill new">Mới</span>' : '')))
+          + (locked ? '<span class="ppill">Khoá</span>' : (nhanNop(m) || (xemXong(m) ? '<span class="ppill doing"><span class="ico">' + I.check + '</span>Xong</span>' : (laMoi(m) ? '<span class="ppill new">Mới</span>' : ''))))
           + (locked ? '' : nutMo(x, xemXong(m) ? 'Xem lại' : (v ? 'Làm tiếp' : 'Làm bài'))) + '</div>';
       }).join('') + '</div>';
     }).join('') + '</div>';
@@ -1709,6 +1744,195 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- xem tài liệu ---------------- */
   var SHEET_MARK = '<!--sbt-sheet-->';
+  /* =====================================================================
+     BẮT BUỘC ỨNG DỤNG THEO LOẠI TÀI LIỆU
+     Video bài giảng là thứ đáng bảo vệ nhất nên chỉ mở trong app; phiếu bài tập,
+     đề và đáp án vẫn đọc được trên điện thoại. Xem BAT_BUOC_APP ở đầu tệp.
+     ===================================================================== */
+  function canApp(kind) {
+    if (laGV() || TRONG_APP || BAT_BUOC_APP === 'khong') return false;
+    return BAT_BUOC_APP === 'tat_ca' || kind === 'video';
+  }
+  function khungCanApp(body, kind) {
+    var la = kind === 'video' ? 'Video bài giảng' : 'Tài liệu này';
+    body.innerHTML = '<div class="vstage"><div class="appgate">'
+      + '<img src="' + licSrc('download') + '" alt="" draggable="false">'
+      + '<h3>' + la + ' chỉ mở trong ứng dụng máy tính</h3>'
+      + '<p>Bài giảng quay sẵn được phát riêng trong ứng dụng <b>Giảng đường Hóa học</b>. Tải một lần, đăng nhập đúng tài khoản này là xem được.</p>'
+      + '<p><a class="btn" href="' + APP_URL + '" target="_blank" rel="noopener">Tải ứng dụng</a></p>'
+      + '<small>Phiếu bài tập, đề và đáp án vẫn mở bình thường ngay trên điện thoại.</small>'
+      + '</div></div>';
+  }
+
+  /* =====================================================================
+     NỘP BÀI & HỎI BÀI (cần schema_v19). Chưa chạy tệp SQL thì hai phần này tự ẩn,
+     phần còn lại của trang vẫn chạy như thường.
+     ===================================================================== */
+  var baiNop = {}, coNopBai = true, coHoiDap = true, dangNop = false;
+
+  async function taiBaiNop() {
+    baiNop = {};
+    if (!coNopBai || !me) return;
+    var r = await sb.from('bai_nop').select('material_id, nop_luc, loi_nhan, tep, cham_luc, diem, nhan_xet').eq('user_id', me.id);
+    if (r.error) { coNopBai = false; return; }
+    (r.data || []).forEach(function (b) { baiNop[b.material_id] = b; });
+  }
+  function matById(id) {
+    for (var i = 0; i < sessions.length; i++) {
+      var ms = sessions[i].materials || [];
+      for (var j = 0; j < ms.length; j++) if (ms[j].id === id) return ms[j];
+    }
+    return null;
+  }
+  function nhanBai(m) { return coNopBai && !!(m && m.nhan_bai); }
+  function quaHan(m) { return !!(m && m.han_nop && new Date(m.han_nop).getTime() < Date.now()); }
+  function nhanNop(m) {
+    if (!nhanBai(m)) return '';
+    var b = baiNop[m.id];
+    if (b && b.cham_luc) return '<span class="ppill doing">' + (b.diem ? esc(b.diem) : 'Đã chấm') + '</span>';
+    if (b) return '<span class="ppill">Đã nộp</span>';
+    return quaHan(m) ? '<span class="ppill">Quá hạn</span>' : '<span class="ppill new">Cần nộp</span>';
+  }
+  function chuNop(m) {
+    if (!nhanBai(m)) return '';
+    var b = baiNop[m.id];
+    if (b && b.cham_luc) return 'đã chấm' + (b.diem ? ' · ' + esc(b.diem) : '');
+    if (b) return 'đã nộp bài';
+    return quaHan(m) ? 'quá hạn nộp' : 'cần nộp bài';
+  }
+  function cocTep(b) {
+    var ts = (b && b.tep) || [];
+    if (!ts.length) return '<div class="sub">Không kèm tệp nào.</div>';
+    return '<div class="npfile">' + ts.map(function (t, i) {
+      return '<button type="button" data-tep="' + i + '">' + esc(t.ten || ('Tệp ' + (i + 1))) + '</button>';
+    }).join('') + '</div>';
+  }
+  async function moTepNop(path) {
+    var s = await sb.storage.from('bainop').createSignedUrl(path, 600);
+    if (s.error) { alert('Không mở được tệp: ' + s.error.message); return; }
+    window.open(s.data.signedUrl, '_blank', 'noopener');
+  }
+  function loiNop(r) {
+    if (r === 'qua_han') return 'đã quá hạn nộp.';
+    if (r === 'da_cham') return 'bài đã được chấm nên không sửa được nữa.';
+    if (r === 'khong_nhan_bai') return 'tài liệu này không nhận bài nộp.';
+    if (r === 'khong_co_quyen') return 'bạn không có quyền nộp cho tài liệu này.';
+    return r || 'lỗi không rõ.';
+  }
+
+  function veNopBai(m) {
+    var box = $('npBox'); if (!box) return;
+    var b = baiNop[m.id], het = quaHan(m);
+    var o = '<h4><span class="ico">' + I.upload + '</span>Nộp bài</h4>';
+    if (m.han_nop) o += '<div class="sub">Hạn nộp ' + fmtWhen(m.han_nop) + (het ? ' — <b>đã quá hạn</b>' : '') + '</div>';
+    if (b && b.cham_luc) {
+      o += '<div class="qa cham"><b>Giảng viên đã chấm' + (b.diem ? ' · ' + esc(b.diem) : '') + '</b>' + esc(b.nhan_xet || 'Không có nhận xét thêm.') + '</div>'
+        + '<div class="sub" style="margin-top:10px">Bài bạn nộp lúc ' + fmtWhen(b.nop_luc) + ':</div>' + cocTep(b);
+    } else if (b) {
+      o += '<div class="sub">Đã nộp lúc ' + fmtWhen(b.nop_luc) + ' · giảng viên chưa chấm.</div>' + cocTep(b)
+        + (b.loi_nhan ? '<div class="qq">“' + esc(b.loi_nhan) + '”</div>' : '')
+        + (het ? '' : '<div class="nprow" style="margin-top:10px"><button type="button" class="btn sec sm" id="npLai">Nộp lại</button>'
+            + '<button type="button" class="btn sec sm" id="npRut">Rút bài</button><span class="sub" id="npTt" style="margin:0"></span></div>');
+    } else if (het) {
+      o += '<div class="sub">Đã quá hạn nộp. Cần nộp muộn thì nhắn giảng viên mở lại giúp.</div>';
+    } else {
+      o += '<div class="sub">Chụp ảnh bài làm hoặc chọn tệp PDF — mỗi tệp tối đa 10 MB, chọn được nhiều tệp một lúc.</div>'
+        + '<input type="file" id="npIn" multiple accept="image/*,application/pdf">'
+        + '<textarea id="npNhan" placeholder="Muốn nhắn gì với giảng viên không? (không bắt buộc)" style="margin-top:10px"></textarea>'
+        + '<div class="nprow" style="margin-top:10px"><button type="button" class="btn" id="npGui">Nộp bài</button><span class="sub" id="npTt" style="margin:0"></span></div>';
+    }
+    box.innerHTML = o;
+    [].forEach.call(box.querySelectorAll('[data-tep]'), function (el) {
+      el.addEventListener('click', function () { var t = (baiNop[m.id] || {}).tep || []; if (t[+el.dataset.tep]) moTepNop(t[+el.dataset.tep].path); });
+    });
+    if ($('npGui')) $('npGui').addEventListener('click', function () { guiBaiNop(m); });
+    if ($('npLai')) $('npLai').addEventListener('click', function () { delete baiNop[m.id]; veNopBai(m); });
+    if ($('npRut')) $('npRut').addEventListener('click', function () { rutBai(m); });
+  }
+  async function guiBaiNop(m) {
+    if (dangNop) return;
+    var inp = $('npIn'), tt = $('npTt'), nut = $('npGui');
+    var ds = inp && inp.files ? [].slice.call(inp.files) : [];
+    if (!ds.length) { tt.textContent = 'Chọn ít nhất một tệp đã.'; return; }
+    dangNop = true; nut.disabled = true;
+    var tep = [];
+    try {
+      for (var i = 0; i < ds.length; i++) {
+        var t = ds[i];
+        if (t.size > 10485760) throw new Error('tệp “' + t.name + '” nặng hơn 10 MB.');
+        tt.textContent = 'Đang tải lên ' + (i + 1) + '/' + ds.length + '…';
+        var ten = String(t.name || 'tep').replace(/[^\w.\-]+/g, '_').slice(-60);
+        var duong = m.id + '/' + me.id + '/' + Date.now() + '-' + i + '-' + ten;
+        var up = await sb.storage.from('bainop').upload(duong, t, { contentType: t.type || 'application/octet-stream' });
+        if (up.error) throw new Error(up.error.message);
+        tep.push({ path: duong, ten: t.name, co: t.size });
+      }
+      tt.textContent = 'Đang ghi nhận…';
+      var r = await sb.rpc('nop_bai', { p_material: m.id, p_loi_nhan: ($('npNhan') ? $('npNhan').value : '').slice(0, 1000), p_tep: tep });
+      if (r.error) throw new Error(r.error.message);
+      if (!r.data || !r.data.ok) throw new Error(loiNop(r.data && r.data.reason));
+      await taiBaiNop();
+      dangNop = false;
+      veNopBai(m); renderView();
+      noiMascot('Nộp bài xong rồi đó!');
+    } catch (e) {
+      dangNop = false;
+      if ($('npTt')) $('npTt').textContent = 'Không nộp được: ' + (e && e.message || e);
+      if ($('npGui')) $('npGui').disabled = false;
+    }
+  }
+  async function rutBai(m) {
+    if (!confirm('Rút bài đã nộp để làm lại?')) return;
+    var r = await sb.rpc('rut_bai', { p_material: m.id });
+    if (r.error || !r.data || !r.data.ok) { if ($('npTt')) $('npTt').textContent = 'Không rút được: ' + loiNop(r.data && r.data.reason || (r.error && r.error.message)); return; }
+    await taiBaiNop(); veNopBai(m); renderView();
+  }
+
+  async function veHoiDap(m) {
+    var box = $('hdBox'); if (!box) return;
+    var r = await sb.from('cau_hoi').select('id, user_id, noi_dung, tao_luc, tra_loi, tra_luc').eq('material_id', m.id).order('tao_luc', { ascending: false });
+    if (r.error) { coHoiDap = false; if (box.parentNode) box.parentNode.removeChild(box); return; }
+    if (!curMat || curMat.id !== m.id) return;
+    var ds = r.data || [];
+    var o = '<h4><span class="ico">' + I.help + '</span>Hỏi bài</h4>'
+      + '<div class="sub">Chỗ nào chưa hiểu thì hỏi ngay. Giảng viên trả lời một lần, cả lớp cùng đọc được — tên người hỏi không hiện với các bạn khác.</div>'
+      + '<textarea id="hdIn" placeholder="Câu hỏi của bạn…"></textarea>'
+      + '<div class="nprow" style="margin-top:8px"><button type="button" class="btn sm" id="hdGui">Gửi câu hỏi</button><span class="sub" id="hdTt" style="margin:0"></span></div>';
+    o += ds.length ? '<div class="qlist">' + ds.map(function (q) {
+      var toi = q.user_id === me.id;
+      return '<div class="qitem"><div class="qq">' + esc(q.noi_dung) + '</div>'
+        + '<div class="qwho">' + (toi ? 'Bạn hỏi' : 'Một bạn trong lớp hỏi') + ' · ' + fmtWhen(q.tao_luc) + '</div>'
+        + (q.tra_loi ? '<div class="qa"><b>Giảng viên trả lời · ' + fmtWhen(q.tra_luc) + '</b>' + esc(q.tra_loi) + '</div>'
+                     : (toi ? '<div class="qwait">Đang chờ giảng viên trả lời</div>' : ''))
+        + '</div>';
+    }).join('') + '</div>' : '<div class="sub" style="margin-top:12px">Chưa có câu hỏi nào cho tài liệu này.</div>';
+    box.innerHTML = o;
+    $('hdGui').addEventListener('click', function () { guiCauHoi(m); });
+  }
+  async function guiCauHoi(m) {
+    var inp = $('hdIn'), tt = $('hdTt'), t = String(inp.value || '').trim();
+    if (t.length < 5) { tt.textContent = 'Viết rõ hơn một chút nhé.'; return; }
+    $('hdGui').disabled = true; tt.textContent = 'Đang gửi…';
+    var r = await sb.from('cau_hoi').insert({ material_id: m.id, user_id: me.id, noi_dung: t.slice(0, 2000) });
+    if (r.error) { tt.textContent = 'Không gửi được: ' + r.error.message; $('hdGui').disabled = false; return; }
+    await veHoiDap(m);
+    noiMascot('Đã gửi câu hỏi, chờ giảng viên trả lời nhé.');
+  }
+
+  /* Vẽ phần nộp bài + hỏi bài xuống dưới nội dung tài liệu. */
+  async function veTuongTac(id) {
+    var m = matById(id); if (!m) return;
+    if (!curMat || curMat.id !== id) return;
+    if (!nhanBai(m) && !coHoiDap) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'vfoot';
+    wrap.innerHTML = (nhanBai(m) ? '<section class="vpanel" id="npBox"></section>' : '')
+      + (coHoiDap ? '<section class="vpanel" id="hdBox"><div class="sub" style="margin:0">Đang tải hỏi đáp…</div></section>' : '');
+    $('vBody').appendChild(wrap);
+    if (nhanBai(m)) veNopBai(m);
+    if (coHoiDap) await veHoiDap(m);
+  }
+
   async function openMaterial(id, kind, title) {
     var v = $('viewer'), body = $('vBody'), k = KIND[kind] || KIND.link;
     curMat = { id: id, title: title, kind: kind };
@@ -1719,6 +1943,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     body.innerHTML = '<div class="vload">Đang mở…</div>';
     v.classList.add('show'); document.body.style.overflow = 'hidden';
     nhacLanDau();
+    if (canApp(kind)) { khungCanApp(body, kind); await veTuongTac(id); return; }   /* vẫn cho hỏi bài dù chưa xem được */
+    await moNoiDung(id, kind, title, body);
+    await veTuongTac(id);
+  }
+  /* Nội dung thật của tài liệu — tách riêng để phần nộp bài / hỏi bài luôn được vẽ sau. */
+  async function moNoiDung(id, kind, title, body) {
     var r = await sb.from('material_contents').select('url, storage_path, body').eq('material_id', id).maybeSingle();
     if (r.error || !r.data) { body.innerHTML = '<div class="vload">Chưa mở được nội dung này. Nếu là đáp án thì hãy chờ tới giờ giảng viên đặt.</div>'; return; }
     var c = r.data;
@@ -1777,7 +2007,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('vNext').addEventListener('click', function () { chuyenTaiLieu(1); });
   $('vClose').addEventListener('click', closeViewer);
   window.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('pal').hidden) dongPal(); else if (!$('gocBox').hidden) dongGoc(); else if (!$('helpBox').hidden) $('helpBox').hidden = true; else closeViewer(); } });
-  $('vBody').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  $('vBody').addEventListener('contextmenu', function (e) { if (e.target.closest('.vpanel')) return; e.preventDefault(); });
   $('vBody').addEventListener('dragstart', function (e) { e.preventDefault(); });
 
   /* =====================================================================

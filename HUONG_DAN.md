@@ -152,6 +152,22 @@ Trước giờ đó sinh viên thấy dòng "Đáp án và lời giải · Mở 
 
 ---
 
+## Ai phải dùng ứng dụng máy tính
+
+Đặt ở đầu tệp `web/index.html`, dòng `BAT_BUOC_APP`:
+
+| Giá trị | Nghĩa là |
+|---|---|
+| `'khong'` | Không bắt buộc gì. Mọi thứ mở được trên trình duyệt, kể cả điện thoại. |
+| `'video'` | **Đang dùng.** Chỉ video bài giảng phải mở trong app; phiếu, đề, đáp án vẫn đọc trên điện thoại. |
+| `'tat_ca'` | Khoá sạch: không có app thì không vào được — **kể cả điện thoại và máy tính bảng**. |
+
+Giảng viên và quản trị luôn được miễn.
+
+Vì sao mặc định là `'video'`: app chỉ có bản Windows và macOS, nên `'tat_ca'` là chặn hết sinh viên học bằng điện thoại. Video bài giảng mới là thứ đáng bảo vệ, còn phiếu bài tập thì để các em ôn ở đâu cũng được.
+
+Chặn thật nằm ở máy chủ chứ không chỉ ở giao diện: `APP_CHO_VIDEO` trong `worker.js` làm Worker **không ký vé xem** cho ai không chạy trong app, dù có gọi thẳng vào `/api/stream/token`. Đổi `BAT_BUOC_APP` thì nhớ đổi cả hai cho khớp.
+
 ## Video: chọn nơi đặt
 
 > **Đã có cách chặn tải:** đưa video lên Cloudflare Stream với link ký — làm theo `HUONG_DAN_VIDEO.md` (từng bước). Bảng dưới là so sánh các lựa chọn.
@@ -169,6 +185,24 @@ Trang học đã có sẵn **dấu chìm động**: tên và email của chính 
 Trang cũng đã tắt chuột phải và kéo ảnh trong cửa sổ xem, và PDF được vẽ ra màn hình chứ không đưa link tải.
 
 ---
+
+## Nộp bài
+
+Bật cho từng phiếu: tab **Buổi học** → ✎ Sửa một *Phiếu bài tập* hoặc *Bài giảng* → tích **Nhận bài nộp**, đặt **Hạn nộp** nếu muốn.
+
+Sinh viên mở phiếu ra là thấy ô nộp ngay bên dưới: chụp ảnh bài làm hoặc chọn PDF (nhiều tệp một lúc, mỗi tệp tối đa 10 MB), kèm lời nhắn. Nộp rồi vẫn **nộp lại** hoặc **rút bài** được — cho tới khi m chấm.
+
+M xem và chấm ở tab **Bài nộp**: mỗi phiếu một bảng, ai nộp ai chưa, bấm tên tệp để mở bài làm, gõ điểm và nhận xét rồi **Lưu**. Chấm xong sinh viên thấy ngay dưới phiếu và không sửa bài được nữa. Muốn cho sửa lại thì xoá trắng cả ô điểm lẫn ô nhận xét rồi Lưu.
+
+Quá hạn thì nút nộp đóng lại. Cần mở thêm cho một bạn thì sửa lại **Hạn nộp** của phiếu.
+
+## Hỏi bài
+
+Dưới **mọi** tài liệu đều có ô hỏi, không phải bật gì cả.
+
+Sinh viên thấy: câu của chính mình (kèm trạng thái *đang chờ trả lời*) và mọi câu **đã được trả lời** của cả lớp. Tên người hỏi không hiện với bạn học — chỉ mình m thấy.
+
+M trả lời ở tab **Hỏi đáp**: câu chưa trả lời xếp lên đầu, số câu chờ hiện ngay trên tên tab. Trả lời một lần là cả lớp đọc được. Câu không phù hợp thì bấm **Ẩn** — ẩn xong chỉ mình m còn thấy.
 
 ## Mỗi tài khoản một máy
 

@@ -297,6 +297,9 @@ async function nguoiDung(request, env) {
 }
 
 /* POST /api/stream/token  { material_id } → { token, embed, host, duration } */
+/* true = chỉ ứng dụng máy tính mới xin được vé xem video (khớp BAT_BUOC_APP trong web/index.html). */
+const APP_CHO_VIDEO = true;
+
 async function streamToken(body, request, env) {
   if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
   const nd = await nguoiDung(request, env);
@@ -311,6 +314,11 @@ async function streamToken(body, request, env) {
   const uid = u.slice(7).trim();
   if (!/^[0-9a-f]{32}$/i.test(uid)) return json({ ok: false, reason: 'uid_sai' }, 400, request);
   if (!nd.staff) {
+    /* Video bài giảng chỉ phát trong ứng dụng máy tính. Trang web tự chặn trước, đây là chốt thật:
+       không có app thì máy chủ không ký vé, dù có gọi thẳng vào địa chỉ này. */
+    if (APP_CHO_VIDEO && (request.headers.get('user-agent') || '').indexOf('LopHocApp/') < 0) {
+      return json({ ok: false, reason: 'can_app' }, 403, request);
+    }
     const s = m.sessions || {};
     if (!s.published) return json({ ok: false, reason: 'chua_mo' }, 403, request);
     if (m.open_at && new Date(m.open_at).getTime() > Date.now()) return json({ ok: false, reason: 'chua_toi_gio' }, 403, request);

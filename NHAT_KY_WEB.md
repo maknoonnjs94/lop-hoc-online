@@ -18,17 +18,105 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
 - App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
 
-M còn phải làm:
-1. **Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets → Add**: Type Secret, tên `SUPABASE_SERVICE_ROLE_KEY`, giá trị = khoá service_role (Supabase → Project Settings → API Keys) → Deploy. Không có nó thì nút "Tạo tài khoản mới" báo "Máy chủ chưa có khoá quản trị".
-2. Bên Supabase → SQL Editor (nếu chưa chạy): `schema_v8_kieu_quay.sql`, `schema_v9_hom_nay.sql` — t chưa thấy m xác nhận. Thiếu v9 thì Ghim / giờ bắt đầu / thông báo lớp / đã xem-tiếp tục không lưu được.
-3. `schema_v10_ho_so.sql` — **đã chạy**; `schema_v10b_ho_so_thieu_dong.sql` — **đã chạy**.
-4. `schema_v11_giao_dien.sql` (4 màu + nhân vật), `schema_v12_anh_dai_dien.sql` (kho ảnh đại diện), `schema_v13_nhan_vat.sql` (8 nhân vật) — chưa chạy thì trang vẫn dùng được, chỉ là lựa chọn không lưu lên máy chủ và chưa tải ảnh lên được.
-5. `don_trung_so.sql` câu 3 — xoá tài khoản admin "Phạm Anh Ngọc" bị trùng (vẫn còn 2 dòng).
-6. **Video**: làm theo `HUONG_DAN_VIDEO.md` phần A (bật Stream, Account ID, API token, 2 lệnh `wrangler secret put`, chạy `schema_v14_video.sql`).
-6b. **Chạy `schema_v18_dung_luong_thang.sql`** (một lần) để tab Kho tệp đếm được phút phát và ước tính tiền phải trả mỗi tháng.
-7. Khi đã chạy đủ 7 luồng test bằng app thật: đổi `REQUIRE_APP = false` → `true` trong `web/index.html` để sinh viên bắt buộc dùng app.
+M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
+
+1. **Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Xem mục đề xuất cuối file.
+2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
+
+Đã xong hết phần cài đặt máy chủ — không còn gì treo:
+
+- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18 — `/api/trang-thai` báo `true` cả loạt.
+- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
+- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
+
+Cách tự kiểm sau này, khỏi mở Supabase:
+
+```
+curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
+```
 
 Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+## 2026-09-11 — Nộp bài, hỏi bài, và app chỉ bắt buộc cho video
+
+**M chọn:** làm việc 1, 3, 4 trong danh sách đề xuất.
+
+### 1. Bắt buộc app theo loại tài liệu (bỏ ý định bật REQUIRE_APP cứng)
+
+Cũ: `REQUIRE_APP = true` là đăng xuất mọi người không dùng app → khoá sạch điện thoại, mà app chỉ có Windows/macOS.
+
+Mới: `BAT_BUOC_APP` ở đầu `web/index.html` nhận `'khong'` / `'video'` / `'tat_ca'`, đang đặt `'video'`. Chỉ `kind === 'video'` bị chặn; sinh viên thấy một màn hình mời tải app (dùng tranh `download.svg` theo đúng giao diện đang chọn) và **vẫn hỏi bài được** ngay dưới đó.
+
+Chặn thật ở máy chủ: `APP_CHO_VIDEO` trong `worker.js` — không có `LopHocApp/` trong user-agent thì `/api/stream/token` trả `can_app` 403, không ký vé. Giảng viên miễn.
+
+### 2. Nộp bài
+
+- `schema_v19_nop_bai_hoi_dap.sql`: cột `materials.nhan_bai` + `han_nop`; bảng `bai_nop` (một dòng mỗi tài liệu × sinh viên); kho tệp riêng `bainop` đường dẫn `<material_id>/<user_id>/<tệp>`, tối đa 10 MB, chỉ nhận ảnh và PDF.
+- RLS: bảng `bai_nop` **không có luật ghi** — mọi thay đổi qua ba hàm `security definer`: `nop_bai` (kiểm hạn nộp + đã chấm thì chặn), `rut_bai`, `cham_bai` (chỉ `is_staff()`).
+- Sinh viên: khung nộp nằm dưới nội dung tài liệu; nộp lại / rút bài được cho tới khi bị chấm; chấm rồi thì hiện điểm + nhận xét. Danh sách tài liệu và tab Bài tập hiện nhãn *cần nộp / đã nộp / đã chấm 8,5*.
+- Quản trị: tab **Bài nộp**, gom theo tài liệu, mỗi bảng có ai nộp ai chưa, mở tệp bằng link ký 10 phút, ô điểm + ô nhận xét + nút Lưu.
+
+### 3. Hỏi bài
+
+- Bảng `cau_hoi`. Sinh viên đọc được: câu của mình + mọi câu **đã trả lời** (luật RLS `ch_doc`), không bao giờ thấy tên bạn học. Trả lời/ẩn qua `tra_loi_cau_hoi` (chỉ giảng viên).
+- Quản trị: tab **Hỏi đáp**, câu chưa trả lời lên đầu, số câu chờ hiện trên tên tab.
+- Hai hàm gom dữ liệu cho quản trị: `bang_bai_nop(class)` và `bang_cau_hoi(class)`.
+
+### Lỗi cũ sửa luôn
+
+Trang quản trị nạp buổi học **không** lấy cột `gioi_han_giay`, nên hộp ✎ Sửa một video luôn hiện "Không giới hạn" và bấm Lưu là **xoá mất quỹ thời lượng xem** đã đặt. Đã thêm cột vào câu truy vấn, kèm đường lui nếu chưa chạy v16/v19.
+
+### M phải làm
+
+Supabase → SQL Editor → dán cả `schema_v19_nop_bai_hoi_dap.sql` → Run. Chưa chạy thì hai tính năng tự ẩn, phần còn lại vẫn chạy bình thường (tab Bài nộp / Hỏi đáp sẽ nhắc đúng tên tệp cần chạy).
+
+### Đã test
+
+Bằng bộ chạy thử tại máy, dò thẳng DOM: khung nộp bài + hỏi bài hiện đúng dưới phiếu bài tập (3 câu hỏi, câu đã trả lời hiện lời giảng viên, câu của mình hiện "đang chờ"); `?nop=cham` hiện điểm 8,5 + nhận xét + tệp đã nộp và nhãn "đã chấm · 8,5" ngoài danh sách; mở tài liệu video trong trình duyệt ra đúng cửa chặn app. Kiểm cú pháp: `node --check worker.js`, khối script của hai trang HTML, và thử riêng logic user-agent (app qua, trình duyệt bị chặn).
+
+---
+
+## 2026-09-10 (khuya) — Bộ chạy thử trang học ngay tại máy
+
+**M cần:** một bản trang học của sinh viên chạy tại máy để tự thử vài luồng.
+
+**Đã làm:** thư mục `test/`:
+- `chay-thu.cmd` — bấm đúp là dựng bản thử, bật máy chủ 127.0.0.1:8765 và tự mở trình duyệt. Có kiểm Node.js trước, thiếu thì báo chỗ tải.
+- `tao-ban-thu.js` — chép `web/index.html` rồi thay thẻ script Supabase bằng một Supabase giả chạy trong trình duyệt (hồ sơ, lớp, buổi học, tài liệu, view_events, rpc, storage). Kèm dải nhắc "BẢN THỬ TẠI MÁY" ở góc phải.
+- `may-chu.js` — máy chủ tĩnh, in sẵn danh sách tham số ra màn hình, tự mở trình duyệt (cờ `--khong-mo` để không mở, dùng khi test tự động).
+- `DOC_TRUOC.md` — bảng tham số và ranh giới thử được / không thử được.
+
+**Tham số:** `?onb=1` (lần đầu đăng nhập), `?g=nam`, `?het=1` (xong hết), `?trong=1` (lớp trống), `?quy=het` (video hết quỹ), `?st=1` (video Cloudflare Stream). Ghép bằng `&`.
+
+**Bẫy đã sập:** bản dựng chèn dải nhắc bằng `h.replace('</body>', …)` — trúng nhầm chuỗi `</body>` nằm **bên trong mã JS** của trang (chỗ dựng tài liệu bản đọc), làm hỏng nguyên khối script 88 nghìn ký tự. Sửa: chèn dải nhắc bằng JS trong stub, không đụng vào HTML. Từ nay dựng xong phải so số ký tự khối script của bản thử với bản thật — bằng nhau mới đúng.
+
+**Đã test:** ba luồng chụp màn hình thật trong pane trình duyệt — mặc định (nữ, Peach, nhân vật nữ), `?onb=1` (màn "Đặt mật khẩu của riêng bạn"), `?g=nam&het=1` (nam, Mint, nhân vật nam). Kiểm cú pháp: khối script chính của bản thử dài đúng 88 485 ký tự, y hệt `web/index.html`.
+
+**Lưu ý:** `web/_test_*.html` đã nằm trong `.gitignore` và trang thật trả 404 cho nó — bản thử không lộ ra ngoài.
+
+---
+
+## 2026-09-10 (tối) — Infographic PR gửi sinh viên
+
+**M cần:** một ảnh đăng group Facebook để giới thiệu lớp học online, khoe điểm mạnh — và **tuyệt đối không nhắc** khoá thiết bị, giới hạn thời lượng xem, dấu chìm, chống chụp màn hình. Những thứ đó để dành cho infographic số 2, phát sau khi sinh viên đã đóng tiền ("nếu lộ ra cái đó SV nó sẽ sợ và không dám đăng kí").
+
+**Đã làm:** `pr/infographic-gioi-thieu.png` — 2160×2700 (1080×1350 @2x, tỉ lệ 4:5, khổ Facebook hiển thị to nhất trên điện thoại). Dựng bằng HTML rồi chụp bằng Chrome headless:
+
+```
+chrome.exe --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+  --virtual-time-budget=12000 --window-size=1080,1350 \
+  --user-data-dir="<thư mục>\cdp" --screenshot="<thư mục>\anh.png" "file:///<thư mục>/infographic-gioi-thieu.html"
+```
+
+Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **đường dẫn Windows tuyệt đối**, dùng đường dẫn tương đối thì Chrome báo *Access is denied*; (2) phải có `--virtual-time-budget` thì phông Google Fonts mới kịp tải; (3) viết lệnh node nhiều dòng trong bash thì backtick bị nuốt — cứ ghi script ra tệp rồi chạy.
+
+**Nội dung đưa vào:** logo + khẩu hiệu "Hóa học khó, có Phạm Ngọc lo"; câu chốt "Không phải một nhóm chat… là giảng đường riêng của lớp mình"; 6 thẻ (bài giảng video xem tiếp đúng chỗ dở · trang Hôm nay · tài liệu mở là đọc · chuông báo bài mới · Ctrl+K · web & app Windows/macOS); dải 4 giao diện + 8 nhân vật 3D kèm 2 ảnh nhân vật thật của app; 3 huy hiệu (máy chủ riêng · không quảng cáo · tài khoản riêng); dải kêu gọi đăng ký.
+
+**Cố ý không có:** khoá một thiết bị, quỹ thời lượng xem, video tự ẩn, dấu chìm tên, chặn chụp/quay, tự đăng xuất sau 5 phút, bắt buộc dùng app. Toàn bộ phần đó dành cho **infographic số 2 — hướng dẫn sử dụng, phát sau khi thu học phí**, chưa làm.
+
+**Sửa lại thế nào:** mở `pr/infographic-gioi-thieu.html` (logo.png, boy.jpg, girl.jpg nằm cùng thư mục), sửa chữ rồi chụp lại bằng lệnh trên. Thư mục `pr/` nằm ngoài `web/` nên không bị đẩy lên trang.
 
 ---
 
