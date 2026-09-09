@@ -40,6 +40,36 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-14 — Sao lưu dữ liệu, và sửa nút Tải về cho chạy được trong app Windows
+
+**M dặn:** làm sao lưu; và **tập trung app PC Windows**, sinh viên chủ yếu dùng máy Windows, phần điện thoại không cần quá kỹ.
+
+### Lỗi bắt được nhờ câu dặn đó
+
+Nút **Tải về để in** làm hôm qua trỏ thẳng `<a download>` sang địa chỉ Supabase. Hai chuyện cùng hỏng:
+
+1. Thuộc tính `download` **bị trình duyệt bỏ qua** khi địa chỉ khác tên miền → mất tên tệp, và có thể mở ra thay vì tải về.
+2. Trong **ứng dụng máy tính**, bộ lọc `win.webContents.on('will-navigate')` trong `app/main.js` thấy địa chỉ không bắt đầu bằng tên miền lớp là **chặn rồi ném hẳn sang trình duyệt ngoài**.
+
+Tức là tính năng này gần như chắc chắn hỏng đúng ở chỗ đông người dùng nhất. Sửa: **tải nội dung về thành blob trước**, rồi mới cho bấm một `<a download>` trỏ vào `blob:` cùng nguồn — chạy được ở cả trình duyệt lẫn app, không cần dựng lại app.
+
+Bài học: mỗi khi thêm thứ gì đụng tới tệp hoặc điều hướng, phải soi lại `app/main.js` — vỏ Electron có bộ lọc riêng mà trình duyệt không có.
+
+### Sao lưu dữ liệu lớp
+
+Tab **Kho tệp** → nút **⤓ Sao lưu dữ liệu**. Gom 13 bảng (`classes, sessions, materials, material_contents, enrollments, profiles, view_events, bai_nop, cau_hoi, dap_an_o, device_bindings, screenshot_events, dung_luong_thang`) về một tệp JSON đặt tên theo ngày.
+
+- Lấy **từng khúc 1000 dòng** bằng `.range()` — Supabase chặn ở 1000, không phân trang là mất dữ liệu mà không báo gì.
+- Bảng nào đọc lỗi thì ghi vào `_meta.bang_khong_doc_duoc` chứ không làm hỏng cả bản sao.
+- `_meta` ghi giờ sao lưu, nguồn, và số dòng từng bảng để mở ra là kiểm được ngay.
+- **Không gồm** tệp PDF/ảnh/video — chỉ có đường dẫn. Đã nói rõ trong tệp lẫn trên màn hình.
+
+Không cần SQL mới: luật RLS sẵn có đã cho giảng viên đọc hết các bảng này.
+
+**Đã test** trong bản chạy thử: chặn lại cú bấm tải rồi đọc thẳng nội dung tệp — đủ 13 bảng, số dòng khớp (1 lớp, 3 buổi, 5 tài liệu, 3 ghi danh, 4 bài nộp, 3 câu hỏi), tên tệp `sao-luu-giang-duong-2026-09-09.json`. Nút Tải về: địa chỉ là `blob:`, tên `phieu5.pdf`, kiểu `application/pdf`, 58 943 byte — khớp tệp gốc.
+
+---
+
 ## 2026-09-13 (chiều) — Xem bài đã điền, sửa kết luận của máy, thống kê câu hay sai
 
 **Vá lỗ hổng t để lại:** máy chấm xong chỉ hiện "3/4", giảng viên **không mở ra xem được sinh viên gõ chữ gì** — nên cái nhãn *cần xem lại* ở câu gần đúng hoàn toàn vô dụng. Nêu hai lượt trước, giờ mới làm.

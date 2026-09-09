@@ -2138,10 +2138,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       var ten = String(duong).split('/').pop().replace(/^\d+_/, '');
       var sg = await sb.storage.from('tailieu').createSignedUrl(duong, 300, { download: ten });
       if (sg.error) throw new Error(sg.error.message);
+      /* Phải tải về thành blob rồi mới cho bấm, KHÔNG trỏ thẳng <a download> sang địa chỉ
+         Supabase: khác tên miền thì thuộc tính download bị bỏ qua, và trong ứng dụng máy tính
+         bộ lọc 'will-navigate' thấy địa chỉ lạ sẽ ném hẳn sang trình duyệt ngoài. */
+      nut.textContent = 'Đang tải về…';
+      var rf = await fetch(sg.data.signedUrl);
+      if (!rf.ok) throw new Error('máy chủ trả lỗi ' + rf.status);
+      var blob = await rf.blob();
+      var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = sg.data.signedUrl; a.download = ten;
+      a.href = url; a.download = ten;
       document.body.appendChild(a); a.click();
-      setTimeout(function () { a.remove(); }, 2000);
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 4000);
       nut.textContent = cu; nut.disabled = false;
     } catch (e) {
       nut.textContent = cu; nut.disabled = false;

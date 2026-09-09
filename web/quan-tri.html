@@ -374,6 +374,12 @@
             <span class="grow"></span>
             <input id="khoFind" class="search" placeholder="Tìm theo tên tệp hoặc buổi…">
           </div>
+          <div class="bar">
+            <b>Kho tệp và dung lượng</b>
+            <span class="grow"></span>
+            <button class="btn sm" id="saoLuuBtn" title="Tải toàn bộ dữ liệu lớp về máy thành một tệp JSON">⤓ Sao lưu dữ liệu</button>
+          </div>
+          <div id="saoLuuTt" class="hint" style="margin:0 0 10px" hidden></div>
           <div class="dlgrid" id="dungLuong"></div>
           <div class="card" id="khoList"></div>
           <p class="hint" style="margin-top:10px">
@@ -1345,6 +1351,72 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var q = vnd >= 1000000 ? (vnd / 1000000).toFixed(2).replace('.', ',') + ' triệu' : Math.round(vnd / 1000) + 'k';
     return d + ' USD <span style="opacity:.7">≈ ' + q + ' đ</span>';
   }
+  /* =====================================================================
+     SAO LƯU TOÀN BỘ DỮ LIỆU LỚP
+     Gom mọi bảng về một tệp JSON tải xuống máy. Đây là bản sao DỮ LIỆU,
+     không gồm tệp PDF và video — hai thứ đó nằm ở kho Supabase và Cloudflare,
+     tệp sao lưu chỉ ghi lại đường dẫn để biết cái gì nằm ở đâu.
+     ===================================================================== */
+  var BANG_SAO_LUU = ['classes', 'sessions', 'materials', 'material_contents', 'enrollments',
+    'profiles', 'view_events', 'bai_nop', 'cau_hoi', 'dap_an_o', 'device_bindings',
+    'screenshot_events', 'dung_luong_thang'];
+
+  /* Supabase trả tối đa 1000 dòng mỗi lần — phải lấy từng khúc cho hết. */
+  async function layHetBang(ten) {
+    var ra = [], buoc = 1000, tu = 0;
+    for (var v = 0; v < 200; v++) {
+      var r = await sb.from(ten).select('*').range(tu, tu + buoc - 1);
+      if (r.error) return { loi: r.error.message };
+      var d = r.data || [];
+      ra = ra.concat(d);
+      if (d.length < buoc) break;
+      tu += buoc;
+    }
+    return { dong: ra };
+  }
+
+  async function saoLuu(nut) {
+    var tt = $('saoLuuTt');
+    nut.disabled = true;
+    tt.hidden = false; tt.textContent = 'Đang gom dữ liệu…';
+    var kho = {
+      _meta: {
+        he_thong: 'Giảng đường Hóa học',
+        luc: new Date().toISOString(),
+        nguon: location.origin,
+        ghi_chu: 'Bản sao dữ liệu. KHÔNG gồm tệp PDF/ảnh (kho Supabase) và video (Cloudflare Stream) — chỉ có đường dẫn tới chúng.'
+      },
+      bang: {}
+    };
+    var dem = {}, loi = [];
+    for (var i = 0; i < BANG_SAO_LUU.length; i++) {
+      var ten = BANG_SAO_LUU[i];
+      tt.textContent = 'Đang gom ' + ten + ' (' + (i + 1) + '/' + BANG_SAO_LUU.length + ')…';
+      var kq = await layHetBang(ten);
+      if (kq.loi) { loi.push(ten + ': ' + kq.loi); kho.bang[ten] = []; dem[ten] = 0; }
+      else { kho.bang[ten] = kq.dong; dem[ten] = kq.dong.length; }
+    }
+    kho._meta.so_dong = dem;
+    if (loi.length) kho._meta.bang_khong_doc_duoc = loi;
+
+    var ten2 = 'sao-luu-giang-duong-' + new Date().toISOString().slice(0, 10) + '.json';
+    var blob = new Blob([JSON.stringify(kho, null, 1)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = ten2;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 4000);
+
+    var tong = Object.keys(dem).reduce(function (t, k) { return t + dem[k]; }, 0);
+    var chinh = ['classes', 'sessions', 'materials', 'enrollments', 'bai_nop', 'cau_hoi']
+      .filter(function (k) { return dem[k]; }).map(function (k) { return dem[k] + ' ' + k; }).join(' · ');
+    tt.innerHTML = '<b>Đã tải xuống ' + esc(ten2) + '</b> — ' + tong + ' dòng' + (chinh ? ' (' + chinh + ')' : '')
+      + (loi.length ? '<br><span style="color:var(--danger,#a72e48)">Không đọc được: ' + esc(loi.join('; ')) + '</span>' : '')
+      + '<br><small>Tệp PDF, ảnh và video KHÔNG nằm trong này — chúng vẫn ở kho Supabase và Cloudflare. Cất tệp sao lưu ở chỗ khác máy này.</small>';
+    nut.disabled = false;
+  }
+  $('saoLuuBtn').addEventListener('click', function () { saoLuu(this); });
+
   async function veDungLuong() {
     var box = $('dungLuong'); if (!box) return;
     box.innerHTML = '<div class="dlbox"><h4>Dung lượng</h4><div class="phu">Đang đo…</div></div>';

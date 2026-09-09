@@ -223,6 +223,18 @@ M xem và chấm ở tab **Bài nộp**: mỗi phiếu một bảng, ai nộp ai
 
 Quá hạn thì nút nộp đóng lại. Cần mở thêm cho một bạn thì sửa lại **Hạn nộp** của phiếu.
 
+## Sao lưu dữ liệu lớp
+
+Quản trị → tab **Kho tệp** → nút **⤓ Sao lưu dữ liệu**. Nó gom mọi bảng về một tệp `.json` tải thẳng xuống máy, tên có sẵn ngày tháng.
+
+Trong tệp có: lớp, buổi học, tài liệu, danh sách sinh viên và hồ sơ, lượt xem và giờ xem, **bài nộp kèm câu trả lời và điểm**, hỏi đáp, đáp án các ô, thiết bị đã gắn, cảnh báo chụp màn hình, và bộ đếm phút phát video.
+
+**Không có trong tệp:** tệp PDF, ảnh và video. Chúng nằm ở kho Supabase và Cloudflare Stream — tệp sao lưu chỉ ghi lại đường dẫn để biết cái nào ở đâu. Muốn giữ cả tệp gốc thì tải riêng từ Supabase → Storage.
+
+Nên làm **cuối mỗi kỳ**, hoặc trước khi m định xoá gì lớn. Cất tệp ở chỗ khác máy này — sao lưu để cùng một chỗ với bản gốc thì hỏng cả hai cùng lúc.
+
+Chưa có nút phục hồi tự động: cần khôi phục thì đưa tệp này cho người dựng hệ thống, dữ liệu trong đó đủ để dựng lại.
+
 ## Cho sinh viên tải phiếu về để in
 
 Cần chạy một lần `schema_v21_cho_tai.sql`.
