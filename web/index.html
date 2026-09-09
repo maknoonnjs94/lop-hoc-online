@@ -2122,6 +2122,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* Nút tải về bản gốc — chỉ khi giảng viên bật cho tài liệu đó. */
   function veNutTai(m) {
     if (!m || !m.cho_tai) return;
+    if (m.kind === 'answer') return;   /* đáp án không bao giờ cho tải, kể cả khi cờ lỡ bật */
     var d = document.createElement('div');
     d.className = 'vtai';
     d.innerHTML = '<div><button type="button" class="btn" id="nutTai"><span class="ico">' + I.file + '</span>Tải về để in</button>'

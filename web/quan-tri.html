@@ -774,7 +774,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
               + '<span class="acts">'
               + '<button class="btn sm" data-a="up" data-m="' + m.id + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>'
               + '<button class="btn sm" data-a="down" data-m="' + m.id + '"' + (i === mats.length - 1 ? ' disabled' : '') + '>↓</button>'
-              + (m.cho_tai ? '<span class="pill" title="Sinh viên tải được tệp gốc của tài liệu này" style="margin-right:4px">⤓ cho tải</span>' : '')
+              + (m.cho_tai && m.kind !== 'answer' ? '<span class="pill" title="Sinh viên tải được tệp gốc của tài liệu này" style="margin-right:4px">⤓ cho tải</span>' : '')
               + (m.nhan_bai && fileKind(m.kind) ? '<button class="btn sm" data-a="dat-o" data-m="' + m.id + '" title="Khoanh ô trả lời lên phiếu để máy chấm đúng/sai">◻ Ô trả lời' + (((m.o_tra_loi || []).length) ? ' · ' + m.o_tra_loi.length : '') + '</button>' : '')
               + '<button class="btn sm" data-a="edit-mat" data-m="' + m.id + '">✎</button>'
               + '<button class="btn sm danger" data-a="del-mat" data-m="' + m.id + '">×</button>'
@@ -1101,7 +1101,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<small>Trước giờ này sinh viên thấy tên tài liệu kèm ổ khoá, máy chủ từ chối trả nội dung.</small></label>';
     }
     if (kind === 'pdf' || kind === 'lecture') body += oNhanBai(false, null);
-    if (kind === 'pdf' || kind === 'lecture' || kind === 'answer') body += oChoTai(false);
+    if (kind === 'pdf' || kind === 'lecture') body += oChoTai(false);   /* đáp án: không bao giờ */
     dialog('Thêm ' + k.name, body, async function () {
       return saveMaterial(null, sesId, kind);
     }, 'Thêm');
@@ -1226,7 +1226,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if (m.kind === 'video') body += oChonQuy(Math.round((Number(m.gioi_han_giay) || 0) / 60));
       body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local" value="' + toLocalInput(m.open_at) + '"></label>';
       if (m.kind === 'pdf' || m.kind === 'lecture') body += oNhanBai(!!m.nhan_bai, m.han_nop);
-      if (m.kind === 'pdf' || m.kind === 'lecture' || m.kind === 'answer') body += oChoTai(!!m.cho_tai);
+      if (m.kind === 'pdf' || m.kind === 'lecture') body += oChoTai(!!m.cho_tai);   /* đáp án: không bao giờ */
       dialog('Sửa ' + k.name, body, async function () { return saveMaterial(id, m._ses.id, m.kind); });
     });
   }

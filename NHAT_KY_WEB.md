@@ -40,6 +40,30 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-14 (chiều) — Soát lại chuỗi bảo vệ theo đúng yêu cầu của m
+
+**M yêu cầu:** app Windows/macOS giữ nguyên bảo vệ video và chống chụp/quay; chỉ **phiếu bài tập** mới được quản trị cân nhắc cho in; **đáp án chắc chắn không**.
+
+**Soát bằng mã — bốn phần bảo vệ còn nguyên:**
+
+- Video: `BAT_BUOC_APP = 'video'` ở trang học, `APP_CHO_VIDEO = true` ở Worker; không có app thì `/api/stream/token` trả `can_app` 403.
+- App: `win.setContentProtection(true)`, dò phần mềm quay mỗi 4 giây.
+- Trang web: PrintScreen, dấu chìm, che mờ khi rời cửa sổ, ghi vi phạm — đếm được 17 chỗ, còn đủ.
+- In từ trang: khối `@media print` vẫn chặn sạch, chỉ hiện dòng báo không được phép in.
+
+**Nhưng sai một chỗ, đã sửa:** ô *Cho tải về* hôm qua t mở cho cả loại `answer` — trái hẳn ý m. Sửa hai lớp:
+
+1. Quản trị: bỏ hẳn lựa chọn ở tài liệu loại **đáp án**, và không hiện nhãn ⤓ cho tải cho loại đó.
+2. Trang học: `veNutTai` từ chối thẳng khi loại là `answer` — **kể cả khi cờ đã lỡ bật trong dữ liệu**.
+
+Lớp thứ hai mới là lớp quan trọng: nếu m đã trót bật cờ cho một đáp án trước bản này thì nút vẫn không hiện.
+
+**Đã test:** dựng dữ liệu thử với đáp án **cố ý bật** `cho_tai:true` → phiếu bài tập có nút Tải về, đáp án **không có nút**.
+
+**Còn để ngỏ, chờ m quyết:** loại **Bài giảng** (`lecture`) hiện vẫn bật cho tải được. M chỉ nói tới phiếu bài tập nên t giữ nguyên; mặc định vẫn tắt.
+
+---
+
 ## 2026-09-14 — Sao lưu dữ liệu, và sửa nút Tải về cho chạy được trong app Windows
 
 **M dặn:** làm sao lưu; và **tập trung app PC Windows**, sinh viên chủ yếu dùng máy Windows, phần điện thoại không cần quá kỹ.
