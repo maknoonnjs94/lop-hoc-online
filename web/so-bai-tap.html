@@ -707,6 +707,22 @@
     font-weight: 700;
     color: var(--primary);
   }
+  /* nhãn dạng bài đứng cạnh số câu — để học sinh biết đang làm dạng gì */
+  .dang-chip {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border: 1px solid var(--paper-line);
+    border-radius: 999px;
+    background: var(--paper-soft);
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    vertical-align: baseline;
+  }
+  .dang-chip b { color: var(--primary); font-weight: 800 }
+  @media print { .dang-chip { background: transparent; border-color: #b9c4cf } }
   .problem-question, .part-question {
     flex: 1;
     outline: none;
@@ -2423,7 +2439,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-08 · đợt 63 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-14 · đợt 64 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -5152,7 +5168,7 @@
       html += '    <button type="button" class="mini-btn danger" data-action="delete-problem" data-pid="' + p.id + '">Xóa câu</button>';
       html += '  </div>';
       html += '  <div class="problem-head">';
-      html += '    <span class="problem-num">' + qLabelText(week, pi)
+      html += '    <span class="problem-num">' + qLabelText(week, pi) + (chipDang(week, p) || '')
               + (p.points == null ? '' : ' <span class="points-chip" contenteditable="true" spellcheck="false"'
                  + ' data-points="' + p.id + '">' + formatPoints(p.points) + ' điểm</span>')
               + '</span>';
@@ -13769,6 +13785,45 @@
       note: d('note', 'Sinh viên không được sử dụng tài liệu. Cán bộ coi thi không giải thích gì thêm.'),
       qLabel: e.qLabel || 'Câu', qSep: e.qSep || '.'
     };
+  }
+  /* =====================================================================
+     NHÃN DẠNG BÀI (đợt này)
+     Mỗi bài lấy từ kho mang sẵn p.typeId. Cây kho: chuyên đề → chủ đề → dạng.
+     Mã: lấy type.ma nếu giảng viên đã đặt, không thì sinh theo vị trí "1.2.3".
+     ===================================================================== */
+  function escDang(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function dangBaiTuTypeId(tid) {
+    if (!tid || !bankTree || !bankTree.topics) return null;
+    var tps = bankTree.topics;
+    for (var i = 0; i < tps.length; i++) {
+      var t = tps[i], ths = t.themes || [];
+      for (var j = 0; j < ths.length; j++) {
+        var th = ths[j], tys = th.types || [];
+        for (var k = 0; k < tys.length; k++) {
+          if (tys[k].id !== tid) continue;
+          var ma = String(tys[k].ma || '').trim() || ((i + 1) + '.' + (j + 1) + '.' + (k + 1));
+          return { ma: ma, ten: tys[k].name || '',
+                   day: [t.name, th.name, tys[k].name].filter(Boolean).join(' › ') };
+        }
+      }
+    }
+    return null;
+  }
+  /* Đề kiểm tra thì KHÔNG hiện dạng bài — nói ra là mách nước cách giải.
+     Muốn ép bật/tắt cho một tuần thì đặt week.hienDang = true / false. */
+  function hienDangBai(week) {
+    if (week && week.hienDang != null) return !!week.hienDang;
+    return !(week && week.layout === 'exam');
+  }
+  function chipDang(week, p) {
+    if (!hienDangBai(week)) return null;
+    var d = dangBaiTuTypeId(p && p.typeId);
+    if (!d || !d.ten) return '';
+    return ' <span class="dang-chip" title="' + escDang(d.day) + '">'
+      + '<b>' + escDang(d.ma) + '</b> ' + escDang(d.ten) + '</span>';
   }
   function qLabelText(week, pi) {
     var v = week && week.layout === 'exam' ? examView(week) : { qLabel: 'Câu', qSep: '.' };
