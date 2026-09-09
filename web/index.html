@@ -384,6 +384,16 @@
   .appgate p{ font-size:14.5px; line-height:1.6; color:#4a637b; margin:0 0 14px }
   .appgate small{ display:block; color:#7d92a6; font-size:12.5px; margin-top:12px }
   /* --- nộp bài & hỏi bài dưới mỗi tài liệu --- */
+  /* nhắc hạn nộp trên trang chủ */
+  .hancard{ border-left:4px solid #d98324 }
+  .hancard.gap{ border-left-color:#c0392b }
+  .hanrow{ display:flex; align-items:center; gap:12px; padding:9px 0; border-top:1px solid rgba(0,0,0,.06) }
+  .hanrow:first-of-type{ border-top:0 }
+  .hanrow .g{ flex:1; min-width:0 }
+  .hanrow b{ display:block; font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .hanrow small{ display:block; color:var(--muted, #6b7f92); font-size:12.5px; margin-top:1px }
+  .hanpill{ flex:none; font-size:12px; font-weight:800; border-radius:99px; padding:4px 10px; background:#fdf0e0; color:#a35a12; white-space:nowrap }
+  .hanpill.gap{ background:#fbe6e4; color:#b3352a }
   .vfoot{ max-width:1040px; margin:22px auto 0; display:grid; gap:14px }
   .vpanel{ background:#fff; color:#182e53; border-radius:14px; padding:16px 18px }
   .vpanel h4{ display:flex; align-items:center; gap:8px; font-size:15.5px; margin:0 0 8px }
@@ -1297,6 +1307,22 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var moiNhat = tatCa(function (m) { return moKhoa(m, now) && !daXem(m); }).sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); })[0];
     var hero = doDang || moiNhat || null;
     var hk = hero ? (KIND[hero.m.kind] || KIND.link) : null;
+    /* Sắp tới hạn nộp — để lên trên cùng, vì đây là thứ có thời hạn duy nhất trên trang. */
+    var han = sapToiHan();
+    if (han.length) {
+      var gap = han[0].con <= 864e5;
+      html += '<div class="pcard hancard' + (gap ? ' gap' : '') + '" style="grid-column:1/-1">'
+        + '<h2><span class="ico">' + I.clock + '</span>Sắp tới hạn nộp</h2>'
+        + han.slice(0, 3).map(function (x) {
+            var k = KIND[x.m.kind] || KIND.link, g2 = x.con <= 864e5;
+            return '<div class="hanrow"><span class="g"><b>' + esc(x.m.title || k.name) + '</b>'
+              + '<small>' + esc(tenBuoi(x.s)) + ' · hạn ' + fmtWhen(x.m.han_nop) + '</small></span>'
+              + '<span class="hanpill' + (g2 ? ' gap' : '') + '">' + chuConLai(x.con) + '</span>'
+              + nutMo(x, 'Nộp bài') + '</div>';
+          }).join('')
+        + (han.length > 3 ? '<div class="hanrow"><span class="g"><small>và ' + (han.length - 3) + ' bài nữa trong tuần này</small></span></div>' : '')
+        + '</div>';
+    }
     html += '<div class="pcard hero' + (avatarNay.indexOf('boy') === 0 ? ' trai' : '') + '">'
       + '<div class="copy"><span class="eyebrow"><span class="ico">' + I.play + '</span>' + (doDang ? 'Tiếp tục học' : (hero ? 'Bài mới' : 'Giảng đường Hóa học')) + '</span>'
       + '<h2>' + (hero ? esc(hero.m.title || hk.name) : 'Chưa có bài nào để học') + '</h2>'
@@ -1832,19 +1858,48 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   function nhanBai(m) { return coNopBai && !!(m && m.nhan_bai); }
   function quaHan(m) { return !!(m && m.han_nop && new Date(m.han_nop).getTime() < Date.now()); }
+  /* Còn bao lâu nữa tới hạn nộp của tài liệu này (mili giây).
+     null = không có hạn, hoặc đã nộp rồi, hoặc tài liệu không nhận bài. Số âm = đã quá hạn. */
+  function conHan(m) {
+    if (!nhanBai(m) || !m.han_nop) return null;
+    if (baiNop[m.id]) return null;
+    return new Date(m.han_nop).getTime() - Date.now();
+  }
+  function chuConLai(ms) {
+    if (ms <= 0) return 'quá hạn';
+    var p = Math.floor(ms / 60000), g = Math.floor(p / 60), ng = Math.floor(g / 24);
+    if (ng >= 1) return 'còn ' + ng + ' ngày';
+    if (g >= 1) return 'còn ' + g + ' giờ';
+    return 'còn ' + Math.max(1, p) + ' phút';
+  }
+  /* Bài chưa nộp, còn hạn trong vòng 7 ngày — gần nhất lên trước. */
+  function sapToiHan() {
+    var ra = [];
+    tatCa(function (m) { return moKhoa(m); }).forEach(function (x) {
+      var d = conHan(x.m);
+      if (d == null || d > 7 * 864e5) return;
+      ra.push({ m: x.m, s: x.s, con: d });
+    });
+    return ra.sort(function (a, b) { return a.con - b.con; });
+  }
   function nhanNop(m) {
     if (!nhanBai(m)) return '';
     var b = baiNop[m.id];
     if (b && b.cham_luc) return '<span class="ppill doing">' + (b.diem ? esc(b.diem) : 'Đã chấm') + '</span>';
     if (b) return '<span class="ppill">Đã nộp</span>';
-    return quaHan(m) ? '<span class="ppill">Quá hạn</span>' : '<span class="ppill new">Cần nộp</span>';
+    if (quaHan(m)) return '<span class="ppill">Quá hạn</span>';
+    var d = conHan(m);
+    if (d != null && d <= 7 * 864e5) return '<span class="ppill new">Nộp · ' + chuConLai(d) + '</span>';
+    return '<span class="ppill new">Cần nộp</span>';
   }
   function chuNop(m) {
     if (!nhanBai(m)) return '';
     var b = baiNop[m.id];
     if (b && b.cham_luc) return 'đã chấm' + (b.diem ? ' · ' + esc(b.diem) : '');
     if (b) return 'đã nộp bài';
-    return quaHan(m) ? 'quá hạn nộp' : 'cần nộp bài';
+    if (quaHan(m)) return 'quá hạn nộp';
+    var d = conHan(m);
+    return d != null && d <= 7 * 864e5 ? 'nộp bài · ' + chuConLai(d) : 'cần nộp bài';
   }
   function cocTep(b) {
     var ts = (b && b.tep) || [];

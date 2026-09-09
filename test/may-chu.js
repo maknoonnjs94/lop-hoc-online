@@ -39,6 +39,7 @@ http.createServer(function (req, res) {
   console.log('    ?st=1         tài liệu video lấy từ Cloudflare Stream');
   console.log('    ?nop=roi      đã nộp bài, chờ chấm · ?nop=cham đã được chấm điểm');
   console.log('    ?han=het      quá hạn nộp → nút nộp đóng lại');
+  console.log('    ?han=gap      còn 2 giờ tới hạn → dải nhắc chuyển màu gấp');
   console.log('    ?hoi=trong    chưa có câu hỏi nào');
   console.log('    ?chuong=1     vừa được chấm bài và trả lời câu hỏi → thử chuông báo');
   console.log('  Ghép nhiều cái bằng dấu &, ví dụ: ' + trang + '?g=nam&het=1');

@@ -17,7 +17,7 @@ const stub = `<script>
   var sessions = [
     { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2, làm câu 1–6 phiếu bài tập.', created_at:d(-2*864e5), materials:[
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu và điểm tương đương', order_no:0, created_at:d(-2*864e5) },
-      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, created_at:d(-36e5), nhan_bai:true, han_nop: P.get('han') === 'het' ? d(-864e5) : d(3*864e5) },
+      { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, created_at:d(-36e5), nhan_bai:true, han_nop: P.get('han') === 'het' ? d(-864e5) : (P.get('han') === 'gap' ? d(2*36e5) : d(3*864e5)) },
       { id:'m2', session_id:'s1', kind:'video', title:'Video: dựng đường cong chuẩn độ', order_no:2, created_at:d(-864e5), gioi_han_giay:3600 },
       { id:'m3', session_id:'s1', kind:'answer', title:'Đáp án phiếu 5', order_no:3, open_at:d(3*864e5), created_at:d(-36e5) } ] },
     { id:'s2', class_id:'c1', no:4, title:'Cân bằng tạo phức', published:true, pinned:false, held_on:'2026-09-01', created_at:d(-7*864e5), materials:[

@@ -152,6 +152,17 @@ Trước giờ đó sinh viên thấy dòng "Đáp án và lời giải · Mở 
 
 ---
 
+## Hạn nộp và nhắc hạn
+
+Đặt hạn khi bật **Nhận bài nộp** cho phiếu. Sau đó sinh viên được nhắc **tự động**:
+
+- Bài chưa nộp mà còn hạn trong **7 ngày** thì hiện thành một dải **“Sắp tới hạn nộp”** ngay đầu trang chủ, kèm đếm ngược và nút Nộp bài.
+- Còn **dưới 24 giờ** thì dải đó chuyển màu đỏ.
+- Trong tab Bài tập, nhãn đổi từ “Cần nộp” thành “Nộp · còn 2 ngày”.
+- Nộp xong là dải biến mất ngay.
+
+Không đặt hạn thì không có nhắc gì cả — chỉ ghi “cần nộp bài”.
+
 ## Trên điện thoại: thêm vào màn hình chính
 
 **Không có app điện thoại trên kho ứng dụng.** Nhưng trang web thêm được vào màn hình chính, sau đó nó có icon logo, có tên, mở toàn màn hình không thanh địa chỉ — nhìn và dùng y như một app.
@@ -211,6 +222,24 @@ Sinh viên mở phiếu ra là thấy ô nộp ngay bên dưới: chụp ảnh b
 M xem và chấm ở tab **Bài nộp**: mỗi phiếu một bảng, ai nộp ai chưa, bấm tên tệp để mở bài làm, gõ điểm và nhận xét rồi **Lưu**. Chấm xong sinh viên thấy ngay dưới phiếu và không sửa bài được nữa. Muốn cho sửa lại thì xoá trắng cả ô điểm lẫn ô nhận xét rồi Lưu.
 
 Quá hạn thì nút nộp đóng lại. Cần mở thêm cho một bạn thì sửa lại **Hạn nộp** của phiếu.
+
+## Bảng điểm cả lớp
+
+Quản trị → tab **Bài nộp** → bấm **Bảng điểm** ở thanh trên cùng.
+
+Một bảng **sinh viên × phiếu**: mỗi ô là điểm đã chấm, dấu **•** là đã nộp mà m chưa chấm, dấu **–** là chưa nộp. Hai cột cuối là số bài đã nộp và điểm trung bình.
+
+Trung bình chỉ tính những ô là **số**. Ô ghi chữ (Đạt, Khá…) vẫn hiện nhưng không cộng vào trung bình — nên nếu muốn có trung bình thì cho điểm bằng số.
+
+Nút **⤓ Xuất bảng điểm** tải về tệp `.csv`, mở được bằng Excel hoặc Google Sheets (đã gắn sẵn dấu nhận diện tiếng Việt nên không bị lỗi phông).
+
+## Xem một sinh viên học thế nào
+
+Quản trị → tab **Sinh viên** → **bấm vào tên** người đó.
+
+Hiện ra một bảng gom hết: đã mở bao nhiêu tài liệu trên tổng số, bao nhiêu lượt, tổng giờ xem video, điểm trung bình; rồi danh sách bài đã nộp (kèm điểm và nhận xét), câu đã hỏi (câu nào chưa được trả lời in đậm), tài liệu mở gần đây, và cảnh báo chụp màn hình nếu có.
+
+Dùng trước buổi phụ đạo để biết em nào đang hổng chỗ nào, khỏi phải mở bốn tab.
 
 ## Hỏi bài
 

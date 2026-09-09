@@ -201,6 +201,30 @@
     .cols{ grid-template-columns:minmax(0,1fr); gap:14px } .side{ position:static }
     .clist{ display:flex; gap:6px; overflow-x:auto; padding:4px } .citem{ flex:none; width:auto; min-width:180px; margin:0; border-color:var(--line); background:var(--surface) }
   }
+  /* thanh chuyển Chấm bài / Bảng điểm */
+  .seg{ display:inline-flex; background:var(--surface-2, #eef1f4); border-radius:11px; padding:3px; gap:3px; margin-bottom:12px }
+  .seg button{ border:0; background:none; font:inherit; font-size:13.5px; font-weight:700; color:var(--muted); padding:6px 14px; border-radius:9px; cursor:pointer }
+  .seg button.on{ background:var(--surface, #fff); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.10) }
+  /* bảng điểm */
+  table.diem td.d{ text-align:center; font-variant-numeric:tabular-nums; font-weight:700 }
+  table.diem td.trong{ text-align:center; color:var(--muted) }
+  table.diem td.chuacham{ text-align:center; color:var(--accent, #b5761f) }
+  table.diem td.tb{ text-align:center; font-weight:800; font-variant-numeric:tabular-nums }
+  table.diem th.xoay{ font-size:12px; font-weight:700; vertical-align:bottom; min-width:76px }
+  /* hồ sơ sinh viên */
+  .hs h4{ margin:16px 0 7px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted) }
+  .hs h4:first-child{ margin-top:0 }
+  .hs .so{ display:flex; gap:9px; flex-wrap:wrap; margin-bottom:4px }
+  .hs .so div{ flex:1 1 108px; background:var(--surface-2, #f3f6f9); border-radius:11px; padding:9px 12px }
+  .hs .so b{ display:block; font-size:19px; font-weight:800; line-height:1.2 }
+  .hs .so span{ font-size:11.5px; color:var(--muted) }
+  .hs ul{ margin:0; padding:0; list-style:none }
+  .hs li{ padding:6px 0; border-top:1px solid var(--line-soft, #eef2f7); font-size:13.5px; line-height:1.5 }
+  .hs li:first-child{ border-top:0 }
+  .hs li small{ color:var(--muted); display:block }
+  .hs .trong{ color:var(--muted); font-size:13.5px }
+  button.tenSV{ border:0; background:none; font:inherit; font-weight:600; color:var(--primary); cursor:pointer; padding:0; text-align:left }
+  button.tenSV:hover{ text-decoration:underline }
   /* ---------------- Điện thoại ---------------- */
   @media (max-width:640px){
     .wrap{ padding:12px 10px 80px }
@@ -1272,21 +1296,106 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (s.error) { toast('Không mở được tệp: ' + s.error.message); return; }
     window.open(s.data.signedUrl, '_blank', 'noopener');
   }
+  /* Hai cách nhìn cùng một mớ dữ liệu: chấm từng phiếu, hoặc bảng điểm cả lớp. */
+  var dsNop = [], nopView = 'cham';
+  function thanhChon() {
+    return '<div class="seg">'
+      + '<button type="button" data-nv="cham"' + (nopView === 'cham' ? ' class="on"' : '') + '>Chấm bài</button>'
+      + '<button type="button" data-nv="diem"' + (nopView === 'diem' ? ' class="on"' : '') + '>Bảng điểm</button>'
+      + '</div>';
+  }
+  /* "8,5" → 8.5 ; "Đạt" → null (không tính vào trung bình) */
+  function soDiem(d) {
+    var s = String(d == null ? '' : d).trim().replace(',', '.');
+    if (!s || !/^[0-9]+(\.[0-9]+)?$/.test(s)) return null;
+    var v = parseFloat(s);
+    return isFinite(v) ? v : null;
+  }
+  function gomBangDiem(ds) {
+    var cot = [], cotId = {}, hang = [], hangId = {};
+    ds.forEach(function (x) {
+      if (cotId[x.material_id] == null) { cotId[x.material_id] = cot.length; cot.push({ id: x.material_id, ten: x.tai_lieu, buoi: x.buoi }); }
+      if (hangId[x.user_id] == null) { hangId[x.user_id] = hang.length; hang.push({ id: x.user_id, ten: x.ho_ten || x.email || x.user_id, email: x.email || "", o: {} }); }
+      hang[hangId[x.user_id]].o[x.material_id] = x;
+    });
+    hang.sort(function (a, b) { return String(a.ten).localeCompare(String(b.ten), 'vi'); });
+    return { cot: cot, hang: hang };
+  }
+  function veBangDiem(ds) {
+    var g = gomBangDiem(ds);
+    if (!g.cot.length || !g.hang.length) return '<div class="empty">Chưa có gì để xếp bảng.</div>';
+    var o = '<div class="bar" style="padding:0 0 10px"><span class="grow"></span>'
+      + '<button class="btn sm" id="diemCsv" title="Tải về tệp .csv, mở bằng Excel hoặc Google Sheets">⤓ Xuất bảng điểm</button></div>'
+      + '<div class="card"><div class="mats"><table class="roster diem"><thead><tr><th>Sinh viên</th>'
+      + g.cot.map(function (c) { return '<th class="xoay" title="' + esc(c.buoi || '') + '">' + esc(c.ten || '') + '</th>'; }).join('')
+      + '<th class="xoay">Đã nộp</th><th class="xoay">Trung bình</th></tr></thead><tbody>';
+    o += g.hang.map(function (r) {
+      var tong = 0, dem = 0, nop = 0;
+      var o2 = g.cot.map(function (c) {
+        var x = r.o[c.id];
+        if (!x || !x.bai_id) return '<td class="trong">–</td>';
+        nop++;
+        if (!x.cham_luc) return '<td class="chuacham" title="Đã nộp, chưa chấm">•</td>';
+        var v = soDiem(x.diem);
+        if (v != null) { tong += v; dem++; }
+        return '<td class="d">' + esc(x.diem || '✓') + '</td>';
+      }).join('');
+      var tb = dem ? (Math.round(tong / dem * 100) / 100).toString().replace('.', ',') : '–';
+      return '<tr><td>' + esc(r.ten) + '</td>' + o2
+        + '<td class="tb">' + nop + '/' + g.cot.length + '</td><td class="tb">' + tb + '</td></tr>';
+    }).join('');
+    o += '</tbody></table></div></div>'
+      + '<p class="hint" style="margin-top:10px">– chưa nộp · <b>•</b> đã nộp nhưng m chưa chấm · số là điểm đã chấm.'
+      + ' Trung bình chỉ tính những ô là số; ô ghi chữ (Đạt, Khá…) không tính.</p>';
+    return o;
+  }
+  function xuatBangDiem() {
+    var g = gomBangDiem(dsNop);
+    var q = function (s) { return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"'; };
+    var dong = [[q('Họ tên'), q('Email')].concat(g.cot.map(function (c) { return q(c.ten); })).concat([q('Đã nộp'), q('Trung bình')]).join(',')];
+    g.hang.forEach(function (r) {
+      var tong = 0, dem = 0, nop = 0;
+      var o = g.cot.map(function (c) {
+        var x = r.o[c.id];
+        if (!x || !x.bai_id) return q('');
+        nop++;
+        if (!x.cham_luc) return q('chưa chấm');
+        var v = soDiem(x.diem); if (v != null) { tong += v; dem++; }
+        return q(x.diem || 'đã chấm');
+      });
+      var tb = dem ? String(Math.round(tong / dem * 100) / 100).replace('.', ',') : '';
+      dong.push([q(r.ten), q(r.email)].concat(o).concat([q(nop + '/' + g.cot.length), q(tb)]).join(','));
+    });
+    var lop = (classes.filter(function (c) { return c.id === curClass; })[0] || {}).name || 'lop';
+    var blob = new Blob(['\ufeff' + dong.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bang-diem-' + lop.replace(/[^\w\u00C0-\u1EF9]+/g, '-') + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    toast('Đã tải bảng điểm về.');
+  }
+
   async function loadNop() {
     var box = $('nopList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     if (!curClass) { box.innerHTML = '<div class="empty">Chọn một lớp ở cột bên trái.</div>'; return; }
     var r = await sb.rpc('bang_bai_nop', { p_class: curClass });
     if (r.error) { box.innerHTML = nhacChayV19('<b>nộp bài</b>') + '<div class="empty">' + esc(r.error.message) + '</div>'; return; }
-    var ds = r.data || [];
+    dsNop = r.data || [];
+    veNop();
+  }
+  function veNop() {
+    var box = $('nopList'), ds = dsNop;
     if (!ds.length) { box.innerHTML = '<div class="empty">Chưa có tài liệu nào bật <b>Nhận bài nộp</b>.<br><small>Tab Buổi học → ✎ Sửa một phiếu bài tập → tích ô “Nhận bài nộp”.</small></div>'; return; }
+    if (nopView === 'diem') { box.innerHTML = thanhChon() + veBangDiem(ds); return; }
     var nhom = [], chiMuc = {};
     ds.forEach(function (x) {
       var k = x.material_id;
       if (chiMuc[k] == null) { chiMuc[k] = nhom.length; nhom.push({ id: k, ten: x.tai_lieu, buoi: x.buoi, han: x.han_nop, sv: [] }); }
       nhom[chiMuc[k]].sv.push(x);
     });
-    box.innerHTML = nhom.map(function (g) {
+    box.innerHTML = thanhChon() + nhom.map(function (g) {
       var daNop = g.sv.filter(function (x) { return x.bai_id; });
       var daCham = daNop.filter(function (x) { return x.cham_luc; });
       return '<details class="card ses" open><summary><span class="no">' + daNop.length + '</span>'
@@ -1310,6 +1419,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     }).join('');
   }
   $('nopList').addEventListener('click', async function (e) {
+    var nv = e.target.closest('[data-nv]');
+    if (nv) { nopView = nv.dataset.nv; veNop(); return; }
+    if (e.target.closest('#diemCsv')) { xuatBangDiem(); return; }
     var t = e.target.closest('.tepnop');
     if (t) { moTepNop(t.dataset.p, t); return; }
     var b = e.target.closest('.chamLuu'); if (!b) return;
@@ -1499,6 +1611,72 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (p.must_change_pw) s += ' <span class="pill" title="Lần đăng nhập tới sẽ bị bắt đổi mật khẩu">chưa đổi mật khẩu</span>';
     return s || '<small style="color:var(--muted)">(trống)</small>';
   }
+  /* Gom mọi thứ về một sinh viên vào một chỗ: đã mở gì, xem bao lâu, nộp bài nào, hỏi câu gì.
+     Không cần tệp SQL mới — chỉ đọc lại các bảng sẵn có. */
+  async function moHoSoSV(uid, ten) {
+    dialog('Hồ sơ · ' + ten, '<div class="hs"><div class="trong">Đang gom dữ liệu…</div></div>', async function () { return true; }, 'Đóng');
+    var rs = await Promise.all([
+      sb.from('sessions').select('id, no, title, materials(id, kind, title, nhan_bai)').eq('class_id', curClass).eq('published', true),
+      sb.from('view_events').select('material_id, opens, last_at, progress, tong_giay').eq('class_id', curClass).eq('user_id', uid),
+      sb.from('bai_nop').select('material_id, nop_luc, cham_luc, diem, nhan_xet, tep').eq('user_id', uid),
+      sb.from('cau_hoi').select('material_id, noi_dung, tao_luc, tra_loi').eq('user_id', uid).order('tao_luc', { ascending: false }),
+      sb.from('screenshot_events').select('kind, material_title, at').eq('user_id', uid).order('at', { ascending: false }).limit(5)
+    ]);
+    var ses = (rs[0].data) || [], xem = (rs[1].data) || [], nop = (rs[2].data) || [], hoi = (rs[3].data) || [], bao = (rs[4].data) || [];
+    var mat = {}, tongMat = 0;
+    ses.forEach(function (s) { (s.materials || []).forEach(function (m) { mat[m.id] = { m: m, s: s }; tongMat++; }); });
+    var tenMat = function (id) { var x = mat[id]; return x ? (x.m.title || 'Tài liệu') : '(tài liệu đã xoá)'; };
+
+    var giay = xem.reduce(function (t, v) { return t + (Number(v.tong_giay) || 0); }, 0);
+    var luot = xem.reduce(function (t, v) { return t + (Number(v.opens) || 0); }, 0);
+    var daCham = nop.filter(function (b) { return b.cham_luc; });
+    var tong = 0, dem = 0;
+    daCham.forEach(function (b) { var v = soDiem(b.diem); if (v != null) { tong += v; dem++; } });
+
+    var o = '<div class="hs">';
+    o += '<div class="so">'
+      + '<div><b>' + xem.length + '/' + tongMat + '</b><span>tài liệu đã mở</span></div>'
+      + '<div><b>' + luot + '</b><span>lượt mở</span></div>'
+      + '<div><b>' + gioChu(giay) + '</b><span>giờ xem video</span></div>'
+      + '<div><b>' + (dem ? String(Math.round(tong / dem * 100) / 100).replace('.', ',') : '–') + '</b><span>điểm trung bình</span></div>'
+      + '</div>';
+
+    o += '<h4>Bài nộp</h4>';
+    o += nop.length
+      ? '<ul>' + nop.sort(function (a, b) { return new Date(b.nop_luc) - new Date(a.nop_luc); }).map(function (b) {
+          return '<li><b>' + esc(tenMat(b.material_id)) + '</b>'
+            + (b.cham_luc ? ' <span class="pill on">' + esc(b.diem || 'đã chấm') + '</span>' : ' <span class="pill">chờ chấm</span>')
+            + '<small>Nộp ' + fmtWhen(b.nop_luc) + ' · ' + ((b.tep || []).length) + ' tệp'
+            + (b.nhan_xet ? ' · “' + esc(b.nhan_xet) + '”' : '') + '</small></li>';
+        }).join('') + '</ul>'
+      : '<div class="trong">Chưa nộp bài nào.</div>';
+
+    o += '<h4>Câu đã hỏi</h4>';
+    o += hoi.length
+      ? '<ul>' + hoi.slice(0, 8).map(function (q) {
+          return '<li>' + esc(q.noi_dung) + '<small>' + esc(tenMat(q.material_id)) + ' · ' + fmtWhen(q.tao_luc)
+            + (q.tra_loi ? ' · đã trả lời' : ' · <b>chưa trả lời</b>') + '</small></li>';
+        }).join('') + '</ul>'
+      : '<div class="trong">Chưa hỏi câu nào.</div>';
+
+    o += '<h4>Tài liệu đã mở gần đây</h4>';
+    o += xem.length
+      ? '<ul>' + xem.sort(function (a, b) { return new Date(b.last_at) - new Date(a.last_at); }).slice(0, 8).map(function (v) {
+          var pr = v.progress || {};
+          var t = pr.done ? 'đã xem xong' : (pr.page ? 'đang đọc trang ' + pr.page + '/' + (pr.pages || '?') : (Number(v.tong_giay) ? 'xem ' + gioChu(v.tong_giay) : 'đã mở'));
+          return '<li>' + esc(tenMat(v.material_id)) + '<small>' + t + ' · ' + (Number(v.opens) || 0) + ' lượt · gần nhất ' + fmtWhen(v.last_at) + '</small></li>';
+        }).join('') + '</ul>'
+      : '<div class="trong">Chưa mở tài liệu nào.</div>';
+
+    if (bao.length) {
+      o += '<h4>Cảnh báo chụp màn hình</h4><ul>' + bao.map(function (b) {
+        return '<li>' + esc(b.kind || '') + '<small>' + esc(b.material_title || '') + ' · ' + fmtWhen(b.at) + '</small></li>';
+      }).join('') + '</ul>';
+    }
+    o += '</div>';
+    if (!$('dlg').hidden) $('dlgBody').innerHTML = o;
+  }
+
   async function loadRoster() {
     var box = $('roster');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
@@ -1528,7 +1706,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th><th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
       + roster.map(function (e) {
         var p = e.profiles || {}, r = p.role || 'student', self = e.student === me.id;
-        return '<tr><td>' + esc(p.full_name || '(chưa đặt tên)')
+        return '<tr><td><button type="button" class="tenSV" data-hs="' + e.student + '">' + esc(p.full_name || '(chưa đặt tên)') + '</button>'
           + (p.active === false ? ' <span class="pill off">đang khoá</span>' : '')
           + '</td><td>' + oHoSo(p) + '</td><td>' + esc(p.email || '') + '</td>'
           + '<td><span class="pill ' + (r === 'student' ? '' : 'on') + '">' + (ROLE[r] || r) + '</span>'
@@ -1551,6 +1729,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       }).join('') + '</tbody></table></div>';
   }
   $('roster').addEventListener('click', async function (e) {
+    var hs = e.target.closest('button[data-hs]');
+    if (hs) { moHoSoSV(hs.dataset.hs, hs.textContent); return; }
     var rl = e.target.closest('button[data-role]');
     if (rl) {
       var want = rl.dataset.role;

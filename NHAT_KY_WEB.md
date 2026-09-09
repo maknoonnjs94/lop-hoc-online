@@ -40,6 +40,41 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-12 — Bảng điểm cả lớp, nhắc hạn nộp, hồ sơ từng sinh viên
+
+**M nói:** sợ không có thời gian chấm, nhưng cứ xây 1-2-3; và gợi ý hướng **cho sinh viên tự chấm theo đáp án**.
+
+### 1. Bảng điểm cả lớp
+
+Tab **Bài nộp** giờ có hai cách nhìn cùng một mớ dữ liệu, chuyển bằng thanh **Chấm bài / Bảng điểm** — không thêm tab thứ tám.
+
+- Bảng **sinh viên × phiếu**: ô là điểm đã chấm, `•` là đã nộp chưa chấm, `–` là chưa nộp; hai cột cuối là số bài đã nộp và trung bình.
+- `soDiem()` nhận cả "8,5" (dấu phẩy thập phân kiểu Việt) và bỏ qua ô ghi chữ như "Đạt" — chữ vẫn hiện nhưng không cộng vào trung bình.
+- Nút xuất `.csv` có **BOM UTF-8** để Excel không vỡ phông tiếng Việt; tên tệp gắn tên lớp và ngày.
+- **Không cần tệp SQL mới** — xoay bảng ngay trên máy khách từ chính `bang_bai_nop()` đã có.
+
+### 2. Nhắc hạn nộp
+
+Trước đó đặt hạn được nhưng chẳng có gì nhắc. Giờ:
+
+- `conHan(m)` trả về số mili giây còn lại; `null` nếu không có hạn **hoặc đã nộp rồi** — nộp xong là dải nhắc biến mất.
+- Dải **“Sắp tới hạn nộp”** lên đầu trang chủ khi còn ≤ 7 ngày, đổi sang màu đỏ khi còn ≤ 24 giờ, hiện tối đa 3 bài rồi ghi "và N bài nữa".
+- Nhãn trong tab Bài tập đổi thành "Nộp · còn 2 ngày".
+
+### 3. Hồ sơ từng sinh viên
+
+Tab **Sinh viên** → bấm vào tên → hộp gom hết: số tài liệu đã mở / tổng, lượt mở, giờ xem, điểm trung bình; bài đã nộp kèm điểm và nhận xét; câu đã hỏi (chưa trả lời in đậm); tài liệu mở gần đây; cảnh báo chụp màn hình. Năm truy vấn chạy song song bằng `Promise.all`, **không cần SQL mới**.
+
+### Đã test
+
+Bằng hai bộ chạy thử, dò thẳng DOM. Bảng điểm ra đúng ba trường hợp: Lê Thu Hà `– – 0/2 –`, Nguyễn Minh Anh `• – 1/2 –`, Trần Quốc Bảo `9 • 2/2 9`. Xuất CSV chạy, toast báo xong. Hồ sơ Minh Anh ra "2/5 tài liệu · 3 lượt · 35 p · bài chờ chấm · 1 câu chưa trả lời". Nhắc hạn: còn 2 ngày → cam; `?han=gap` còn 1 giờ → đỏ, `hanpill gap`; `?nop=roi` → dải biến mất.
+
+**Bẫy đã gặp lại:** viết script vá mà để một chuỗi JS tràn sang phần tử mảng kế tiếp → `node --check` của chính script vá báo lỗi trước khi nó kịp phá tệp thật. Luôn `node --check` script vá trước khi chạy.
+
+**Cũng lưu ý:** thông báo lỗi trong bộ đệm console của pane trình duyệt **không tự xoá khi tải lại trang** — hai lỗi `ngayGio is not defined` còn hiện là rác từ lần dựng trước, đã đối chiếu số dòng để xác nhận. Đừng vội tin console cũ.
+
+---
+
 ## 2026-09-11 (tối) — Thêm được vào màn hình chính điện thoại
 
 **M hỏi:** "app trên điện thoại à, có logo này nọ không?"

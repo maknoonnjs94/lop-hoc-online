@@ -35,6 +35,8 @@ Thêm phần sau vào đuôi địa chỉ:
 | `?nop=cham` | Bài đã được chấm → hiện điểm và nhận xét, không sửa được nữa |
 | `?han=het` | Quá hạn nộp → nút nộp đóng lại |
 | `?hoi=trong` | Chưa có câu hỏi nào |
+| `?han=gap` | Còn 2 giờ tới hạn → dải nhắc chuyển màu gấp |
+| `?chuong=1` | Vừa được chấm bài và trả lời câu hỏi → thử chuông báo |
 
 Ghép nhiều cái bằng `&`, ví dụ:
 `http://127.0.0.1:8765/_test_index.html?g=nam&het=1`
