@@ -40,6 +40,27 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-14 (tối) — Thiết kế lại khung Hỏi bài của sinh viên
+
+**M hỏi:** đã code giao diện hỏi đáp bên sinh viên chưa, làm cho thông minh, và **chèn logo cùng bộ tranh trong folder** vào.
+
+**Trả lời thẳng:** đã code từ hôm làm nộp bài, nhưng **rất thô** — một tiêu đề, một ô nhập, một danh sách chữ. Chưa đụng tí nào tới bộ tranh 4 giao diện đã có sẵn.
+
+### Đã dựng lại thành một mạch trò chuyện
+
+- **Đầu khung:** tranh `ask-teacher.svg` lấy qua `licSrc()` nên **tự đổi theo giao diện sinh viên đang chọn** (Mint / Sky / Peach / Lavender). Kèm huy hiệu đếm *3 câu · 2 đã trả lời*.
+- **Ô soạn:** mang **mặt nhân vật 3D của chính em ấy** (`anhMat(avatarNay)`), nhìn ra dáng đang nhắn tin chứ không phải điền biểu mẫu.
+- **Câu hỏi:** bong bóng bo góc lệch, mặt nhân vật bên trái; câu của mình tô đậm hơn câu của bạn khác.
+- **Câu trả lời:** thụt vào, bong bóng xanh lá có vạch bên trái, và **mang LOGO Giảng đường** làm ảnh đại diện — nhìn phát biết là giảng viên nói. Đây là chỗ m bảo chèn logo.
+- **Đang chờ:** viên thuốc vàng có chấm nhấp nháy, chỉ hiện với câu của chính mình.
+- **Chưa ai hỏi:** tranh `discussion.svg` cỡ lớn + lời mời hỏi câu đầu tiên, thay cho dòng chữ xám cụt lủn.
+
+### Đã test
+
+Trong bản chạy thử: tranh ra đúng `img/themes/peach/ask-teacher.svg` (đúng giao diện đang chọn), đếm đúng *3 câu · 2 đã trả lời*, ô soạn mang `mat-girl-00.jpg`, hai câu trả lời đều dùng `img/logo.png`, một chấm chờ. Khổ 375px: **không phần tử nào tràn**, trang không tràn ngang.
+
+---
+
 ## 2026-09-14 (chiều) — Soát lại chuỗi bảo vệ theo đúng yêu cầu của m
 
 **M yêu cầu:** app Windows/macOS giữ nguyên bảo vệ video và chống chụp/quay; chỉ **phiếu bài tập** mới được quản trị cân nhắc cho in; **đáp án chắc chắn không**.
