@@ -707,22 +707,26 @@
     font-weight: 700;
     color: var(--primary);
   }
-  /* nhãn dạng bài đứng cạnh số câu — để học sinh biết đang làm dạng gì */
-  .dang-chip {
-    display: inline-block;
-    margin-left: 6px;
-    padding: 1px 8px;
-    border: 1px solid var(--paper-line);
-    border-radius: 999px;
-    background: var(--paper-soft);
-    color: var(--muted);
-    font-size: 11.5px;
-    font-weight: 600;
-    white-space: nowrap;
-    vertical-align: baseline;
+  /* Tiêu đề khối dạng bài: phiếu chia thành từng cụm, mỗi cụm là một dạng.
+     Học sinh nhìn là biết cụm này luyện dạng gì. */
+  .dang-divider { list-style: none; margin: 22px 0 10px; break-after: avoid; break-inside: avoid; }
+  .dang-divider:first-child { margin-top: 2px; }
+  .dang-divider-inner {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    padding: 6px 0 5px;
+    border-bottom: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 12.5pt;
   }
-  .dang-chip b { color: var(--primary); font-weight: 800 }
-  @media print { .dang-chip { background: transparent; border-color: #b9c4cf } }
+  .dang-divider-inner .dang-so { flex: none }
+  .dang-divider-inner .dang-ten { flex: 1; min-width: 0 }
+  .dang-divider-inner .dang-ma {
+    flex: none; font-size: 10pt; font-weight: 600; color: var(--muted); white-space: nowrap;
+  }
+  @media print { .dang-divider-inner { border-bottom-color: #7a7a7a; color: #000 } }
   .problem-question, .part-question {
     flex: 1;
     outline: none;
@@ -2439,7 +2443,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-14 · đợt 64 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-14 · đợt 65 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -5150,7 +5154,16 @@
 
     html += '<ol class="problems">';
     var sectionNo = 0;
+    /* Gom câu thành khối theo dạng: chỉ in tiêu đề khi sang một dạng khác.
+       Không sắp xếp lại thứ tự câu — giữ nguyên như m đã đặt. */
+    var dangTruoc = '\u0000', soDang = 0;
     week.problems.forEach(function (p, pi) {
+      var tid = (p && p.typeId) || '';
+      if (tid !== dangTruoc) {
+        dangTruoc = tid;
+        var td = tid ? tieuDeDang(week, p, soDang + 1) : '';
+        if (td) { soDang++; html += td; }
+      }
       if (p.sectionLabel) {
         sectionNo++;
         html += '<li class="section-divider"><div class="section-divider-inner">Phần ' + sectionNo + ': '
@@ -5168,7 +5181,7 @@
       html += '    <button type="button" class="mini-btn danger" data-action="delete-problem" data-pid="' + p.id + '">Xóa câu</button>';
       html += '  </div>';
       html += '  <div class="problem-head">';
-      html += '    <span class="problem-num">' + qLabelText(week, pi) + (chipDang(week, p) || '')
+      html += '    <span class="problem-num">' + qLabelText(week, pi)
               + (p.points == null ? '' : ' <span class="points-chip" contenteditable="true" spellcheck="false"'
                  + ' data-points="' + p.id + '">' + formatPoints(p.points) + ' điểm</span>')
               + '</span>';
@@ -13818,12 +13831,16 @@
     if (week && week.hienDang != null) return !!week.hienDang;
     return !(week && week.layout === 'exam');
   }
-  function chipDang(week, p) {
-    if (!hienDangBai(week)) return null;
+  /* Tiêu đề mở đầu một khối dạng bài. Trả về chuỗi rỗng nếu không cần in tiêu đề. */
+  function tieuDeDang(week, p, soDang) {
+    if (!hienDangBai(week)) return '';
     var d = dangBaiTuTypeId(p && p.typeId);
     if (!d || !d.ten) return '';
-    return ' <span class="dang-chip" title="' + escDang(d.day) + '">'
-      + '<b>' + escDang(d.ma) + '</b> ' + escDang(d.ten) + '</span>';
+    return '<li class="dang-divider"><div class="dang-divider-inner" title="' + escDang(d.day) + '">'
+      + '<span class="dang-so">Dạng ' + soDang + '.</span>'
+      + '<span class="dang-ten">' + escDang(d.ten) + '</span>'
+      + (d.ma ? '<span class="dang-ma">' + escDang(d.ma) + '</span>' : '')
+      + '</div></li>';
   }
   function qLabelText(week, pi) {
     var v = week && week.layout === 'exam' ? examView(week) : { qLabel: 'Câu', qSep: '.' };
