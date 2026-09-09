@@ -2443,7 +2443,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-14 · đợt 65 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-14 · đợt 66 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -5245,6 +5245,9 @@
     html += '<div class="add-problem-row no-print">'
       + (week.theoryHtml == null ? '<button class="btn btn-ghost" id="addTheoryBtn">+ Lý thuyết</button>' : '')
       + '<button class="btn btn-primary" id="pickFromBankBtn">＋ Chọn bài từ kho</button>'
+      + (nenHienNutXep(week)
+          ? '<button class="btn btn-ghost" id="xepTheoDangBtn" title="Dồn các câu cùng dạng về một khối. Bấm Ctrl+Z nếu muốn trả lại như cũ.">⇅ Sắp theo dạng</button>'
+          : '')
       + '<button class="btn btn-ghost" id="addProblemBtn">+ Câu trống</button></div>';
     /* footer 2 vùng: trái = chữ tự do (mặc định GV • email); phải = số trang (bật/tắt trong Khổ giấy) */
     html += '<div class="running-footer">';
@@ -6192,6 +6195,11 @@
     }
     if (e.target.id === 'pickFromBankBtn') {
       document.getElementById('bankBtn').click();   /* mở kho để chọn bài cho tuần này */
+      return;
+    }
+    if (e.target.id === 'xepTheoDangBtn') {
+      mutateCurrent(function (week) { xepTheoDang(week); });
+      notify('Đã dồn các câu cùng dạng về một khối. Ctrl+Z để trả lại như cũ.');
       return;
     }
     if (e.target.id === 'addTheoryBtn') {
@@ -13830,6 +13838,39 @@
   function hienDangBai(week) {
     if (week && week.hienDang != null) return !!week.hienDang;
     return !(week && week.layout === 'exam');
+  }
+  /* Có đáng hiện nút "Sắp theo dạng" không: phải đang bật hiện dạng,
+     và phải có ít nhất hai câu lấy từ kho thì xếp mới có nghĩa. */
+  function nenHienNutXep(week) {
+    if (!week || !hienDangBai(week)) return false;
+    var co = (week.problems || []).filter(function (p) { return p && p.typeId; });
+    if (co.length < 2) return false;
+    /* đã xếp gọn rồi thì thôi, khỏi mời gọi vô ích */
+    var truoc = '\u0000', daGap = {};
+    for (var i = 0; i < (week.problems || []).length; i++) {
+      var t = week.problems[i].typeId || '';
+      if (t === truoc) continue;
+      if (daGap[t]) return true;          /* dạng này đã xuất hiện rồi lại quay lại → còn rời rạc */
+      daGap[t] = true; truoc = t;
+    }
+    return false;
+  }
+  /* Dồn các câu cùng dạng về một khối, giữ nguyên thứ tự xuất hiện đầu tiên của
+     từng dạng và thứ tự các câu bên trong mỗi dạng. Câu tự soạn (không lấy từ kho)
+     dồn xuống cuối, vì không có dạng nào để xếp chúng vào. */
+  function xepTheoDang(week) {
+    var KHONG = '\u0000khong-dang';
+    var nhom = [], viTri = {};
+    (week.problems || []).forEach(function (p) {
+      var k = (p && p.typeId) || KHONG;
+      if (viTri[k] == null) { viTri[k] = nhom.length; nhom.push({ k: k, ds: [] }); }
+      nhom[viTri[k]].ds.push(p);
+    });
+    /* sort của JS là ổn định, nên các dạng giữ nguyên thứ tự xuất hiện */
+    nhom.sort(function (a, b) { return (a.k === KHONG ? 1 : 0) - (b.k === KHONG ? 1 : 0); });
+    var ra = [];
+    nhom.forEach(function (g) { ra = ra.concat(g.ds); });
+    week.problems = ra;
   }
   /* Tiêu đề mở đầu một khối dạng bài. Trả về chuỗi rỗng nếu không cần in tiêu đề. */
   function tieuDeDang(week, p, soDang) {
