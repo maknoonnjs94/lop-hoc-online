@@ -20,13 +20,14 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 
 M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
 
-1. **Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Xem mục đề xuất cuối file.
+1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
 2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
 
 Đã xong hết phần cài đặt máy chủ — không còn gì treo:
 
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18 — `/api/trang-thai` báo `true` cả loạt.
+- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19 — `/api/trang-thai` báo `true` cả loạt.
 - **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
+- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
 - **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
 
 Cách tự kiểm sau này, khỏi mở Supabase:
