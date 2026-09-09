@@ -40,6 +40,44 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-11 (chiều) — Bộ chạy thử quản trị, chuông rộng hơn, quản trị dùng được trên điện thoại
+
+**M nói:** chưa có thời gian ngồi test, bảo t làm trước những việc không cần m.
+
+### Bộ chạy thử cho trang quản trị
+
+`test/tao-ban-thu-qt.js` → `web/_test_quan-tri.html`. Khác bản của sinh viên ở chỗ **ghi thật vào bộ nhớ**: một máy truy vấn giả có lọc `.eq()`, biết insert/update/delete, nên bấm Lưu là dữ liệu đổi và mở lại tab thấy kết quả. Có sẵn 1 lớp, 3 sinh viên, 3 buổi, 5 tài liệu, 3 bài nộp, 3 câu hỏi; Worker cũng được giả lập bằng cách bọc `window.fetch`.
+
+**Trả công ngay lập tức — bắt được một lỗi chết người:** hai tab Bài nộp và Hỏi đáp gọi `ngayGio()`, hàm đó **chỉ có ở trang sinh viên**, trang quản trị không có. Cả hai tab đứng im ở "Đang tải…" trên bản thật. Đổi 3 chỗ sang `fmtWhen()`. Bài học: đừng bê tên hàm từ tệp này sang tệp kia, hai trang không dùng chung mã.
+
+Cũng xác nhận được lỗi quỹ xem đã sửa hôm qua: mở ✎ Sửa video giờ hiện đúng **60 phút** thay vì "Không giới hạn".
+
+### Bài tập cần làm gom cả tài liệu nhận bài nộp
+
+Trước chỉ lọc `kind 'pdf'|'answer'` — bật nhận bài nộp cho một Bài giảng thì nó không hiện ở tab Bài tập. Thêm `nhanBai(m)` vào cả bộ lọc lẫn phép đếm "còn lại".
+
+### Chuông báo gom ba loại tin
+
+Trước chỉ đếm *tài liệu mới*. Giờ `tinMoi()` gộp: tài liệu mới, **bài của mình vừa được chấm**, **câu hỏi của mình vừa được trả lời**. Nạp thêm `taiHoiDaTra()`. Mốc so sánh vẫn là `lanTruoc`.
+
+### Trang quản trị trên điện thoại
+
+Đo ở khổ 375px: trang tràn ngang **712px**, mọi tab đều hỏng. Ba nguyên nhân, sửa cả ba:
+
+1. **Thủ phạm chính:** `.cols{ grid-template-columns:1fr }` trong media 900px. `1fr` là `minmax(auto,1fr)` — **không co xuống dưới bề rộng tối thiểu của nội dung**, nên một cái bảng rộng kéo giãn cả trang. Đổi thành `minmax(0,1fr)` + `.cols > *{ min-width:0 }`. Nhớ mẹo này, nó là bẫy kinh điển của CSS Grid.
+2. Ba bảng `.roster` nằm thẳng trong `.card` (Kho tệp, Cảnh báo, Sinh viên) chưa có khung cuộn → bọc vào `.mats`, và `.mats{ overflow-x:auto }`.
+3. Thanh trên cùng bốn thứ đè nhau → cho xuống dòng ở ≤640px.
+
+Thêm khối `@media (max-width:640px)`: tab cuộn ngang, thanh công cụ xuống dòng, và **bảng Bài nộp xếp thành thẻ dọc** (`table.nop` + `data-l` làm nhãn qua `::before`) để còn gõ được điểm và nhận xét bằng ngón tay.
+
+**Kết quả đo lại:** cả 7 tab đều `scrollWidth === 375`, không tab nào tràn.
+
+### Đã test
+
+Dò DOM trong pane trình duyệt: hai tab mới hiện đúng bảng và thẻ; **chấm điểm thật** (gõ 7,5 + nhận xét → Lưu → dòng đổi sang "đã chấm"); **trả lời thật** (gửi trả lời → nhãn tab tụt từ 2 xuống 1, câu đã trả lời xuống cuối); bật/tắt "Nhận bài nộp" rồi mở lại hộp thoại thấy nhớ đúng; chuông báo hiện "Bài của bạn đã được chấm · 8,5" và "Giảng viên đã trả lời câu hỏi của bạn" (tham số `?chuong=1`).
+
+---
+
 ## 2026-09-11 — Nộp bài, hỏi bài, và app chỉ bắt buộc cho video
 
 **M chọn:** làm việc 1, 3, 4 trong danh sách đề xuất.

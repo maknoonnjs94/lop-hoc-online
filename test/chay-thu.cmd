@@ -13,15 +13,19 @@ if errorlevel 1 (
 )
 
 echo.
-echo   Dang dung ban thu tu web\index.html ...
+echo   Dang dung hai ban thu (trang hoc + quan tri) ...
 node tao-ban-thu.js
-if errorlevel 1 (
-  echo.
-  echo   Dung ban thu that bai. Chup man hinh nay gui lai.
-  echo.
-  pause
-  exit /b 1
-)
+if errorlevel 1 goto :loi
+node tao-ban-thu-qt.js
+if errorlevel 1 goto :loi
+goto :chay
+:loi
+echo.
+echo   Dung ban thu that bai. Chup man hinh nay gui lai.
+echo.
+pause
+exit /b 1
+:chay
 
 node may-chu.js
 pause

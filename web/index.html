@@ -1235,6 +1235,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     });
     await taiLuotXem();
     await taiBaiNop();
+    await taiHoiDaTra();
     if (sessions.length && !(curSes && sessions.some(function (s) { return s.id === curSes; }))) {
       var ghim = sessions.filter(function (s) { return s.pinned; })[0];
       curSes = (ghim || sessions[0]).id;
@@ -1398,12 +1399,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function renderTasks() {
     var now = Date.now();
     var groups = sessions.map(function (s) {
-      var ms = (s.materials || []).filter(function (m) { return (m.kind === 'pdf' || m.kind === 'answer'); }).sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+      var ms = (s.materials || []).filter(function (m) { return m.kind === 'pdf' || m.kind === 'answer' || nhanBai(m); }).sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
       return { s: s, ms: ms };
     }).filter(function (g) { return g.ms.length; });
     if (!groups.length) { $('tasksBody').innerHTML = '<div class="pcard">' + khoanhKhac('trong', 'Chưa có bài tập nào', 'Khi giảng viên giao phiếu hoặc mở đáp án, chúng sẽ xếp theo từng buổi ở đây.', 'Xem bài giảng', 'lessons') + '</div>'; return; }
     /* Xong hết bài đang mở → cảnh "nộp bài thành công" lên đầu. */
-    var conLai = tatCa(function (m) { return moKhoa(m, now) && (m.kind === 'pdf' || m.kind === 'answer') && !xemXong(m); }).length;
+    var conLai = tatCa(function (m) { return moKhoa(m, now) && (m.kind === 'pdf' || m.kind === 'answer' || nhanBai(m)) && !xemXong(m); }).length;
     var dauTrang = conLai ? '' : '<div class="pcard">' + khoanhKhac('nop', 'Xong hết rồi!', 'Bạn đã làm xong mọi bài đang mở. Xem lại lúc nào cũng được; có bài mới là có thông báo.', null) + '</div>';
     $('tasksBody').innerHTML = '<div class="list">' + dauTrang + groups.map(function (g) {
       return '<div class="pcard"><h2><span class="ico">' + I.clipboard + '</span>' + esc(tenBuoi(g.s)) + '</h2>' + g.ms.map(function (m) {
@@ -1464,13 +1465,34 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   window.addEventListener('pagehide', function () { if (me) ghiMocLanTruoc(); });
   document.addEventListener('visibilitychange', function () { if (me && document.visibilityState === 'hidden') ghiMocLanTruoc(); });
   function danhSachMoi() { var now = Date.now(); return tatCa(function (m) { return laMoi(m) && moKhoa(m, now); }).sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); }); }
-  function capNhatChuong() { var n = danhSachMoi().length; $('bellN').textContent = n; $('bellN').hidden = !n; }
+  /* Chuông gom ba thứ: tài liệu mới, bài của mình vừa được chấm, câu hỏi của mình vừa được trả lời. */
+  function sauLanTruoc(ts) { return ts && (!lanTruoc || new Date(ts).getTime() > lanTruoc); }
+  function tinMoi() {
+    var ra = [];
+    danhSachMoi().forEach(function (x) {
+      var k = KIND[x.m.kind] || KIND.link;
+      ra.push({ m: x.m, luc: x.m.created_at, ten: x.m.title || k.name, phu: tenBuoi(x.s) + ' · ' + k.name });
+    });
+    Object.keys(baiNop).forEach(function (id) {
+      var b = baiNop[id];
+      if (!b.cham_luc || !sauLanTruoc(b.cham_luc)) return;
+      var m = matById(id); if (!m || !moKhoa(m)) return;
+      ra.push({ m: m, luc: b.cham_luc, ten: 'Bài của bạn đã được chấm' + (b.diem ? ' · ' + b.diem : ''), phu: m.title || 'Bài nộp' });
+    });
+    hoiDaTra.forEach(function (q) {
+      if (!sauLanTruoc(q.tra_luc)) return;
+      var m = matById(q.material_id); if (!m || !moKhoa(m)) return;
+      ra.push({ m: m, luc: q.tra_luc, ten: 'Giảng viên đã trả lời câu hỏi của bạn', phu: m.title || 'Hỏi bài' });
+    });
+    return ra.sort(function (a, b) { return new Date(b.luc) - new Date(a.luc); });
+  }
+  function capNhatChuong() { var n = tinMoi().length; $('bellN').textContent = n; $('bellN').hidden = !n; }
   $('bellBtn').addEventListener('click', function (e) {
     e.stopPropagation(); toggleMenu(false);
     var mn = $('bellMenu'); if (!mn.hidden) { mn.hidden = true; return; }
-    var ds = danhSachMoi();
-    mn.innerHTML = '<div class="who">' + (ds.length ? '' : lic('notifications', 56)) + '<b>' + (ds.length ? ds.length + ' tài liệu mới từ lần trước' : 'Không có gì mới') + '</b><span>Ctrl+K để tìm nhanh</span></div>'
-      + ds.slice(0, 12).map(function (x) { var k = KIND[x.m.kind] || KIND.link; return '<button type="button" class="it" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '"><span>' + esc(x.m.title || k.name) + '<small>' + esc(tenBuoi(x.s)) + ' · ' + k.name + '</small></span></button>'; }).join('')
+    var ds = tinMoi();
+    mn.innerHTML = '<div class="who">' + (ds.length ? '' : lic('notifications', 56)) + '<b>' + (ds.length ? ds.length + ' tin mới từ lần trước' : 'Không có gì mới') + '</b><span>Ctrl+K để tìm nhanh</span></div>'
+      + ds.slice(0, 12).map(function (x) { var k = KIND[x.m.kind] || KIND.link; return '<button type="button" class="it" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '"><span>' + esc(x.ten) + '<small>' + esc(x.phu) + '</small></span></button>'; }).join('')
       + (ds.length ? '<div class="foot"><button type="button" class="it" id="bellSeen">Đánh dấu đã xem hết</button></div>' : '');
     mn.hidden = false;
   });
@@ -1769,6 +1791,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
      phần còn lại của trang vẫn chạy như thường.
      ===================================================================== */
   var baiNop = {}, coNopBai = true, coHoiDap = true, dangNop = false;
+  var hoiDaTra = [];   /* câu hỏi của chính mình đã được giảng viên trả lời — để đổ chuông */
 
   async function taiBaiNop() {
     baiNop = {};
@@ -1776,6 +1799,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var r = await sb.from('bai_nop').select('material_id, nop_luc, loi_nhan, tep, cham_luc, diem, nhan_xet').eq('user_id', me.id);
     if (r.error) { coNopBai = false; return; }
     (r.data || []).forEach(function (b) { baiNop[b.material_id] = b; });
+  }
+  async function taiHoiDaTra() {
+    hoiDaTra = [];
+    if (!coHoiDap || !me) return;
+    var r = await sb.from('cau_hoi').select('id, material_id, tra_luc, tra_loi').eq('user_id', me.id).not('tra_loi', 'is', null);
+    if (r.error) { coHoiDap = false; return; }
+    hoiDaTra = (r.data || []).filter(function (q) { return q.tra_luc; });
   }
   function matById(id) {
     for (var i = 0; i < sessions.length; i++) {

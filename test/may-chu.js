@@ -40,7 +40,12 @@ http.createServer(function (req, res) {
   console.log('    ?nop=roi      đã nộp bài, chờ chấm · ?nop=cham đã được chấm điểm');
   console.log('    ?han=het      quá hạn nộp → nút nộp đóng lại');
   console.log('    ?hoi=trong    chưa có câu hỏi nào');
+  console.log('    ?chuong=1     vừa được chấm bài và trả lời câu hỏi → thử chuông báo');
   console.log('  Ghép nhiều cái bằng dấu &, ví dụ: ' + trang + '?g=nam&het=1');
+  console.log('');
+  console.log('  Trang quản trị (bản thử):  http://127.0.0.1:' + cong + '/_test_quan-tri.html');
+  console.log('    — có sẵn 1 lớp, 3 sinh viên, 3 buổi, 3 bài nộp, 3 câu hỏi.');
+  console.log('    — bấm Lưu / Chấm / Trả lời là dữ liệu đổi thật trong bộ nhớ, tải lại trang là về như cũ.');
   console.log('');
   console.log('  Đóng cửa sổ này (hoặc Ctrl + C) là tắt máy chủ.');
   console.log('');

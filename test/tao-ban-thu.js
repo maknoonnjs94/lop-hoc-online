@@ -34,19 +34,20 @@ const stub = `<script>
   /* ?trong=1: lớp chưa có buổi nào → xem màn hình trống của sinh viên mới vào lớp */
   if (P.get('trong') === '1') { sessions = []; views = []; classes[0].notice = ''; }
   /* ?nop=roi đã nộp chưa chấm · ?nop=cham đã chấm · ?han=het quá hạn */
-  var nop = P.get('nop'), baiNop = [];
+  var chuong = P.get('chuong') === '1', bayGio = new Date().toISOString();
+  var nop = chuong ? 'cham' : P.get('nop'), baiNop = [];
   if (nop === 'roi' || nop === 'cham') baiNop = [{ material_id:'m1', nop_luc:d(-2*36e5), loi_nhan:'Em chưa chắc câu 4 ạ.',
     tep:[{ path:'m1/u1/bai-lam.jpg', ten:'bai-lam.jpg', co:820000 }],
-    cham_luc: nop === 'cham' ? d(-36e5) : null, diem: nop === 'cham' ? '8,5' : null,
+    cham_luc: nop === 'cham' ? (chuong ? bayGio : d(-36e5)) : null, diem: nop === 'cham' ? '8,5' : null,
     nhan_xet: nop === 'cham' ? 'Câu 4 sai dấu khi cân bằng, còn lại tốt. Xem lại mục 5.2 nhé.' : '' }];
   var cauHoi = P.get('hoi') === 'trong' ? [] : [
-    { id:'q1', user_id:'u1', noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5),
-      tra_loi:'Điểm tương đương là điểm lý thuyết khi số mol vừa đủ; điểm cuối là lúc chỉ thị đổi màu, thường lệch một chút. Sai số đó gọi là sai số chỉ thị.', tra_luc:d(-4*36e5) },
-    { id:'q2', user_id:'u1', noi_dung:'Cô ơi bài 3 em ra 0,12 M có đúng không ạ?', tao_luc:d(-36e5), tra_loi:null, tra_luc:null },
-    { id:'q3', user_id:'u9', noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5),
+    { id:'q1', material_id:'m1', user_id:'u1', noi_dung:'Chỗ điểm tương đương và điểm cuối chuẩn độ khác nhau thế nào ạ?', tao_luc:d(-5*36e5),
+      tra_loi:'Điểm tương đương là điểm lý thuyết khi số mol vừa đủ; điểm cuối là lúc chỉ thị đổi màu, thường lệch một chút. Sai số đó gọi là sai số chỉ thị.', tra_luc: chuong ? bayGio : d(-4*36e5) },
+    { id:'q2', material_id:'m1', user_id:'u1', noi_dung:'Cô ơi bài 3 em ra 0,12 M có đúng không ạ?', tao_luc:d(-36e5), tra_loi:null, tra_luc:null },
+    { id:'q3', material_id:'m1', user_id:'u9', noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5),
       tra_loi:'Để nước còn đọng trong buret không pha loãng dung dịch chuẩn, làm nồng độ thực tế thấp hơn.', tra_luc:d(-2*864e5) }
   ];
-  function q(data){ var o = {}; ['select','eq','order','maybeSingle','upsert','update','insert'].forEach(function(k){ o[k] = function(){ return o; }; }); o.then = function(a, b){ return Promise.resolve({ data:data, error:null }).then(a, b); }; return o; }
+  function q(data){ var o = {}; ['select','eq','order','maybeSingle','upsert','update','insert','not','is','in','limit','single'].forEach(function(k){ o[k] = function(){ return o; }; }); o.then = function(a, b){ return Promise.resolve({ data:data, error:null }).then(a, b); }; return o; }
   window.supabase = { createClient: function(){ return {
     auth: { getSession: function(){ return Promise.resolve({ data:{ session:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } } } }); }, onAuthStateChange: function(){}, signOut: function(){ alert('Đây là bản thử — thật thì sẽ đăng xuất.'); return Promise.resolve({}); }, signInWithPassword: function(){ return Promise.resolve({ data:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } }, error:null }); }, updateUser: function(){ return Promise.resolve({ data:{}, error:null }); }, resetPasswordForEmail: function(){ return Promise.resolve({ error:null }); } },
     from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return q(cauHoi); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null }); return q([]); },

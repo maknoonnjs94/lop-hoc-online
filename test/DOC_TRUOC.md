@@ -39,6 +39,18 @@ Thêm phần sau vào đuôi địa chỉ:
 Ghép nhiều cái bằng `&`, ví dụ:
 `http://127.0.0.1:8765/_test_index.html?g=nam&het=1`
 
+## Trang quản trị
+
+Địa chỉ: `http://127.0.0.1:8765/_test_quan-tri.html`
+
+Bản này **ghi thật vào bộ nhớ**: bật "Nhận bài nộp" rồi Lưu, chấm điểm, trả lời câu hỏi — mở lại tab là thấy kết quả. Tắt trang là mất hết, không đụng gì tới lớp thật.
+
+Có sẵn: 1 lớp, 3 sinh viên, 3 buổi (một buổi còn nháp), 5 tài liệu đủ loại, 3 bài nộp (1 đã chấm, 1 nộp muộn), 3 câu hỏi (2 chờ trả lời).
+
+Thử được: tạo/sửa/xoá buổi và tài liệu, bật nhận bài nộp + hạn nộp, chấm điểm, trả lời và ẩn câu hỏi, nới quỹ giờ xem, bảng dung lượng và ước tính hoá đơn, danh sách sinh viên, cảnh báo chụp màn hình.
+
+Không thử được: tạo tài khoản thật, đổi mật khẩu, tải tệp lên Cloudflare Stream (Worker được giả lập, luôn trả về thành công).
+
 ## Thử được
 
 - Toàn bộ giao diện: 4 giao diện màu, 8 nhân vật 3D, đổi qua lại, ảnh nền theo giới tính.
