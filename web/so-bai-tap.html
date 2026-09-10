@@ -2481,7 +2481,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 79 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-18 · đợt 81 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -7296,7 +7296,7 @@
     'Cuối cùng', 'Mặt khác', 'Tương tự', 'Kết quả', 'Như vậy', 'Kết luận', 'Đề bài cho', 'Gọi',
     /* thêm ở đợt 75 — mở đầu bước rất hay gặp trong lời giải Hoá phân tích */
     'Kiểm tra', 'Nồng độ', 'Hằng số', 'Điều kiện', 'Phương trình', 'Trong đó', 'Thay vào',
-    'Rút ra', 'Đặt', 'Xét', 'pH của', 'pOH của', 'pK', 'Hằng số phân li', 'Nồng độ ion'];
+    'Rút ra', 'Đặt', 'Xét', 'pH của', 'pOH của', 'Hằng số phân li', 'Nồng độ ion'];
   function autoBreakSteps(html) {
     var re = new RegExp('(?:\\s|<br\\s*\\/?>)*(?:\\bB[uư][ớo]c\\s*\\d{1,2}\\s*[.:)]'
       + '|(?<!\\p{L})(?:' + BUOC_MO.join('|') + ')(?!\\p{L})'
@@ -7304,15 +7304,30 @@
       /* "…tính đệm tốt.pH của dung dịch" — bóc từ PDF hay dính liền, không có khoảng trắng.
          Đòi chữ hoa hoặc pH/pOH đứng ngay sau, để "v.v." hay "T.S." không bị ngắt. */
       + '|(?<=[^\\d][.!?])(?=\\p{Lu}|pH|pOH))', 'gu');
-    html = html.replace(re, function (m) {
-      var label = m.replace(/^(?:\s|<br\s*\/?>)+/i, '');
-      return label ? '<br>' + label : '<br>';
+    /* Chừa nguyên phần trong $…$: chèn <br> vào giữa mã LaTeX là cắt đôi cụm công thức,
+       bộ dựng không nhận ra nữa và hai dấu $ hiện nguyên trên giấy. (Đúng bẫy đã gặp với
+       donSoMu ở đợt 74 — lần đó vá donSoMu mà quên hàm này.) */
+    function ngoaiTexB(chuoi, f) {
+      return chuoi.split(/(\$[^$\n]*\$)/).map(function (p, i) { return (i % 2) ? p : f(p); }).join('');
+    }
+    html = ngoaiTexB(html, function (p) {
+      return p.replace(re, function (m) {
+        var label = m.replace(/^(?:\s|<br\s*\/?>)+/i, '');
+        return label ? '<br>' + label : '<br>';
+      });
+    });
+    /* Ngắt trước "pKₐ của acid là:" — chỉ khi có chữ "của" theo sau, để không đụng vào
+       "pK_a = −log K_a" đứng giữa công thức. */
+    html = ngoaiTexB(html, function (p) {
+      return p.replace(/(?<=\S)\s+(?=pK(?:<[^>]+>|[A-Za-z0-9])*\s*c\u1ee7a)/g, '<br>');
     });
     /* Xuống dòng sau dấu ":" — nhưng chừa tỉ lệ 1:2, giờ 10:30 và "http://".
        Chỉ đụng phần chữ, không thò vào bên trong thẻ. */
-    html = html.split(/(<[^>]+>)/).map(function (p, i) {
-      return (i % 2) ? p : p.replace(/:(?!\s*[\d\/])/g, ':<br>');
-    }).join('');
+    html = ngoaiTexB(html, function (q) {
+      return q.split(/(<[^>]+>)/).map(function (p, i) {
+        return (i % 2) ? p : p.replace(/:(?!\s*[\d\/])/g, ':<br>');
+      }).join('');
+    });
     /* gộp <br> trùng, và bỏ <br> ở hai đầu — nhãn đứng đầu đoạn thì không cần ngắt trước nó */
     return html.replace(/(?:<br\s*\/?>\s*)+/gi, '<br>')
       .replace(/^(?:<br\s*\/?>)+/i, '')
@@ -9121,6 +9136,26 @@
   var qaddEditingId = null;   /* null = tạo câu mới; có giá trị = đang sửa câu này */
   var qaddEditingFull = null; /* bản gốc đầy đủ, giữ lại các trường không sửa ở đây (mc/tf, ảnh...) */
 
+  /* Gỡ công thức đã dựng về MÃ để sửa tay được.
+     Từ đợt 70, mã LaTeX trong data-tex là bản gốc; thứ hiện ra chỉ là cấu trúc dựng từ nó,
+     có cả ký tự ẩn trong .can-kh. Nạp đúng cấu trúc đó vào ô Sửa thì không ai sửa nổi —
+     gõ vào giữa nó là ra một mớ, và người dùng tưởng nút Lưu không chạy.
+     Ngược lại của hàm này là renderTexInHtml() ở lúc lưu, nên sửa xong lại dựng lại như thường. */
+  function texGoBoc(html) {
+    if (!html) return html || '';
+    var box = document.createElement('div');
+    box.innerHTML = html;
+    for (var lap = 0; lap < 400; lap++) {
+      var sp = box.querySelector('.tex-plain');
+      if (!sp) break;
+      var tex = sp.getAttribute('data-tex') || '';
+      var thay = document.createTextNode(tex ? '$' + tex + '$' : sp.textContent);
+      sp.parentNode.replaceChild(thay, sp);
+    }
+    /* căn/phân số dựng trực tiếp từ chữ (không qua $…$) thì trả về chữ phẳng như cũ */
+    return mathUndressHtml(box.innerHTML);
+  }
+
   function openQuestionEditor(existing) {
     qaddEditingId = existing ? existing.id : null;
     qaddEditingFull = existing || null;
@@ -9132,11 +9167,13 @@
     if (existing && (existing.qtype === 'mc' || existing.qtype === 'tf')) {
       hint = 'Câu ' + QTYPE_LABEL[existing.qtype] + ' — ô này chỉ sửa phần dẫn đề và đáp án chung; '
         + 'sửa từng phương án/nhận định trực tiếp ngay trên thẻ trong kho.';
+    if (existing) hint += ' Công thức hiện dưới dạng MÃ trong cặp $…$ — sửa mã rồi bấm Lưu, nó tự dựng lại.';
     }
     document.getElementById('qaddTarget').textContent = hint;
-    document.getElementById('qaddQuestion').innerHTML = existing ? (existing.questionHtml || '') : '';
-    document.getElementById('qaddAnswer').innerHTML = existing ? (existing.answerHtml || '') : '';
-    document.getElementById('qaddSolution').innerHTML = existing ? (existing.solutionHtml || '') : '';
+    /* nạp MÃ công thức, không nạp cấu trúc đã dựng — xem texGoBoc() */
+    document.getElementById('qaddQuestion').innerHTML = existing ? texGoBoc(existing.questionHtml) : '';
+    document.getElementById('qaddAnswer').innerHTML = existing ? texGoBoc(existing.answerHtml) : '';
+    document.getElementById('qaddSolution').innerHTML = existing ? texGoBoc(existing.solutionHtml) : '';
     document.getElementById('qaddQuestion').dataset.ph = 'Gõ nội dung câu hỏi, hoặc dán ảnh cắt từ PDF (Ctrl+V)…';
     document.getElementById('qaddAnswer').dataset.ph = 'Đáp số, kết quả cuối…';
     document.getElementById('qaddSolution').dataset.ph = 'Các bước làm, giải thích…';
@@ -9209,6 +9246,11 @@
       qHtml = renderTexInHtml(chemFormatHtml(qHtml));
       aHtml = renderTexInHtml(autoBreakSteps(chemFormatHtml(aHtml)));
       sHtml = renderTexInHtml(autoBreakSteps(chemFormatHtml(sHtml)));
+    } else if ((qEl.textContent + aEl.textContent + sEl.textContent).indexOf('$') >= 0) {
+      /* Tắt "tự hoá công thức" thì vẫn phải dựng $…$, không thì mã lòi ra phiếu. */
+      qHtml = renderTexInHtml(qHtml);
+      aHtml = renderTexInHtml(aHtml);
+      sHtml = renderTexInHtml(sHtml);
     }
     var figures = qaddFigs.map(function (f) { return { id: uid(), imgId: f.imgId, size: 'md' }; });
     var lines = parseInt(document.getElementById('qaddLines').value, 10) || 5;
