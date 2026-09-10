@@ -2481,7 +2481,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 77 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 78 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -4040,7 +4040,10 @@
          theo sau C hoặc K phải là chỉ số dưới. Phải kiểm tra TRƯỚC looksChemical, vì những
          token này (VD "Ka1") cũng lọt qua looksChemical (bị hiểu nhầm K=kali, "a1" là công
          thức) và bị formatChemToken xử lý sai mất trước khi tới được đây. */
-      var cSub = core.match(/^C([MN])$/);
+      /* Nồng độ có chỉ số bằng CHỮ: C_base, C_acid… Bóc từ PDF/Word hay rơi mất chỉ số
+         thành "Cbase", "Cacid" — không chất nào tên vậy nên đổi lại là chắc ăn.
+         KHÔNG đụng "Ca" (canxi) — chỗ đó donSoMu() xử theo ngữ cảnh. */
+      var cSub = core.match(/^C(M|N|base|acid|axit|bazo|bazơ|dd|0)$/i);
       if (cSub) return 'C<sub>' + cSub[1] + '</sub>' + tail;
       var kSub = core.match(/^(p?K)((?:a|b|w|sp|f|d)[123]?)$/);
       if (kSub) return kSub[1] + '<sub>' + kSub[2] + '</sub>' + tail;
@@ -4066,7 +4069,7 @@
         /* Cùng 2 quy tắc C_M/C_N và K_a/K_b… ở trên, nhưng cho trường hợp dính liền ký tự
            khác không phải công thức (dấu =, số liệu…) nên không khớp core "sạch" ở trên được
            — VD "CM=7,00" hay "(Ka1)=...". */
-        .replace(/\bC([MN])\b/g, 'C<sub>$1</sub>')
+        .replace(/\bC(M|N|base|acid|axit|bazo|bazơ|dd|0)\b/gi, 'C<sub>$1</sub>')
         .replace(/\b(p?K)((?:a|b|w|sp|f|d)[123]?)\b/g, '$1<sub>$2</sub>')
         /* Công thức dính liền với ký tự khác không phải công thức (dấu =, số liệu…) —
            VD "M(CaCl2)=110,98" hay "(NaNO3)=84,99" viết liền không có khoảng trắng ngăn
@@ -7297,7 +7300,10 @@
   function autoBreakSteps(html) {
     var re = new RegExp('(?:\\s|<br\\s*\\/?>)*(?:\\bB[uư][ớo]c\\s*\\d{1,2}\\s*[.:)]'
       + '|(?<!\\p{L})(?:' + BUOC_MO.join('|') + ')(?!\\p{L})'
-      + '|(?<=[^\\d][.!?])\\s+(?=\\p{Lu}))', 'gu');
+      + '|(?<=[^\\d][.!?])\\s+(?=\\p{Lu})'
+      /* "…tính đệm tốt.pH của dung dịch" — bóc từ PDF hay dính liền, không có khoảng trắng.
+         Đòi chữ hoa hoặc pH/pOH đứng ngay sau, để "v.v." hay "T.S." không bị ngắt. */
+      + '|(?<=[^\\d][.!?])(?=\\p{Lu}|pH|pOH))', 'gu');
     html = html.replace(re, function (m) {
       var label = m.replace(/^(?:\s|<br\s*\/?>)+/i, '');
       return label ? '<br>' + label : '<br>';

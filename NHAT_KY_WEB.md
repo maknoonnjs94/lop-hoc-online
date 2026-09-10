@@ -40,6 +40,18 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-17 (tối) — Chỉ số C_base/C_acid + xuống dòng sau dấu chấm dính liền (đợt 78)
+
+Sửa được: `Cbase`/`Cacid` về `C_base`/`C_acid` (thêm base·acid·axit·bazo·dd·0 vào bộ tự hoá
+công thức, vẫn chừa `Ca` là canxi), và ngắt dòng sau dấu chấm **dính liền** (`tốt.pH`) — vẫn chừa `v.v.`.
+
+**Chưa sửa được:** phân số từ PDF vẫn đảo thứ tự khi **không có ngoặc** — `ngoacLech()` không bắt được ca này.
+Đường chắc chắn đúng vẫn là **nạp bằng .docx** (bộ đọc OMML giữ nguyên cấu trúc, đã có phép thử).
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 78**. Bộ thử **56/56 đạt**.
+
+---
+
 ## 2026-09-17 (chiều) — Bắt công thức bị đảo thứ tự khi bóc PDF (đợt 77)
 
 M gửi ảnh: `K_a = [H⁺]²/C_a` bóc ra thành `]^2 K_a = [H+ Ca`. Phân số xếp tầng trong PDF
