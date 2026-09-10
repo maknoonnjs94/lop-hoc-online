@@ -40,6 +40,27 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-19 — Tên dạng bài có ngay lúc mở sổ; PDF không còn rơi xuống hộp thoại in (đợt 84–85)
+
+M: *"vẫn không hiện tên dạng bài… giãn dòng để bé thôi, hoặc cho t tự chỉnh"*. Dựng lại đúng cảnh trên bản web:
+
+1. **Cây kho không được nạp lúc mở sổ** (chỉ nạp khi mở Kho) → mở sổ in thẳng là không có tiêu đề dạng.
+   Giờ `loadTree()` ngay lúc khởi động, cây về thì dựng lại phiếu nếu đang thiếu tiêu đề.
+2. **html2canvas 1.4.1 không đọc được `color()`** mà Chrome sinh ra từ `color-mix()` trong CSS tiêu đề dạng /
+   "Phần N" → từ đợt 65, phiếu có tiêu đề dạng là **dựng PDF thất bại**, app lùi về hộp thoại in của trình duyệt
+   (đó là nguồn của header/footer đợt 82 và dòng kẻ "sai" đợt 83). Thay bằng `rgba(var(--primary-rgb), a)`.
+3. Bỏ hẳn nới khoảng cách để lấp trang; ô *Dòng kẻ làm bài (mm)* mặc định 8,5, chỉnh 5–25.
+
+Đợt 84 (cùng lần đẩy): đọc `word/numbering.xml` khi nhập .docx → danh sách a. b. c. / i. ii. / (1) ra đúng nhãn,
+không còn "1. a.".
+
+Đo trên localhost (bản web, không mở Kho): 2 tiêu đề dạng có ngay, dòng kẻ 8,50 mm, html2canvas chạy 4 lượt không
+lỗi, *Đã tải file PDF về máy*. `thu_cong_thuc` 77/77.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 85**.
+
+---
+
 ## 2026-09-18 (khuya) — Tiêu đề dạng bài không rơi khi sang trang; dòng kẻ 1,5 cm (đợt 83)
 
 M báo bản in mất dạng bài và dòng kẻ quá cao. Dạng bài không bị xoá — PDF cắt trang **từ mép trên

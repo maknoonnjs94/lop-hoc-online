@@ -7,6 +7,7 @@
   :root {
     --ink: #152f4d;
     --primary: #1888c9;
+    --primary-rgb: 24,136,201;   /* để pha rgba() — html2canvas không đọc được color-mix() */
     --accent: #10a99b;
     --paper: #ffffff;
     --paper-soft: #f2f8fc;
@@ -703,8 +704,10 @@
     gap: 8px;
     padding: 5px 14px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    /* rgba chứ không color-mix: Chrome tính color-mix ra color(srgb …), html2canvas 1.4.1 không
+       đọc được → cả PDF dựng thất bại, app lùi về hộp thoại in của trình duyệt */
+    background: rgba(var(--primary-rgb), .10);
+    border: 1px solid rgba(var(--primary-rgb), .35);
     color: var(--primary);
     font-weight: 700;
     font-size: 11.5pt;
@@ -754,7 +757,7 @@
     align-items: baseline;
     gap: 9px;
     padding: 6px 0 5px;
-    border-bottom: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+    border-bottom: 2px solid rgba(var(--primary-rgb), .45);   /* không color-mix — xem .section-divider-inner */
     color: var(--primary);
     font-weight: 800;
     font-size: 12.5pt;
@@ -782,14 +785,14 @@
 
   /* Ruled writing space — real elements, so it rasterises reliably into the PDF */
   .answer-block { margin: 8px 0 2px; }
-  /* Cao dòng kẻ lấy từ "Khổ giấy / lề / cỡ chữ" (--rule-h, mặc định 15 mm) và CỐ ĐỊNH —
+  /* Cao dòng kẻ lấy từ "Khổ giấy / lề / cỡ chữ" (--rule-h, mặc định 8,5 mm) và CỐ ĐỊNH —
      không còn giãn theo chỗ trống của trang khi xuất PDF. */
   .answer-block .rule {
     display: block;
-    height: var(--rule-h, 15mm);
+    height: var(--rule-h, 8.5mm);
     border-bottom: 1px solid var(--paper-line);
   }
-  .answer-block.compact .rule { height: calc(var(--rule-h, 15mm) * .8); }
+  .answer-block.compact .rule { height: calc(var(--rule-h, 8.5mm) * .8); }
 
   /* giấy kẻ ô 5mm — vẽ bằng SVG nền nên rasterise vào PDF chuẩn */
   .answer-block.grid {
@@ -1450,8 +1453,8 @@
     margin-top: 4px;
     padding: 11px 13px;
     border-radius: 10px;
-    background: color-mix(in srgb, #7c5cff 9%, transparent);
-    border: 1px solid color-mix(in srgb, #7c5cff 30%, transparent);
+    background: rgba(124,92,255,.09);
+    border: 1px solid rgba(124,92,255,.3);
   }
   .pdf-ai-box b { font-size: 13px; }
   .pdf-ai-box span { font-size: 12px; line-height: 1.55; color: var(--app-muted); }
@@ -2488,7 +2491,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-18 · đợt 83 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-19 · đợt 85 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2555,7 +2558,7 @@
             <input type="number" id="psLine" min="1.1" max="2.2" step="0.1" style="width:100%;margin-top:4px;padding:7px 10px;border:1px solid var(--app-border);border-radius:8px;background:var(--app-bg);color:var(--app-text)">
           </label>
           <label style="display:block;grid-column:1 / -1" title="Khoảng cách giữa hai dòng kẻ để sinh viên viết bài. Cố định — không giãn theo chỗ trống của trang.">Dòng kẻ làm bài (mm)<br>
-            <input type="number" id="psRule" min="6" max="25" step="0.5" style="width:100%;margin-top:4px;padding:7px 10px;border:1px solid var(--app-border);border-radius:8px;background:var(--app-bg);color:var(--app-text)">
+            <input type="number" id="psRule" min="5" max="25" step="0.5" style="width:100%;margin-top:4px;padding:7px 10px;border:1px solid var(--app-border);border-radius:8px;background:var(--app-bg);color:var(--app-text)">
           </label>
           <label style="display:flex;align-items:center;gap:8px;grid-column:1 / -1;cursor:pointer">
             <input type="checkbox" id="psPageNo"> Đánh số trang "Trang i/n" ở góc phải footer (mọi trang)
@@ -3915,7 +3918,7 @@
     root.setProperty('--paper-margin', marginMm() + 'mm');
     root.setProperty('--paper-font', (state.settings.fontPt || 13) + 'pt');
     root.setProperty('--paper-lh', String(state.settings.lineHeight || 1.5));
-    root.setProperty('--rule-h', (state.settings.ruleMm || 15) + 'mm');   /* đợt 83: dòng kẻ làm bài */
+    root.setProperty('--rule-h', (state.settings.ruleMm || 8.5) + 'mm');   /* đợt 83: dòng kẻ làm bài */
     if (typeof applyTheme === 'function') applyTheme();
   }
   var dbApi = null;
@@ -5145,6 +5148,11 @@
       loadLocal();
     }
     loadTrash();   /* để nút 🗑 Thùng rác trên thanh đầu trang có số lượng ngay, không cần mở Kho trước */
+    /* đợt 85: cây kho là nơi có TÊN dạng bài. Trước đây chỉ nạp khi mở màn hình Kho, nên mở sổ ra
+       in thẳng là phiếu không có tiêu đề dạng (cây rỗng → dangBaiTuTypeId trả null). Tạm ứng bản
+       cục bộ cho có ngay, rồi đọc bản máy chủ; cây về mà phiếu đang thiếu tiêu đề thì dựng lại. */
+    bankTree = localTree();
+    loadTree().then(dungLaiPhieuNeuThieuDang);
     loadBank();    /* đợt 63: đọc kho ngay lúc mở sổ, để câu chỉ nằm trên máy được đẩy lên máy chủ
                       mà không phải chờ tới lúc mở màn hình Kho — không đọc thì không biết là đang thiếu */
   }
@@ -5651,10 +5659,10 @@
     var n = Math.max(1, Math.min(20, Number(count) || 1));
     var kind = style || 'lines';
     if (kind === 'grid') {
-      return '<div class="answer-block grid" style="height:calc(' + n + ' * var(--rule-h, 15mm))"></div>';
+      return '<div class="answer-block grid" style="height:calc(' + n + ' * var(--rule-h, 8.5mm))"></div>';
     }
     if (kind === 'blank') {
-      return '<div class="answer-block blank" style="height:calc(' + n + ' * var(--rule-h, 15mm))"></div>';
+      return '<div class="answer-block blank" style="height:calc(' + n + ' * var(--rule-h, 8.5mm))"></div>';
     }
     var html = '<div class="answer-block' + (compact ? ' compact' : '') + '">';
     for (var i = 0; i < n; i++) html += '<span class="rule"></span>';
@@ -6754,49 +6762,10 @@
       var m0 = measureProblems();
       var pages = paginate(m0.tops, m0.bottoms);
 
-      /* Give each page's leftover space back to the students as taller writing lines,
-         so a page is never half empty. Capped so one lone question doesn't get silly. */
-      pages.forEach(function (page, pi) {
-        if (page.start < 0) return;
-        var isFirst = pi === 0;
-        var available = pageHeightPx - probeFooterBlock - (isFirst ? 0 : probeHeaderBlock);
-        var used = m0.bottoms[page.end] - (isFirst ? 0 : m0.tops[page.start]);
-        var leftover = available - used;
-        if (leftover < 4) return;
-        var targets = [];
-        for (var qi = page.start; qi <= page.end; qi++) {
-          [].slice.call(problemEls[qi].querySelectorAll('.answer-block .rule')).forEach(function (r) {
-            targets.push({ el: r, weight: 1 });
-          });
-          /* giấy kẻ ô / chỗ trống là một khối liền — giãn theo số dòng nó đại diện */
-          [].slice.call(problemEls[qi].querySelectorAll('.answer-block.grid, .answer-block.blank')).forEach(function (g) {
-            targets.push({ el: g, weight: Math.max(1, Math.round(g.getBoundingClientRect().height / 32)) });
-          });
-        }
-        if (!targets.length) return;
-        var totalWeight = targets.reduce(function (s, t) { return s + t.weight; }, 0);
-        /* Đợt 83: dòng kẻ CỐ ĐỊNH theo "Khổ giấy / lề / cỡ chữ" — trước đây giãn tới 66 px (≈ 1,75 cm)
-           để lấp trang, m thấy quá dài. Chỗ trống còn lại thì nới khoảng cách giữa các câu (bên dưới). */
-        var perWeight = 0;
-        targets.forEach(function (t) {
-          var base = t.el.getBoundingClientRect().height;
-          stretchedRules.push({ el: t.el, prop: 'height', prev: t.el.style.height });
-          t.el.style.height = (base + perWeight * t.weight) + 'px';
-        });
-
-        /* Dòng kẻ giãn hết cỡ mà vẫn thừa giấy (trang chỉ có 1–2 câu) thì
-           nới khoảng cách giữa các câu, để trang không bị hẫng một mảng trắng ở dưới. */
-        var remaining = leftover - perWeight * totalWeight;
-        var count = page.end - page.start + 1;
-        if (remaining > 8 && count > 0) {
-          var perGap = Math.min(remaining / count, 70);
-          for (var gi = page.start; gi <= page.end; gi++) {
-            var pel = problemEls[gi];
-            stretchedRules.push({ el: pel, prop: 'marginBottom', prev: pel.style.marginBottom });
-            pel.style.marginBottom = (12 + perGap) + 'px';
-          }
-        }
-      });
+      /* Đợt 85: KHÔNG nới gì để lấp trang nữa. Trước đây app kéo dòng kẻ (tới đợt 82) rồi nới khoảng
+         cách giữa các câu tới +70 px mỗi câu (đợt 83) cho trang khỏi trống — m thấy đó là "giãn dòng
+         sai". PDF giờ y như trang đang soạn: dòng kẻ đúng số mm trong "Khổ giấy / lề / cỡ chữ",
+         câu cách câu như trên màn hình, chỗ trống cuối trang cứ để trống. */
       void sheetEl.offsetWidth;
 
       var bigCanvas = await html2canvas(sheetEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
@@ -9495,6 +9464,66 @@
     if (vert === 'subscript') return joinScript(out, text, false);
     return out + text;
   }
+  /* numId → ilvl → { fmt, text }. Word: w:num (numId) → w:abstractNumId → w:abstractNum → w:lvl
+     (ilvl) → w:numFmt (decimal / lowerLetter / upperLetter / lowerRoman / upperRoman / bullet…)
+     và w:lvlText ("%1." / "%1)" / "(%1)" / "•"). w:num có thể ghi đè từng lvl (lvlOverride). */
+  var docxNumDinhDang = {};
+  function docxDocNumbering(xml) {
+    var doc = new DOMParser().parseFromString(xml, 'application/xml');
+    var ra = {}, absMap = {};
+    function val(el, ln) { var c = el && mChildW(el, ln); if (!c) return null; return c.getAttributeNS(W_NS, 'val') || c.getAttribute('w:val'); }
+    function mChildW(node, ln) {
+      for (var c = node.firstElementChild; c; c = c.nextElementSibling) if (c.namespaceURI === W_NS && c.localName === ln) return c;
+      return null;
+    }
+    function docLvl(lvl) {
+      return { fmt: val(lvl, 'numFmt') || 'decimal', text: val(lvl, 'lvlText') || '%1.' };
+    }
+    [].forEach.call(doc.getElementsByTagNameNS(W_NS, 'abstractNum'), function (an) {
+      var id = an.getAttributeNS(W_NS, 'abstractNumId') || an.getAttribute('w:abstractNumId');
+      var lv = {};
+      [].forEach.call(an.getElementsByTagNameNS(W_NS, 'lvl'), function (lvl) {
+        lv[lvl.getAttributeNS(W_NS, 'ilvl') || lvl.getAttribute('w:ilvl') || '0'] = docLvl(lvl);
+      });
+      absMap[id] = lv;
+    });
+    [].forEach.call(doc.getElementsByTagNameNS(W_NS, 'num'), function (num) {
+      var id = num.getAttributeNS(W_NS, 'numId') || num.getAttribute('w:numId');
+      var abs = val(num, 'abstractNumId');
+      var lv = {};
+      var goc = absMap[abs] || {};
+      Object.keys(goc).forEach(function (k) { lv[k] = goc[k]; });
+      [].forEach.call(num.getElementsByTagNameNS(W_NS, 'lvlOverride'), function (ov) {
+        var lvl = mChildW(ov, 'lvl');
+        if (lvl) lv[ov.getAttributeNS(W_NS, 'ilvl') || ov.getAttribute('w:ilvl') || '0'] = docLvl(lvl);
+      });
+      ra[id] = lv;
+    });
+    return ra;
+  }
+  function docxSoLaMa(n) {
+    var b = [[1000,'m'],[900,'cm'],[500,'d'],[400,'cd'],[100,'c'],[90,'xc'],[50,'l'],[40,'xl'],[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']], r = '';
+    for (var i = 0; i < b.length; i++) while (n >= b[i][0]) { r += b[i][1]; n -= b[i][0]; }
+    return r;
+  }
+  /* Nhãn của mục thứ n theo kiểu đánh số của Word. Dấu đầu dòng thì trả về "" — chữ tự đứng. */
+  function docxNhanDanhSach(numId, ilvl, n) {
+    var d = (docxNumDinhDang[numId] || {})[ilvl] || { fmt: 'decimal', text: '%1.' };
+    if (d.fmt === 'bullet' || d.fmt === 'none') return '';
+    var so;
+    if (d.fmt === 'lowerLetter') so = String.fromCharCode(96 + ((n - 1) % 26) + 1);
+    else if (d.fmt === 'upperLetter') so = String.fromCharCode(64 + ((n - 1) % 26) + 1);
+    else if (d.fmt === 'lowerRoman') so = docxSoLaMa(n);
+    else if (d.fmt === 'upperRoman') so = docxSoLaMa(n).toUpperCase();
+    else so = String(n);
+    /* lvlText kiểu "%1." / "%1)" / "(%1)" — thay %1 (cấp hiện tại) bằng số; cấp khác bỏ */
+    var nhan = String(d.text || '%1.').replace(/%\d/g, function (m) { return m === '%' + (Number(ilvl) + 1) ? so : ''; });
+    return nhan.trim() + ' ';
+  }
+  /* Chữ đã tự mang nhãn ở đầu (a. / b) / 1. / (2) / A. / i. …) thì không gắn thêm nhãn nữa —
+     không thì ra "1. a. 0,0023" như ảnh m gửi. */
+  var DOCX_DA_CO_NHAN = /^\s*(?:\(?[a-zA-Z]\)|[a-zA-Z][.)]|\(?\d{1,2}\)|\d{1,2}[.)]|[ivxIVX]{1,4}[.)])\s/;
+
   function docxParagraphText(p, listCounters) {
     var out = '';
     /* danh sách tự đánh số: số KHÔNG có trong chữ — tự đếm theo numId (cấp 0) và chèn "N. " */
@@ -9508,9 +9537,10 @@
           if (c2.localName === 'numId') numId = c2.getAttributeNS(W_NS, 'val') || c2.getAttribute('w:val');
           if (c2.localName === 'ilvl') ilvl = c2.getAttributeNS(W_NS, 'val') || c2.getAttribute('w:val') || '0';
         }
-        if (numId && ilvl === '0') {
-          listCounters[numId] = (listCounters[numId] || 0) + 1;
-          out = listCounters[numId] + '. ';
+        if (numId) {
+          var khoa = numId + '|' + ilvl;
+          listCounters[khoa] = (listCounters[khoa] || 0) + 1;
+          out = docxNhanDanhSach(numId, ilvl, listCounters[khoa]);   /* a. / 1. / i. / (1) … theo Word */
         }
       }
     }
@@ -9532,7 +9562,9 @@
         }
       }
     }
+    var nhanTuSinh = out;
     walk(p);
+    if (nhanTuSinh && DOCX_DA_CO_NHAN.test(out.slice(nhanTuSinh.length))) out = out.slice(nhanTuSinh.length);
     return out;
   }
   function docxBlocks(node, lines, listCounters) {
@@ -9569,6 +9601,14 @@
     var doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw new Error('bad-xml');
     var body = doc.getElementsByTagNameNS(W_NS, 'body')[0] || doc.documentElement;
+    /* Kiểu đánh số của từng danh sách nằm ở word/numbering.xml, KHÔNG nằm trong document.xml.
+       Không đọc nó thì mọi danh sách đều thành "1. 2. 3." dù Word đang hiện a. b. c. */
+    docxNumDinhDang = {};
+    var numEntry = zip.file('word/numbering.xml');
+    if (numEntry) {
+      try { docxNumDinhDang = docxDocNumbering(await numEntry.async('string')); }
+      catch (e) { console.warn('Không đọc được numbering.xml — dùng số 1. 2. 3.', e); docxNumDinhDang = {}; }
+    }
     var lines = [];
     docxBlocks(body, lines, {});
     /* dòng trống liên tiếp gộp 1; bỏ khoảng trắng thừa cuối dòng */
@@ -10587,7 +10627,7 @@
     var checkFlags = items.map(checkFlagsFor);
     var checkCount = checkFlags.filter(function (f) { return f.length; }).length;
     var srcTag = overrideSource === 'ai'
-      ? '<span class="ai-tag" style="background:color-mix(in srgb, #7c5cff 15%, transparent);border-color:#7c5cff;color:#7c5cff">🤖 AI đọc</span>'
+      ? '<span class="ai-tag" style="background:rgba(124,92,255,.15);border-color:#7c5cff;color:#7c5cff">🤖 AI đọc</span>'
       : '';
     var html = '<div class="bulk-summary">' + srcTag + '<b>Tách được ' + items.length + ' câu</b>'
       + (withKey ? ' · ' + withKey + ' câu có đáp án' : ' · chưa ghép được đáp án nào')
@@ -11466,7 +11506,7 @@
   }
 
   /* ---- tuỳ chỉnh khổ giấy / lề / cỡ chữ / giãn dòng ---- */
-  var DEFAULT_PAGE_SETTINGS = { paperSize: 'a4', marginMm: 10, fontPt: 13, lineHeight: 1.5, ruleMm: 15 };
+  var DEFAULT_PAGE_SETTINGS = { paperSize: 'a4', marginMm: 10, fontPt: 13, lineHeight: 1.5, ruleMm: 8.5 };
   var pageSettingsModal = document.getElementById('pageSettingsModal');
 
   function fillPageSettingsForm() {
@@ -11474,7 +11514,7 @@
     document.getElementById('psMargin').value = marginMm();
     document.getElementById('psFont').value = state.settings.fontPt || 13;
     document.getElementById('psLine').value = state.settings.lineHeight || 1.5;
-    document.getElementById('psRule').value = state.settings.ruleMm || 15;
+    document.getElementById('psRule').value = state.settings.ruleMm || 8.5;
     document.getElementById('psPageNo').checked = state.settings.pageNumbers !== false;
   }
 
@@ -11494,7 +11534,7 @@
     var l = parseFloat(document.getElementById('psLine').value);
     state.settings.lineHeight = isFinite(l) ? Math.min(2.2, Math.max(1.1, l)) : 1.5;
     var rl = parseFloat(document.getElementById('psRule').value);
-    state.settings.ruleMm = isFinite(rl) ? Math.min(25, Math.max(6, rl)) : 15;
+    state.settings.ruleMm = isFinite(rl) ? Math.min(25, Math.max(5, rl)) : 8.5;
     state.settings.pageNumbers = document.getElementById('psPageNo').checked;
     applyPaperVars();
     schedulePageMarks();       /* cỡ giấy/chữ đổi thì số trang cũng đổi theo */
@@ -12669,6 +12709,7 @@
   function applyTheme() {
     var t = currentTheme(), root = document.documentElement, st = root.style;
     st.setProperty('--ink', t.ink); st.setProperty('--primary', t.primary); st.setProperty('--accent', t.accent);
+    st.setProperty('--primary-rgb', hexToRgb(t.primary).join(','));   /* cho rgba() trong tiêu đề dạng / Phần N */
     st.setProperty('--paper-soft', mixHex(t.primary, '#ffffff', 0.92)); st.setProperty('--paper-soft-2', mixHex(t.primary, '#ffffff', 0.96)); st.setProperty('--paper-line', mixHex(t.primary, '#ffffff', 0.72));
     var dark = root.getAttribute('data-theme') === 'dark';
     st.setProperty('--app-accent', dark ? mixHex(t.primary, '#ffffff', 0.35) : t.primary);
@@ -14772,6 +14813,16 @@
     week.problems = ra;
   }
   /* Tiêu đề mở đầu một khối dạng bài. Trả về chuỗi rỗng nếu không cần in tiêu đề. */
+  /* Cây kho vừa về (hoặc vừa đổi) mà phiếu đang mở có câu thuộc dạng nhưng chưa in tiêu đề
+     → dựng lại phiếu. Không đụng phiếu khi không cần, để khỏi cắt ngang lúc m đang gõ. */
+  function dungLaiPhieuNeuThieuDang() {
+    var week = currentWeek();
+    if (!week || !hienDangBai(week)) return;
+    var can = (week.problems || []).some(function (p) { var d = dangBaiTuTypeId(p && p.typeId); return d && d.ten; });
+    if (!can) return;
+    if (document.querySelector('#sheet .dang-divider')) return;
+    renderSheet();
+  }
   function tieuDeDang(week, p, soDang) {
     if (!hienDangBai(week)) return '';
     var d = dangBaiTuTypeId(p && p.typeId);
