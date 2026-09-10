@@ -40,6 +40,19 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-18 (khuya) — Tiêu đề dạng bài không rơi khi sang trang; dòng kẻ 1,5 cm (đợt 83)
+
+M báo bản in mất dạng bài và dòng kẻ quá cao. Dạng bài không bị xoá — PDF cắt trang **từ mép trên
+của câu đầu trang**, nên tiêu đề dạng đứng ngay trước câu đó rơi ra ngoài lát cắt (trang 1 không sao).
+Sửa `measureProblems()` để tiêu đề đi cùng câu.
+
+Dòng kẻ: app tự kéo giãn tới 1,75 cm để lấp trang. Giờ là ô **"Dòng kẻ làm bài (mm)"** trong
+*Khổ giấy / lề / cỡ chữ*, mặc định 15, **cố định** — không giãn nữa.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 83**.
+
+---
+
 ## 2026-09-18 (tối) — In ra không còn header/footer của trình duyệt (đợt 82)
 
 M báo PDF xuất ra có ngày giờ / tên trang / URL / số trang ở mép giấy. Đó là **hàng chữ trình duyệt

@@ -782,12 +782,14 @@
 
   /* Ruled writing space — real elements, so it rasterises reliably into the PDF */
   .answer-block { margin: 8px 0 2px; }
+  /* Cao dòng kẻ lấy từ "Khổ giấy / lề / cỡ chữ" (--rule-h, mặc định 15 mm) và CỐ ĐỊNH —
+     không còn giãn theo chỗ trống của trang khi xuất PDF. */
   .answer-block .rule {
     display: block;
-    height: 32px;
+    height: var(--rule-h, 15mm);
     border-bottom: 1px solid var(--paper-line);
   }
-  .answer-block.compact .rule { height: 26px; }
+  .answer-block.compact .rule { height: calc(var(--rule-h, 15mm) * .8); }
 
   /* giấy kẻ ô 5mm — vẽ bằng SVG nền nên rasterise vào PDF chuẩn */
   .answer-block.grid {
@@ -2486,7 +2488,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-18 · đợt 82 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-18 · đợt 83 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2551,6 +2553,9 @@
           </label>
           <label style="display:block;grid-column:1 / -1">Giãn dòng<br>
             <input type="number" id="psLine" min="1.1" max="2.2" step="0.1" style="width:100%;margin-top:4px;padding:7px 10px;border:1px solid var(--app-border);border-radius:8px;background:var(--app-bg);color:var(--app-text)">
+          </label>
+          <label style="display:block;grid-column:1 / -1" title="Khoảng cách giữa hai dòng kẻ để sinh viên viết bài. Cố định — không giãn theo chỗ trống của trang.">Dòng kẻ làm bài (mm)<br>
+            <input type="number" id="psRule" min="6" max="25" step="0.5" style="width:100%;margin-top:4px;padding:7px 10px;border:1px solid var(--app-border);border-radius:8px;background:var(--app-bg);color:var(--app-text)">
           </label>
           <label style="display:flex;align-items:center;gap:8px;grid-column:1 / -1;cursor:pointer">
             <input type="checkbox" id="psPageNo"> Đánh số trang "Trang i/n" ở góc phải footer (mọi trang)
@@ -3910,6 +3915,7 @@
     root.setProperty('--paper-margin', marginMm() + 'mm');
     root.setProperty('--paper-font', (state.settings.fontPt || 13) + 'pt');
     root.setProperty('--paper-lh', String(state.settings.lineHeight || 1.5));
+    root.setProperty('--rule-h', (state.settings.ruleMm || 15) + 'mm');   /* đợt 83: dòng kẻ làm bài */
     if (typeof applyTheme === 'function') applyTheme();
   }
   var dbApi = null;
@@ -5645,10 +5651,10 @@
     var n = Math.max(1, Math.min(20, Number(count) || 1));
     var kind = style || 'lines';
     if (kind === 'grid') {
-      return '<div class="answer-block grid" style="height:' + (n * 32) + 'px"></div>';
+      return '<div class="answer-block grid" style="height:calc(' + n + ' * var(--rule-h, 15mm))"></div>';
     }
     if (kind === 'blank') {
-      return '<div class="answer-block blank" style="height:' + (n * 32) + 'px"></div>';
+      return '<div class="answer-block blank" style="height:calc(' + n + ' * var(--rule-h, 15mm))"></div>';
     }
     var html = '<div class="answer-block' + (compact ? ' compact' : '') + '">';
     for (var i = 0; i < n; i++) html += '<span class="rule"></span>';
@@ -6707,7 +6713,16 @@
         var rect = sheetEl.getBoundingClientRect();
         problemEls.forEach(function (el) {
           var r = el.getBoundingClientRect();
-          t.push(r.top - rect.top);
+          var top = r.top;
+          /* Tiêu đề dạng bài / "Phần N" đứng NGAY TRƯỚC câu thì đi cùng câu — mép trên của
+             khối là mép trên của tiêu đề. Không thì khi câu đầu trang là câu mở dạng, lát cắt
+             bắt đầu từ mép câu và tiêu đề rơi ra ngoài: trên màn hình có, PDF mất. */
+          var prev = el.previousElementSibling;
+          while (prev && prev.classList && (prev.classList.contains('dang-divider') || prev.classList.contains('section-divider'))) {
+            top = Math.min(top, prev.getBoundingClientRect().top);
+            prev = prev.previousElementSibling;
+          }
+          t.push(top - rect.top);
           b.push(r.bottom - rect.top);
         });
         return { tops: t, bottoms: b };
@@ -6760,7 +6775,9 @@
         }
         if (!targets.length) return;
         var totalWeight = targets.reduce(function (s, t) { return s + t.weight; }, 0);
-        var perWeight = Math.min(leftover / totalWeight, 34);   /* dòng viết cao tối đa ~66px */
+        /* Đợt 83: dòng kẻ CỐ ĐỊNH theo "Khổ giấy / lề / cỡ chữ" — trước đây giãn tới 66 px (≈ 1,75 cm)
+           để lấp trang, m thấy quá dài. Chỗ trống còn lại thì nới khoảng cách giữa các câu (bên dưới). */
+        var perWeight = 0;
         targets.forEach(function (t) {
           var base = t.el.getBoundingClientRect().height;
           stretchedRules.push({ el: t.el, prop: 'height', prev: t.el.style.height });
@@ -11449,7 +11466,7 @@
   }
 
   /* ---- tuỳ chỉnh khổ giấy / lề / cỡ chữ / giãn dòng ---- */
-  var DEFAULT_PAGE_SETTINGS = { paperSize: 'a4', marginMm: 10, fontPt: 13, lineHeight: 1.5 };
+  var DEFAULT_PAGE_SETTINGS = { paperSize: 'a4', marginMm: 10, fontPt: 13, lineHeight: 1.5, ruleMm: 15 };
   var pageSettingsModal = document.getElementById('pageSettingsModal');
 
   function fillPageSettingsForm() {
@@ -11457,6 +11474,7 @@
     document.getElementById('psMargin').value = marginMm();
     document.getElementById('psFont').value = state.settings.fontPt || 13;
     document.getElementById('psLine').value = state.settings.lineHeight || 1.5;
+    document.getElementById('psRule').value = state.settings.ruleMm || 15;
     document.getElementById('psPageNo').checked = state.settings.pageNumbers !== false;
   }
 
@@ -11475,12 +11493,14 @@
     state.settings.fontPt = isFinite(f) ? Math.min(18, Math.max(10, f)) : 13;
     var l = parseFloat(document.getElementById('psLine').value);
     state.settings.lineHeight = isFinite(l) ? Math.min(2.2, Math.max(1.1, l)) : 1.5;
+    var rl = parseFloat(document.getElementById('psRule').value);
+    state.settings.ruleMm = isFinite(rl) ? Math.min(25, Math.max(6, rl)) : 15;
     state.settings.pageNumbers = document.getElementById('psPageNo').checked;
     applyPaperVars();
     schedulePageMarks();       /* cỡ giấy/chữ đổi thì số trang cũng đổi theo */
     scheduleSaveSettings();
   }
-  ['psPaper', 'psMargin', 'psFont', 'psLine', 'psPageNo'].forEach(function (id) {
+  ['psPaper', 'psMargin', 'psFont', 'psLine', 'psRule', 'psPageNo'].forEach(function (id) {
     document.getElementById(id).addEventListener('change', onPageSettingChange);
   });
 
