@@ -40,6 +40,21 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-18 (tối) — In ra không còn header/footer của trình duyệt (đợt 82)
+
+M báo PDF xuất ra có ngày giờ / tên trang / URL / số trang ở mép giấy. Đó là **hàng chữ trình duyệt
+tự chèn khi in**, xuất hiện khi đi qua hộp thoại in (`printFallback` hoặc Ctrl+P).
+
+Sửa: `@page { margin: 0 }` (Chrome/Edge bỏ hàng chữ đó khi lề = 0), lề thật do `.sheet` lo bằng
+`padding: var(--paper-margin)`; và lưu file thất bại thì **mở PDF đã dựng ở tab mới** thay vì quay về
+hộp thoại in.
+
+Kiểm trên bản web thật: quyền `downloads` có, jsPDF + html2canvas tải được từ cdnjs.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 82**.
+
+---
+
 ## 2026-09-18 (chiều) — Ô Sửa hiện mã công thức (đợt 81)
 
 M báo *"sửa thủ công … nhưng k save được"*. Dựng lại lỗi thì thấy nút Lưu **có** chạy —

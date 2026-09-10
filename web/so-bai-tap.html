@@ -1834,12 +1834,17 @@
       width: auto;
       min-height: 0;
       margin: 0;
-      padding: 0;
+      /* Lề giấy do CHÍNH tờ phiếu lo, không để @page lo — xem chú thích ở @page bên dưới. */
+      padding: var(--paper-margin, 10mm);
     }
     .problem { border-color: #cfd8e0; break-inside: avoid; }
     .problem-tools, .lines-step, .add-problem-row, .hero-logo-remove { display: none !important; }
     .hero-logo { cursor: default; }
-    @page { size: A4; margin: 10mm; }
+    /* margin: 0 — QUAN TRỌNG. Hễ @page còn lề khác 0 là Chrome/Edge tự chèn thêm một hàng
+       ngày giờ + tên trang + URL + số trang vào mép giấy. Đặt 0 thì nó bỏ hẳn phần đó,
+       và lề thật đã có .sheet lo bằng padding (đúng con số trong "Khổ giấy / lề / cỡ chữ").
+       Nhờ vậy trang in ra giống y trang đang soạn — không thêm, không thừa. */
+    @page { size: A4; margin: 0; }
   }
 </style>
 
@@ -2481,7 +2486,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-18 · đợt 81 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-18 · đợt 82 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6589,10 +6594,24 @@
     return pdfLibsReady;
   }
 
+  /* PDF đã dựng xong rồi — mở nó ra tab mới còn hơn quay về hộp thoại in của trình duyệt,
+     vì hộp thoại đó chính là thứ chèn ngày giờ / tên trang / URL / số trang vào mép giấy. */
+  function moPdfTrongTab(blob, ten) {
+    try {
+      var url = URL.createObjectURL(blob);
+      var w = window.open(url, '_blank');
+      if (!w) { URL.revokeObjectURL(url); return false; }
+      notify('Đã mở PDF ở tab mới — bấm nút tải trong trình xem để lưu "' + ten + '".');
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      return true;
+    } catch (e) { return false; }
+  }
+
   function printFallback(week) {
     var oldTitle = document.title;
     if (week) document.title = 'BaiTap_Tuan' + (week.weekNumber || week.order);
-    notify('Trong cửa sổ in, chọn "Save as PDF" / "Lưu dưới dạng PDF" để xuất file.');
+    notify('Trong cửa sổ in: chọn "Save as PDF", đặt Lề (Margins) = None và bỏ tích '
+      + '"Headers and footers" — khi đó giấy ra đúng như trang đang soạn.');
     setTimeout(function () {
       window.print();
       document.title = oldTitle;
@@ -6848,8 +6867,10 @@
           notify('Bạn đã hủy lưu file PDF.');
         } else {
           console.warn('Lưu PDF thất bại:', err);
-          notify('Không lưu được PDF, đang mở hộp thoại in để bạn tự lưu.');
-          printFallback(week);
+          if (!moPdfTrongTab(pdfBlob, fileName)) {
+            notify('Không lưu được PDF, đang mở hộp thoại in để bạn tự lưu.');
+            printFallback(week);
+          }
         }
       }
     } catch (err) {
@@ -9136,7 +9157,7 @@
   var qaddEditingId = null;   /* null = tạo câu mới; có giá trị = đang sửa câu này */
   var qaddEditingFull = null; /* bản gốc đầy đủ, giữ lại các trường không sửa ở đây (mc/tf, ảnh...) */
 
-  /* Gỡ công thức đã dựng về MÃ để sửa tay được.
+  /* Gỡ công thức đã dựng về mã để sửa tay được.
      Từ đợt 70, mã LaTeX trong data-tex là bản gốc; thứ hiện ra chỉ là cấu trúc dựng từ nó,
      có cả ký tự ẩn trong .can-kh. Nạp đúng cấu trúc đó vào ô Sửa thì không ai sửa nổi —
      gõ vào giữa nó là ra một mớ, và người dùng tưởng nút Lưu không chạy.
@@ -9167,10 +9188,10 @@
     if (existing && (existing.qtype === 'mc' || existing.qtype === 'tf')) {
       hint = 'Câu ' + QTYPE_LABEL[existing.qtype] + ' — ô này chỉ sửa phần dẫn đề và đáp án chung; '
         + 'sửa từng phương án/nhận định trực tiếp ngay trên thẻ trong kho.';
-    if (existing) hint += ' Công thức hiện dưới dạng MÃ trong cặp $…$ — sửa mã rồi bấm Lưu, nó tự dựng lại.';
+    if (existing) hint += ' Công thức hiện dưới dạng mã trong cặp $…$ — sửa mã rồi bấm Lưu, nó tự dựng lại.';
     }
     document.getElementById('qaddTarget').textContent = hint;
-    /* nạp MÃ công thức, không nạp cấu trúc đã dựng — xem texGoBoc() */
+    /* nạp mã công thức, không nạp cấu trúc đã dựng — xem texGoBoc() */
     document.getElementById('qaddQuestion').innerHTML = existing ? texGoBoc(existing.questionHtml) : '';
     document.getElementById('qaddAnswer').innerHTML = existing ? texGoBoc(existing.answerHtml) : '';
     document.getElementById('qaddSolution').innerHTML = existing ? texGoBoc(existing.solutionHtml) : '';
