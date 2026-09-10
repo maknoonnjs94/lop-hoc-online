@@ -40,6 +40,23 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-17 (chiều) — Bắt công thức bị đảo thứ tự khi bóc PDF (đợt 77)
+
+M gửi ảnh: `K_a = [H⁺]²/C_a` bóc ra thành `]^2 K_a = [H+ Ca`. Phân số xếp tầng trong PDF
+nằm ở ba tầng toạ độ; bộ đọc chữ xếp theo dòng ngang nên tử/mẫu bị cắt rời và ghép xen kẽ.
+**Thứ tự mất từ đầu vào — không hàm nào dựng lại được.**
+
+Đã làm: `ngoacLech()` bắt dấu đóng đứng trước dấu mở (chứng cứ chắc chắn của chữ đảo) và hiện
+**⚠ công thức đảo thứ tự** trên thẻ trong bảng soát, để m sửa tay trước khi câu vào kho.
+
+Và kiểm chứng được: bộ đọc **OMML của Word** (`ommlToText`) đọc `<m:f>` thành `(tử)/(mẫu)` theo
+đúng cấu trúc → **nạp bằng .docx thì công thức không bao giờ bị đảo**. Có phép thử riêng cho việc này.
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 77**.
+- Bộ thử lên **51 phép, 51/51 đạt**.
+
+---
+
 ## 2026-09-17 — Dấu căn kéo theo số đo thật của phông (đợt 76)
 
 M báo PDF bản GV căn vẫn hơi xấu. Đúng: `scaleY` 1,45 / 2,75 là con số chỉnh bằng mắt trên

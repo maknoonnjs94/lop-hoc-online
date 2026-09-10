@@ -2481,7 +2481,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 76 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 77 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -10427,6 +10427,29 @@
     return out;
   }
 
+  /* Ngoặc lệch = chữ bị đảo thứ tự khi bóc.
+     Phân số xếp tầng trong PDF nằm ở ba tầng toạ độ (tử / gạch / mẫu). Bộ đọc chữ của PDF
+     xếp mẩu chữ theo dòng, nên "K_a = [H⁺]²/C_a" ra thành "]^2 K_a = [H+ Ca" — thứ tự đã
+     mất ngay từ đầu vào, KHÔNG hàm nào dựng lại được. Nhưng dấu đóng đứng trước dấu mở là
+     chứng cứ chắc chắn, đủ để bắt và báo cho m trước khi câu đó vào kho.
+     Chỉ đếm ngoặc vuông và ngoặc tròn; đếm riêng từng dòng để một dòng hỏng không đổ lỗi cả bài. */
+  function ngoacLech(chu) {
+    var dong = String(chu || '').split(/\n|(?:<br\s*\/?>)/i);
+    for (var i = 0; i < dong.length; i++) {
+      var sau = { '[': 0, '(': 0 };
+      var t = dong[i];
+      for (var k = 0; k < t.length; k++) {
+        var c = t.charAt(k);
+        if (c === '[') sau['[']++;
+        else if (c === '(') sau['(']++;
+        else if (c === ']') { if (sau['['] === 0) return true; sau['[']--; }
+        else if (c === ')') { if (sau['('] === 0) return true; sau['(']--; }
+      }
+      if (sau['['] > 0 || sau['('] > 0) return true;   /* mở mà không đóng cũng là dấu hiệu */
+    }
+    return false;
+  }
+
   function checkFlagsFor(it) {
     var flags = [];
     var ans = textOf(it.answerHtml), sol = textOf(it.solutionHtml), q = textOf(it.questionHtml);
@@ -10439,6 +10462,18 @@
         if (!hit) flags.push({ s: 'đáp số ≠ lời giải', t: 'Con số ở ĐÁP ÁN không khớp con số sau dấu "=" cuối cùng của LỜI GIẢI — kiểm tra xem có ghép nhầm đáp án của câu khác không.' });
       }
     }
+    /* công thức bị đảo thứ tự khi bóc — xem ghi chú ở ngoacLech() */
+    var dao = [];
+    if (ngoacLech(it.questionHtml)) dao.push('đề bài');
+    if (ngoacLech(it.answerHtml)) dao.push('đáp án');
+    if (ngoacLech(it.solutionHtml)) dao.push('lời giải');
+    if (dao.length) {
+      flags.push({ s: 'công thức đảo thứ tự', t: 'Ngoặc lệch trong ' + dao.join(', ')
+        + ' — phân số xếp tầng hay bị bóc sai thứ tự (VD "K_a = [H⁺]²/C_a" ra thành "]^2 K_a = [H+ Ca").'
+        + ' Thứ tự mất từ lúc bóc nên máy không dựng lại được: sửa tay ngay ở thẻ này, hoặc nạp lại từ file Word (.docx)'
+        + ' — file Word giữ nguyên cấu trúc công thức nên bóc ra đúng.' });
+    }
+
     if (q && sol) {
       var qF = formulaTokens(q), sF = formulaTokens(sol);
       if (qF.length && sF.length && !qF.some(function (f) { return sF.indexOf(f) >= 0; })) {
