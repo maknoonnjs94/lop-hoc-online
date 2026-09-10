@@ -40,6 +40,63 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-17 (khuya) — Equation của Word dịch thẳng sang LaTeX (đợt 79)
+
+M chuyển sang nạp bằng `.docx` — thứ tự phân số đã đúng, nhưng bộ đọc OMML trả về **chữ phẳng**
+(`([H+]^2)/Ca`) mà không ai dựng lại, nên phiếu vẫn hiện dấu mũ trần và không có phân số.
+
+Giờ bộ đọc trả về **LaTeX** (`\frac{}{}`, `{e}^{}`, `{e}_{}`, `\sqrt{}`) và bọc cả cụm trong `$…# Nhật ký làm việc — Lớp học online (web + app máy tính)
+
+**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
+**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
+**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
+**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
+**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
+
+Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
+
+---
+
+## Trạng thái hiện tại (2026-09-08, tối)
+
+Đang chạy trên web:
+- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
+- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
+- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
+- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+
+M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
+
+1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
+2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
+
+Đã xong hết phần cài đặt máy chủ — không còn gì treo:
+
+- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
+- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
+- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
+- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
+
+Cách tự kiểm sau này, khỏi mở Supabase:
+
+```
+curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
+```
+
+Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+
+---
+
+,
+để bộ dựng LaTeX (đợt 70) vẽ ra phân số / căn thức / số mũ thật. Cấu trúc nằm sẵn trong file Word
+nên không phải đoán gì.
+
+**Chốt với m: cứ dùng Equation của Word như đang làm, đừng gõ LaTeX tay.**
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 79**. Bộ thử **59/59 đạt** (thêm nhóm Q: cả đường từ OMML).
+
+---
+
 ## 2026-09-17 (tối) — Chỉ số C_base/C_acid + xuống dòng sau dấu chấm dính liền (đợt 78)
 
 Sửa được: `Cbase`/`Cacid` về `C_base`/`C_acid` (thêm base·acid·axit·bazo·dd·0 vào bộ tự hoá

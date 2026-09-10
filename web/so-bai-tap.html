@@ -2481,7 +2481,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 78 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 79 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -7296,7 +7296,7 @@
     'Cuối cùng', 'Mặt khác', 'Tương tự', 'Kết quả', 'Như vậy', 'Kết luận', 'Đề bài cho', 'Gọi',
     /* thêm ở đợt 75 — mở đầu bước rất hay gặp trong lời giải Hoá phân tích */
     'Kiểm tra', 'Nồng độ', 'Hằng số', 'Điều kiện', 'Phương trình', 'Trong đó', 'Thay vào',
-    'Rút ra', 'Đặt', 'Xét', 'pH của', 'pOH của'];
+    'Rút ra', 'Đặt', 'Xét', 'pH của', 'pOH của', 'pK', 'Hằng số phân li', 'Nồng độ ion'];
   function autoBreakSteps(html) {
     var re = new RegExp('(?:\\s|<br\\s*\\/?>)*(?:\\bB[uư][ớo]c\\s*\\d{1,2}\\s*[.:)]'
       + '|(?<!\\p{L})(?:' + BUOC_MO.join('|') + ')(?!\\p{L})'
@@ -9356,15 +9356,16 @@
       return ommlChildren(node);
     }
     switch (node.localName) {
-      case 't': return node.textContent;
-      case 'f': return wrapMathPart(ommlPart(node, 'num')) + '/' + wrapMathPart(ommlPart(node, 'den'));
-      case 'sSup': return joinScript(ommlPart(node, 'e'), ommlPart(node, 'sup'), true);
-      case 'sSub': return joinScript(ommlPart(node, 'e'), ommlPart(node, 'sub'), false);
-      case 'sSubSup': return joinScript(joinScript(ommlPart(node, 'e'), ommlPart(node, 'sub'), false), ommlPart(node, 'sup'), true);
+      /* Chữ trong công thức: bỏ ký tự phá cú pháp LaTeX (chính chữ Word không bao giờ cần chúng). */
+      case 't': return node.textContent.replace(/[{}$\\]/g, '');
+      case 'f': return '\\frac{' + ommlPart(node, 'num') + '}{' + ommlPart(node, 'den') + '}';
+      case 'sSup': return '{' + ommlPart(node, 'e') + '}^{' + ommlPart(node, 'sup') + '}';
+      case 'sSub': return '{' + ommlPart(node, 'e') + '}_{' + ommlPart(node, 'sub') + '}';
+      case 'sSubSup': return '{' + ommlPart(node, 'e') + '}_{' + ommlPart(node, 'sub') + '}^{' + ommlPart(node, 'sup') + '}';
       case 'sPre': return ommlPart(node, 'e');
       case 'rad': {
-        var deg = ommlPart(node, 'deg'), e = ommlPart(node, 'e');
-        return (deg ? deg + '√' : '√') + (/[\s×·+−\-*/=]/.test(e) ? '(' + e + ')' : e);
+        var deg = ommlPart(node, 'deg');
+        return '\\sqrt' + (deg ? '[' + deg + ']' : '') + '{' + ommlPart(node, 'e') + '}';
       }
       case 'd': {
         var dPr = mChild(node, 'dPr');
@@ -9374,11 +9375,11 @@
       case 'nary': {
         var chr = mAttr(mChild(node, 'naryPr'), 'chr', '∫');
         var sub = ommlPart(node, 'sub'), sup = ommlPart(node, 'sup');
-        return chr + (sub ? '_' + wrapMathPart(sub) : '') + (sup ? '^' + wrapMathPart(sup) : '') + ' ' + ommlPart(node, 'e');
+        return chr + (sub ? '_{' + sub + '}' : '') + (sup ? '^{' + sup + '}' : '') + ' ' + ommlPart(node, 'e');
       }
-      case 'func': return ommlPart(node, 'fName') + ' ' + ommlPart(node, 'e');
-      case 'limLow': return ommlPart(node, 'e') + '_' + wrapMathPart(ommlPart(node, 'lim'));
-      case 'limUpp': return ommlPart(node, 'e') + '^' + wrapMathPart(ommlPart(node, 'lim'));
+      case 'func': return '\\operatorname{' + ommlPart(node, 'fName') + '} ' + ommlPart(node, 'e');
+      case 'limLow': return ommlPart(node, 'e') + '_{' + ommlPart(node, 'lim') + '}';
+      case 'limUpp': return ommlPart(node, 'e') + '^{' + ommlPart(node, 'lim') + '}';
       case 'eqArr': return mChildren(node, 'e').map(ommlToText).join('\n');
       case 'm': return mChildren(node, 'mr').map(function (mr) { return mChildren(mr, 'e').map(ommlToText).join('  '); }).join('\n');
       case 'bar': case 'acc': case 'box': case 'borderBox': case 'groupChr': case 'phant': return ommlPart(node, 'e');
@@ -9435,7 +9436,13 @@
     }
     function walk(node) {
       for (var c = node.firstElementChild; c; c = c.nextElementSibling) {
-        if (c.namespaceURI === M_NS) { out += ommlToText(c); continue; }
+        if (c.namespaceURI === M_NS) {
+          /* Bọc $…$ để bộ dựng LaTeX (đợt 70) vẽ ra phân số / căn thức / số mũ thật.
+             Cấu trúc nằm sẵn trong file Word nên không phải đoán gì. */
+          var tex = ommlToText(c).trim();
+          if (tex) out += (/\\S$/.test(out) ? ' ' : '') + '$' + tex + '$ ';
+          continue;
+        }
         if (c.namespaceURI !== W_NS) continue;
         switch (c.localName) {
           case 'r': out = docxRunText(c, out); break;
