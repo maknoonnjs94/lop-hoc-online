@@ -40,6 +40,22 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 
 ---
 
+## 2026-09-17 — Dấu căn kéo theo số đo thật của phông (đợt 76)
+
+M báo PDF bản GV căn vẫn hơi xấu. Đúng: `scaleY` 1,45 / 2,75 là con số chỉnh bằng mắt trên
+**phông sans-serif** của thẻ trong kho, mà phiếu dùng **Times New Roman** — chữ `√` hai phông cao
+thấp khác nhau nên nét không chạm gạch phủ.
+
+Giờ `canDoChu()` đo nét mực chữ `√` bằng `canvas measureText` trong đúng phông + cỡ chữ, rồi
+`canChinhCao()` tính hai biến CSS `--can-s` / `--can-ty` cho từng dấu căn. Đo lại ngay trước khi
+chụp PDF. Kết quả trên phiếu thật: đỉnh nét ↔ gạch phủ lệch **0,00 px** ở cả ba cỡ căn (kể cả căn ôm phân số).
+
+- `web/so-bai-tap.html` dựng lại ở **đợt 76** → nút *Giao cho lớp* xuất PDF có căn khít.
+- `web/sheet.css` đổi khối `.can::before` theo cùng cách (bản web của phiếu không chạy JS đo,
+  nên dùng giá trị mặc định — vẫn đúng dáng, chỉ không khít tuyệt đối).
+
+---
+
 ## 2026-09-16 (khuya) — Chuẩn hoá cả loạt + ngắt dòng lời giải (đợt 75)
 
 Hai việc m nêu: nút chuẩn hoá cho **cả loạt** (vốn đã có từ đợt 70 nhưng t nhét lẫn vào hàng chip

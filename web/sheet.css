@@ -114,13 +114,15 @@ body.sheet-view{
    trông như vết bẩn. Ký tự thì cỡ nào cũng đúng dáng, và html2canvas vẽ chữ + transform
    y hệt màn hình nên PDF không lệch. */
 .can::before {
-  content: "√"; position: absolute; left: 0; bottom: -.06em;
+  content: "√"; position: absolute; left: 0; top: 0;
   font-size: 1em; line-height: 1; color: #152f4d;
-  transform: scaleY(1.45); transform-origin: left bottom;
+  /* --can-s và --can-ty do canChinhCao() tính từ số đo thật của phông (xem so_bai_tap.html).
+     Giá trị mặc định chỉ để dùng tạm khi chưa kịp đo. */
+  transform: translateY(var(--can-ty, 0px)) scaleY(var(--can-s, 1.45));
+  transform-origin: left top;
 }
 /* Căn ôm phân số (hay ôm một căn khác) cao gấp đôi — kéo dấu căn cho kịp. */
 .can.cao { padding-left: .74em; }
-.can.cao::before { transform: scaleY(2.75); }
 .can-duoi { align-self: stretch; border-top: .075em solid #152f4d; padding: .09em .16em 0 .02em; line-height: 1.25; }
 /* Chỉ số trên/dưới làm PHỒNG hộp dòng, đẩy gạch phủ vọt lên gần một dòng
    ("√1,35 × 10⁻⁵ × 0,0800" là ví dụ rõ nhất) — line-height:0 để chúng không tính vào chiều cao. */

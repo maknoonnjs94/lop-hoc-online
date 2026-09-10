@@ -664,13 +664,15 @@
      trông như vết bẩn. Ký tự thì cỡ nào cũng đúng dáng, và html2canvas vẽ chữ + transform
      y hệt màn hình nên PDF không lệch. */
   .can::before {
-    content: "√"; position: absolute; left: 0; bottom: -.06em;
+    content: "√"; position: absolute; left: 0; top: 0;
     font-size: 1em; line-height: 1; color: #152f4d;
-    transform: scaleY(1.45); transform-origin: left bottom;
+    /* --can-s và --can-ty do canChinhCao() tính từ số đo thật của phông (xem so_bai_tap.html).
+       Giá trị mặc định chỉ để dùng tạm khi chưa kịp đo. */
+    transform: translateY(var(--can-ty, 0px)) scaleY(var(--can-s, 1.45));
+    transform-origin: left top;
   }
   /* Căn ôm phân số (hay ôm một căn khác) cao gấp đôi — kéo dấu căn cho kịp. */
   .can.cao { padding-left: .74em; }
-  .can.cao::before { transform: scaleY(2.75); }
   .can-duoi { align-self: stretch; border-top: .075em solid #152f4d; padding: .09em .16em 0 .02em; line-height: 1.25; }
   /* Chỉ số trên/dưới làm PHỒNG hộp dòng, đẩy gạch phủ vọt lên gần một dòng
      ("√1,35 × 10⁻⁵ × 0,0800" là ví dụ rõ nhất) — line-height:0 để chúng không tính vào chiều cao. */
@@ -2479,7 +2481,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-16 · đợt 75 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 76 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -4527,6 +4529,52 @@
       if (!mathBocMotCan(root) && !mathBocMotPhanSo(root)) break;
     }
   }
+  /* ---- kéo dấu căn cho vừa biểu thức, theo SỐ ĐO THẬT của phông ----
+     Trước đây scaleY là con số chỉnh bằng mắt (1,45 và 2,75). Chỉnh trên phông sans-serif của
+     thẻ trong kho thì phiếu (Times New Roman) lệch, vì chữ √ hai phông cao thấp khác nhau —
+     và căn ôm phân số thì cao gấp mấy lần căn thường. Giờ đo hẳn: lấy nét mực của chữ √ trong
+     đúng phông + cỡ chữ đang dùng, rồi tính tỉ lệ sao cho đỉnh nét chạm gạch phủ và đáy nét
+     chạm đáy biểu thức. Phông nào, cỡ nào, mấy tầng cũng khớp. */
+  var canDoCache = {};
+  function canDoChu(phong, F) {
+    var khoa = phong + '|' + F;
+    if (canDoCache[khoa]) return canDoCache[khoa];
+    var cv = canDoChu.cv || (canDoChu.cv = document.createElement('canvas'));
+    var ctx = cv.getContext('2d');
+    ctx.font = F + 'px ' + phong;
+    var m = ctx.measureText('√');
+    var fbA = m.fontBoundingBoxAscent  || F * 0.9;
+    var fbD = m.fontBoundingBoxDescent || F * 0.2;
+    var inkA = m.actualBoundingBoxAscent  || F * 0.7;
+    var inkD = m.actualBoundingBoxDescent || 0;
+    /* hộp chữ cao đúng 1em (line-height:1) → chỗ đường cơ sở nằm trong hộp */
+    var coSo = (F - (fbA + fbD)) / 2 + fbA;
+    var res = { dinh: coSo - inkA, cao: inkA + inkD };   /* đỉnh mực tính từ mép trên hộp; chiều cao nét mực */
+    if (!(res.cao > 0)) res.cao = F * 0.7;
+    return (canDoCache[khoa] = res);
+  }
+  function canChinhCao(root) {
+    if (!root || !root.querySelectorAll) return;
+    var ds = root.querySelectorAll('.can');
+    for (var i = 0; i < ds.length; i++) {
+      var c = ds[i];
+      if (!c.isConnected) continue;
+      var duoi = null, con = c.children;
+      for (var k = 0; k < con.length; k++) if (con[k].classList.contains('can-duoi')) { duoi = con[k]; break; }
+      if (!duoi) continue;
+      var H = duoi.offsetHeight;
+      if (!H) continue;                       /* chưa có bố cục (nút rời) — để giá trị mặc định */
+      var cs = getComputedStyle(c);
+      var F = parseFloat(cs.fontSize) || 16;
+      var d = canDoChu(cs.fontFamily, F);
+      var s = H / d.cao;
+      if (!(s > 0) || !isFinite(s)) continue;
+      if (s < 1) s = 1;
+      c.style.setProperty('--can-s', s.toFixed(3));
+      c.style.setProperty('--can-ty', (-s * d.dinh).toFixed(2) + 'px');
+    }
+  }
+
   /* Gỡ bọc: trả về đúng HTML chữ thường như trước khi bọc (đi từ trong ra ngoài). */
   function mathUndressHtml(html) {
     var box = document.createElement('div');
@@ -4771,7 +4819,7 @@
     mathHen = setTimeout(function () {
       mathHen = null;
       var ds = mathHang; mathHang = [];
-      ds.forEach(function (x) { if (x.isConnected) mathDressElement(x); });
+      ds.forEach(function (x) { if (x.isConnected) { mathDressElement(x); canChinhCao(x); } });
     }, 0);
   }
   function mathBatTheoDoi() {
@@ -5887,6 +5935,7 @@
 
     sheetEl.innerHTML = html;
     mathDressElement(sheetEl);   /* đợt 67: √(…) và (a)/(b) → căn thức, phân số thật */
+    canChinhCao(sheetEl);        /* đợt 76: kéo dấu căn cho vừa, theo phông thật của phiếu */
     hydrateImages();
     schedulePageMarks();
     inkAfterRender();   /* đợt 52: bảng giảng phủ lại lớp vẽ */
@@ -6573,6 +6622,7 @@
     [].slice.call(sheetEl.querySelectorAll('.page-mark')).forEach(function (m) { m.remove(); });
 
     /* ô đáp án chưa nhập gì thì đừng in ra bản giáo viên */
+    canChinhCao(sheetEl);   /* đợt 76: đo lại trước khi chụp — cỡ chữ hay khổ giấy có thể vừa đổi */
     var hideEls = [].slice.call(sheetEl.querySelectorAll('.no-print'))
       .concat([].slice.call(sheetEl.querySelectorAll('.answer-key')).filter(function (k) {
         return !k.textContent.trim();
