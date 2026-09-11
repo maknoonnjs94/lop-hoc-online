@@ -110,7 +110,18 @@ Trên trình duyệt thường, ở địa chỉ mới:
 5. Ở trang quản trị **địa chỉ mới**, tải lên một video ngắn, gắn vào buổi thử → mở app → video phát được
    (chứng tỏ khoá hai địa chỉ ở Bước 4 chạy đúng).
 
+## Bước 6b — Sinh viên gắn máy bằng TRÌNH DUYỆT ở địa chỉ cũ
+
+Mã máy trên trình duyệt nằm trong `localStorage` — **riêng cho từng địa chỉ**. Sinh viên đã gắn máy bằng trình duyệt
+ở `workers.dev` mà mở `giangduonghoahoc.com` sẽ bị "Tài khoản này đã gắn với một máy khác". Trong **app** thì
+không sao (mã máy thật, không phụ thuộc địa chỉ). Xử lý: quản trị → **Sinh viên** → cột *Thiết bị* — dòng nào
+KHÔNG bắt đầu bằng `app:` là gắn bằng trình duyệt → bấm **Gỡ** khi sinh viên báo, họ đăng nhập lại là xong.
+
 ## Bước 7 — Báo tên miền cho Claude để đổi trong mã
+
+**Đã làm 11/9/2026** cho `giangduonghoahoc.com` (commit `6729aed`): `TEN_MIEN` nằm trong `wrangler.jsonc`, `ORIGINS`,
+`APP_URL`, `SITE_URL`, hướng dẫn, infographic; nút **🔒 Khoá lại video** ở Kho tệp đã bấm (1 video). Supabase
+Site URL + Redirect URL `/**` đã đặt. Phần dưới giữ lại để lần sau đổi tên miền khác thì biết chỗ.
 
 Gửi đúng tên miền, Claude sẽ sửa một lượt (chưa cần phát hành app):
 

@@ -20,7 +20,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **App máy tính 1.0.16** — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
 **SQL:** v9 → **v24** đều `true` trên `/api/trang-thai` (kiểm 11/9, máy chấm thật 10/10 phép qua RPC). Không còn schema nào treo.
-**Tên miền riêng:** mã đã sẵn (`TEN_MIEN`), chưa có tên miền — theo `HUONG_DAN_TEN_MIEN.md`.
+**Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
 
@@ -58,8 +58,13 @@ phần trên (cạnh Bindings). Để khỏi mò menu, đưa luôn vào `wrangle
 - `app/main.js`: `SITE_URL` → tên miền riêng, **cho bản app sau**; ghi rõ phải bấm 🔒 Khoá lại video trước khi phát hành.
 - `HUONG_DAN.md`, `HUONG_DAN_VIDEO.md`, `pr/infographic-gioi-thieu.html` (pr/ vẫn chưa commit): địa chỉ mới.
 
-Còn phía m: Supabase → Authentication → URL Configuration (Site URL + Redirect URL `https://giangduonghoahoc.com/**`,
-giữ dòng workers.dev), rồi vòng thử Bước 6 và bấm 🔒 Khoá lại video một lần.
+M đã làm xong: Supabase Site URL `https://giangduonghoahoc.com` + Redirect URLs 2 dòng (`/**` cho cả hai địa chỉ —
+lần đầu m dán nhầm `/**` vào ô Site URL, lần hai gõ nhầm thành `giangduonghoahoc.com/workers.dev/`, đã sửa);
+bấm 🔒 Khoá lại video → "1 video cho: giangduonghoahoc.com, workers.dev, www., *.". Kiểm CORS từ ngoài: 3 origin
+hợp lệ được echo, origin lạ rơi về workers.dev. `www.` chưa gắn Custom Domain (000) — tuỳ chọn.
+
+**Bẫy còn lại (ghi ở Bước 6b hướng dẫn):** mã máy trên trình duyệt là localStorage theo origin → SV gắn máy bằng
+trình duyệt ở workers.dev mở địa chỉ mới bị "gắn với máy khác"; app không sao. GV bấm Gỡ ở tab Sinh viên.
 
 ---
 ## 2026-09-11 (chiều) — Hướng dẫn tên miền từng bước + khoá video cho cả hai địa chỉ
