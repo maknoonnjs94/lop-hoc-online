@@ -70,6 +70,8 @@ Làm:
 - Sổ tay `HUONG_DAN.md`: mục Trên điện thoại viết lại, bảng BAT_BUOC_APP (đang `tat_ca` + vì sao + 3 việc mã đã lo), bảng
   web/app, **bảng 4 địa chỉ**, mục mới "Trang công khai — sửa nội dung ở đâu".
 
+**Bẫy lớn:** deploy xong, `/` với UA `LopHocApp/` vẫn ra trang công khai — vì Cloudflare trả **tệp tĩnh trước khi chạy Worker** (mặc định `run_worker_first: false`): yêu cầu khớp tệp trong `web/` không bao giờ tới `worker.js`, chỉ `/api/*` mới tới. Sửa: `wrangler.jsonc` → `assets.run_worker_first: true` (`4ab96a0`); Worker vẫn gọi `env.ASSETS.fetch` nên `_headers` và chuyển hướng `.html → sạch` giữ nguyên (đã kiểm: `/hoc` no-cache, `/hoc.html` 307). Kiểm từ ngoài sau đó: `/` UA app → trang học (cả workers.dev), UA thường → trang công khai, `/quan-tri` có tab, `/so-bai-tap` 200.
+
 **Bẫy gặp:** heredoc Bash nuốt `\\n` thành `\n` trong script vá → anchor có `\n\n` literal không khớp; chuyển sang Write.
 Screenshot pane ẩn hay timeout/zoom lạ → đo DOM bằng javascript_tool (grid columns, chiều cao thẻ, scrollWidth).
 
