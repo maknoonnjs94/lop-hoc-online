@@ -81,6 +81,8 @@ Screenshot pane ẩn hay timeout/zoom lạ → đo DOM bằng javascript_tool (g
 
 **Zalo từng khoá + giấu trang quản trị (theo m):** thẻ khoá học có `zalo` (link nhóm lớp, chỉ nhận http(s)) + `zalo_nhan`; `nutKhoa()`: có link → nút chính vào nhóm + nút phụ Nhắn giảng viên; không → Đăng ký qua Zalo (số ở Liên hệ); kết thúc → không nút. Bỏ link "Giảng viên" ở chân trang công khai ("trang quản trị phải tuyệt mật, không được lộ link"); `quan-tri.html` thêm meta robots noindex, `_headers` thêm `X-Robots-Tag: noindex` cho /quan-tri và /so-bai-tap; `robots.txt` chỉ Allow / (không liệt kê đường quản trị vì liệt kê = lộ). Thử 4 trường hợp thẻ + tab quản trị lưu/tải lại.
 
+**Chữ cố định sửa được (theo m: "1 số chữ hơi thô"):** danh mục 46 chuỗi ở `web/chu-cong-khai.js` ([khoá, nhãn, mặc định], dùng chung cho cả trang công khai lẫn quản trị); trang công khai gắn `data-chu` lên phần tử tĩnh + `T(k)` trong các hàm vẽ, `apChu()` áp trước khi vẽ; menu dùng chung chữ với nhãn mục. Quản trị: khối `<details>` "Chữ trên trang" gập sẵn, placeholder = mặc định, ô trống = mặc định, "-" = bỏ trống (bỏ nội dung ghi chú là ẩn cả ghi chú); khi lưu chỉ giữ ô có chữ → `chu`. Tiện tay đổi vài mặc định: "Học ở đây, bạn có gì", "Bốn bước để bắt đầu", "Hỏi bài, có lời giải đáp". Thử: ghi đè menu/nhãn/thẻ/pill, ẩn ghi chú, lưu + tải lại ở quản trị.
+
 **M phải làm:** vào Quản trị → Trang công khai điền số Zalo + chọn ảnh QR (+ sửa khoá học cho đúng);
 thử `/hoc` bằng trình duyệt với tài khoản SV → phải thấy màn "mở trong ứng dụng"; mở app 1.0.16 → vẫn vào lớp như cũ.
 

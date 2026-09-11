@@ -241,6 +241,10 @@ nhắc đúng tên tệp, còn trang công khai vẫn hiện bản mẫu có s�
 
 Số Zalo đang **để trống** trong bản mẫu — m điền ở tab này, trang mới hiện nút *Nhắn Zalo* và *Đăng ký qua Zalo*.
 
+**Chữ cố định trên trang** (tiêu đề mục, nhãn, nút, 6 thẻ "được gì", chân trang): cùng tab, khối **Chữ trên trang** (bấm để mở).
+Ô trống = chữ mặc định (hiện mờ trong ô); gõ đúng một dấu `-` = bỏ trống hẳn (bỏ nội dung ghi chú cuối mục Cách học là ẩn cả ghi chú).
+Muốn thêm/bớt dòng sửa được thì bảo t sửa `web/chu-cong-khai.js`.
+
 **Link Zalo riêng từng khoá:** trong thẻ khoá học có ô *Link Zalo của khoá* (nhóm lớp) + *Chữ trên nút*. Có link thì nút chính
 của thẻ dẫn vào nhóm, nút phụ "Nhắn giảng viên"; không có thì nút "Đăng ký qua Zalo" dùng số ở mục Liên hệ. Khoá đã kết thúc không có nút.
 

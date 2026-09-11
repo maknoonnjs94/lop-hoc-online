@@ -8,6 +8,7 @@
 <!-- Thêm vào màn hình chính điện thoại (bản quản trị, mở thẳng vào /quan-tri). -->
 <link rel="manifest" href="manifest-quan-tri.json">
 <meta name="robots" content="noindex, nofollow">
+<script src="chu-cong-khai.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="apple-touch-icon" href="img/app-180.png">
 <meta name="theme-color" content="#0f766e">
@@ -2468,11 +2469,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ================= TRANG CÔNG KHAI (v25) ================= */
   var TCK_TT = [["dang_mo", "Đang mở"], ["sap_mo", "Sắp mở"], ["ket_thuc", "Đã kết thúc"]];
   var tckDaTai = false;
-  function tckF(ten, nhan, gt, kieu, w) {
-    var v = esc(gt == null ? "" : gt);
-    if (kieu === "textarea") return '<label class="f' + (w ? " w" : "") + '">' + nhan + '<textarea data-k="' + ten + '">' + v + '</textarea></label>';
+  function tckF(ten, nhan, gt, kieu, w, ph) {
+    var v = esc(gt == null ? "" : gt), p = ph ? ' placeholder="' + esc(ph) + '"' : "";
+    if (kieu === "textarea") return '<label class="f' + (w ? " w" : "") + '">' + nhan + '<textarea data-k="' + ten + '"' + p + '>' + v + '</textarea></label>';
     if (kieu === "tt") return '<label class="f">' + nhan + '<select data-k="' + ten + '">' + TCK_TT.map(function (t) { return '<option value="' + t[0] + '"' + (gt === t[0] ? " selected" : "") + ">" + t[1] + "</option>"; }).join("") + "</select></label>";
-    return '<label class="f' + (w ? " w" : "") + '">' + nhan + '<input data-k="' + ten + '" value="' + v + '"></label>';
+    return '<label class="f' + (w ? " w" : "") + '">' + nhan + '<input data-k="' + ten + '" value="' + v + '"' + p + '></label>';
   }
   function tckRow(loai, o) {
     o = o || {};
@@ -2501,7 +2502,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<div class="ghi"><b>Ảnh QR Zalo</b>Zalo → <i>Cá nhân</i> → <i>Mã QR của tôi</i> → <i>Lưu ảnh</i>, rồi chọn ảnh đó ở đây. Ảnh tự thu nhỏ về 480 px và nằm ngay trong trang, sinh viên quét bằng Zalo là ra bạn.'
         + '<div class="nut"><label class="btn sm" style="cursor:pointer">📷 Chọn ảnh<input type="file" id="tckQrFile" accept="image/*" hidden></label><button type="button" class="btn sm" id="tckQrXoa"' + (lh.qr_anh ? "" : " disabled") + '>Bỏ ảnh</button></div></div>'
         + '<input type="hidden" data-k="qr_anh" id="tckQr" value="' + esc(lh.qr_anh || "") + '"></div>'
-        + "</div></div>";
+        + "</div></div>"
+      + tckChu(d.chu || {});
+  }
+  /* Chữ cố định trên trang: danh mục ở chu-cong-khai.js; ô trống = mặc định (hiện mờ), "-" = bỏ trống */
+  function tckChu(chu) {
+    var ds = window.CHU_CONG_KHAI || [];
+    return '<details class="card" data-khoi="chu"><summary style="cursor:pointer;padding:18px 18px 14px;font-weight:800;font-size:15.5px">Chữ trên trang — tiêu đề mục, nhãn, nút, 6 thẻ "được gì" <span class="phu" style="display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:4px">Ô trống là dùng chữ mặc định (đang hiện mờ). Muốn bỏ hẳn một dòng thì gõ đúng một dấu gạch "-".</span></summary><div class="lh" style="padding:0 18px 16px">'
+      + ds.map(function (nh) {
+        return '<div style="grid-column:1 / -1;font-weight:800;font-size:13px;color:var(--ink);margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">' + esc(nh.nhom) + "</div>"
+          + nh.ds.map(function (c) { var dai = c[2].length > 60; return tckF(c[0], esc(c[1]), chu[c[0]] || "", dai ? "textarea" : null, dai, c[2]); }).join("");
+      }).join("") + "</div></details>";
   }
   function docKhoi(el) {
     var o = {};
@@ -2512,6 +2523,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var d = {};
     [].forEach.call($("tckBox").querySelectorAll("[data-khoi]"), function (k) {
       var loai = k.dataset.khoi;
+      if (loai === "chu") { var o = docKhoi(k.querySelector(".lh")), g = {}; Object.keys(o).forEach(function (x) { if (o[x]) g[x] = o[x]; }); d.chu = g; return; }
       if (loai === "gioi_thieu" || loai === "lien_he") d[loai] = docKhoi(k.querySelector(".lh"));
       else d[loai] = [].map.call(k.querySelectorAll(".row"), function (r) { return docKhoi(r); }).filter(function (o) { return Object.keys(o).some(function (x) { return o[x]; }); });
     });
