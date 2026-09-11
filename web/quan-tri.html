@@ -2647,6 +2647,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function loadRoster() {
     var box = $('roster');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
+    /* hai hàng chờ (đăng ký mới, học phí) gom MỌI lớp — nạp trước, không phụ thuộc lớp đang chọn có sinh viên hay không (bẫy 12/9) */
+    loadChoDangKy(); loadChoDuyet();
     var r = await sb.from('enrollments')
       .select('student, joined_at, han_dong, da_dong_at, so_tien, mien, bao_chuyen_at, ghi_chu_hp, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
       .eq('class_id', curClass);
@@ -2672,8 +2674,6 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
     var ngay = function (s) { try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; } };
-    if (coHocPhi) loadChoDuyet(); else { $('choDuyet').hidden = true; }
-    loadChoDangKy();
     var lopHP = classes.filter(function (x) { return x.id === curClass; })[0] || {}, thuHP = coHocPhi && (Number(lopHP.hoc_phi) || 0) > 0;
     $('hpTom').textContent = thuHP ? hpTomTat(roster, lopHP) : (coHocPhi ? 'Lớp không thu học phí' : '');
     box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th>' + (thuHP ? '<th>Học phí</th>' : '') + '<th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
