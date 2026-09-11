@@ -10,34 +10,33 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 
 ---
 
-## Trạng thái hiện tại (2026-09-08, tối)
+## Trạng thái hiện tại (2026-09-11)
 
 Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
+- **Trang học sinh viên** — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** máy chấm đúng/sai, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
+- **Trang quản trị** — Buổi học / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
+- **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` — đang ở **đợt 85**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc.
+- **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
+- **App máy tính 1.0.16** — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
+**SQL:** v9 → **v23** đều `true` trên `/api/trang-thai` (kiểm 11/9). Không còn schema nào treo.
 
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
+Tự kiểm sau này, khỏi mở Supabase:
 
 ```
 curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 ```
 
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
+**Việc còn treo phía m (không phải mã):**
+1. **Publish lại** bản gốc Hóa phân tích + sổ Hóa hữu cơ ở đợt 85 (bản web đã tự lên, artifact thì phải publish tay).
+2. **Giao cho lớp lại** phiếu pH — bản sinh viên đang thấy là PDF cũ từ trước khi sửa công thức.
+3. Chạy đủ luồng bằng app Windows thật + một tài khoản sinh viên thật.
 
+**Giới hạn đã biết, nói rõ:**
+- Phân số bóc từ **PDF** có thể đảo thứ tự (tử/mẫu bị đọc theo dòng ngang) — mất dữ kiện từ đầu vào, không dựng lại được. Nạp bằng **.docx** thì đúng.
+- `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
+
+**Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
 ## 2026-09-19 — Tên dạng bài có ngay lúc mở sổ; PDF không còn rơi xuống hộp thoại in (đợt 84–85)
@@ -61,6 +60,8 @@ lỗi, *Đã tải file PDF về máy*. `thu_cong_thuc` 77/77.
 
 ---
 
+---
+
 ## 2026-09-18 (khuya) — Tiêu đề dạng bài không rơi khi sang trang; dòng kẻ 1,5 cm (đợt 83)
 
 M báo bản in mất dạng bài và dòng kẻ quá cao. Dạng bài không bị xoá — PDF cắt trang **từ mép trên
@@ -71,6 +72,8 @@ Dòng kẻ: app tự kéo giãn tới 1,75 cm để lấp trang. Giờ là ô **
 *Khổ giấy / lề / cỡ chữ*, mặc định 15, **cố định** — không giãn nữa.
 
 - `web/so-bai-tap.html` dựng lại ở **đợt 83**.
+
+---
 
 ---
 
@@ -89,6 +92,8 @@ Kiểm trên bản web thật: quyền `downloads` có, jsPDF + html2canvas tả
 
 ---
 
+---
+
 ## 2026-09-18 (chiều) — Ô Sửa hiện mã công thức (đợt 81)
 
 M báo *"sửa thủ công … nhưng k save được"*. Dựng lại lỗi thì thấy nút Lưu **có** chạy —
@@ -96,91 +101,7 @@ lỗi là **thiết kế của t từ đợt 70**: mã LaTeX là bản gốc, nh
 (có cả ký tự ẩn trong `.can-kh`). Gõ vào giữa đó là chỉnh phần hiển thị, còn `data-tex` vẫn nguyên,
 nên lưu xong nó dựng lại y như cũ — nhìn đúng như không lưu được.
 
-Đã sửa: `texGoBoc()` gỡ về mã `$…# Nhật ký làm việc — Lớp học online (web + app máy tính)
-
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
- khi mở ô Sửa; lúc lưu có dấu `# Nhật ký làm việc — Lớp học online (web + app máy tính)
-
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
- là luôn dựng lại
+Đã sửa: `texGoBoc()` gỡ về mã `$…$` khi mở ô Sửa; lúc lưu có dấu đô-la là luôn dựng lại
 (kể cả khi tắt "tự hoá công thức"). Lời nhắc trong ô nói rõ điều này.
 
 - `web/so-bai-tap.html` dựng lại ở **đợt 81**. Bộ thử **65/65 đạt** (thêm nhóm S: dựng rồi gỡ về mã).
@@ -190,141 +111,15 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 ## 2026-09-18 — Hết lòi dấu $ ra phiếu (đợt 80)
 
 Lỗi t gây ra ở đợt 79: thêm `'pK'` vào bộ từ ngắt bước, mà `pK` đứng giữa công thức suốt ngày
-(`pK_a = −log K_a`) → `autoBreakSteps` chèn `<br>` giữa cụm `$…# Nhật ký làm việc — Lớp học online (web + app máy tính)
+(`pK_a = −log K_a`) → `autoBreakSteps` chèn `<br>` giữa cụm `$…$` → cắt đôi mã LaTeX →
+hai dấu đô-la hiện nguyên trên phiếu.
 
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
- → cắt đôi mã LaTeX →
-hai dấu `# Nhật ký làm việc — Lớp học online (web + app máy tính)
-
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
- hiện nguyên trên phiếu.
-
-Đã sửa: `autoBreakSteps` chừa nguyên phần trong `$…# Nhật ký làm việc — Lớp học online (web + app máy tính)
-
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
- (cả luật từ mở đầu bước lẫn luật dấu hai chấm);
+Đã sửa: `autoBreakSteps` chừa nguyên phần trong `$…$` (cả luật từ mở đầu bước lẫn luật dấu hai chấm);
 bỏ `'pK'` khỏi bộ từ, thay bằng luật hẹp "chỉ ngắt trước pK khi có chữ *của* theo sau".
 
 **Đúng bẫy đã gặp ở đợt 74** — lần đó vá `donSoMu` mà quên `autoBreakSteps`.
 
-- `web/so-bai-tap.html` dựng lại ở **đợt 80**. Bộ thử **62/62 đạt** (thêm nhóm R: không được lòi dấu $).
+- `web/so-bai-tap.html` dựng lại ở **đợt 80**. Bộ thử **62/62 đạt** (thêm nhóm R: không được lòi dấu đô-la).
 
 ---
 
@@ -333,49 +128,7 @@ bỏ `'pK'` khỏi bộ từ, thay bằng luật hẹp "chỉ ngắt trước pK
 M chuyển sang nạp bằng `.docx` — thứ tự phân số đã đúng, nhưng bộ đọc OMML trả về **chữ phẳng**
 (`([H+]^2)/Ca`) mà không ai dựng lại, nên phiếu vẫn hiện dấu mũ trần và không có phân số.
 
-Giờ bộ đọc trả về **LaTeX** (`\frac{}{}`, `{e}^{}`, `{e}_{}`, `\sqrt{}`) và bọc cả cụm trong `$…# Nhật ký làm việc — Lớp học online (web + app máy tính)
-
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
-,
+Giờ bộ đọc trả về **LaTeX** (`\frac{}{}`, `{e}^{}`, `{e}_{}`, `\sqrt{}`) và bọc cả cụm trong `$…$`,
 để bộ dựng LaTeX (đợt 70) vẽ ra phân số / căn thức / số mũ thật. Cấu trúc nằm sẵn trong file Word
 nên không phải đoán gì.
 
@@ -397,6 +150,8 @@ công thức, vẫn chừa `Ca` là canxi), và ngắt dòng sau dấu chấm **
 
 ---
 
+---
+
 ## 2026-09-17 (chiều) — Bắt công thức bị đảo thứ tự khi bóc PDF (đợt 77)
 
 M gửi ảnh: `K_a = [H⁺]²/C_a` bóc ra thành `]^2 K_a = [H+ Ca`. Phân số xếp tầng trong PDF
@@ -411,6 +166,8 @@ Và kiểm chứng được: bộ đọc **OMML của Word** (`ommlToText`) đ�
 
 - `web/so-bai-tap.html` dựng lại ở **đợt 77**.
 - Bộ thử lên **51 phép, 51/51 đạt**.
+
+---
 
 ---
 
@@ -430,6 +187,8 @@ chụp PDF. Kết quả trên phiếu thật: đỉnh nét ↔ gạch phủ lệ
 
 ---
 
+---
+
 ## 2026-09-16 (khuya) — Chuẩn hoá cả loạt + ngắt dòng lời giải (đợt 75)
 
 Hai việc m nêu: nút chuẩn hoá cho **cả loạt** (vốn đã có từ đợt 70 nhưng t nhét lẫn vào hàng chip
@@ -440,49 +199,7 @@ chỉ tính khi bản gốc đã có xuống dòng — mà chữ bóc từ PDF d
 (chừa `1:2`, `10:30`, `http://`) và thêm các từ mở đầu bước của Hoá phân tích.
 
 Bộ thử `So_Bai_Tap_HUS/Tools/thu_cong_thuc.js` lên **46 phép, 46/46 đạt** — thêm nhóm ngắt dòng,
-số mũ dương rời (`× 10 5`), và ca `donSoMu` không được thò tay vào trong `$…# Nhật ký làm việc — Lớp học online (web + app máy tính)
-
-**Trang học:** https://lop-hoc-online.giangduonghoahoc.workers.dev/ (đổi từ …maknoonnjs94… ngày 09/9 khi đổi tên nhánh Cloudflare; tên cũ đã chết) (Cloudflare Workers, phát tự động sau mỗi lần đẩy lên GitHub, trễ 1–3 phút)
-**Kho mã:** https://github.com/maknoonnjs94/lop-hoc-online (thư mục này, `git log` là lịch sử đầy đủ từng lần sửa)
-**Máy chủ dữ liệu:** Supabase, dự án `euyrrodppbpnkmificbs` — khoá `service_role` không bao giờ nằm trong kho mã hay trong nhật ký này
-**App máy tính:** tải tại `/tai-app` → Windows `LopHoc-win.exe`, macOS `LopHoc-mac.dmg` (kho Cloudflare R2 `giang-duong-hoa-hoc-app`)
-**Nhật ký của Sổ Bài Tập (artifact):** `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` — file này chỉ ghi phần web + app.
-
-Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải làm gì bên ngoài (SQL, khoá), đã test gì, còn gì.
-
----
-
-## Trạng thái hiện tại (2026-09-08, tối)
-
-Đang chạy trên web:
-- Tên hệ thống: **Giảng đường Hóa học**, logo tròn màu nước ở cột trái / đăng nhập / favicon. Trang học sinh viên: **4 giao diện tự chọn** (Mint Explorer / Sky Captain / Peach Garden / Lavender Dream) × 8 nhân vật 3D, lần đầu đăng nhập **đổi mật khẩu → khai hồ sơ**, trang chủ "Hôm nay", chuông tài liệu mới, Ctrl+K, xem PDF/video/bản đọc, dấu chìm tên, canh gác chụp / quay / in, khoá một thiết bị, tự đăng xuất sau 5 phút, bộ icon minh hoạ màu.
-- Trang quản trị: Buổi học / Sinh viên (**Tạo tài khoản mới**, Thêm bằng email, cột Hồ sơ, Cấp lại mật khẩu, gỡ thiết bị) / Kho tệp / Theo dõi / Cảnh báo.
-- Worker `worker.js` cạnh file tĩnh: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*` — cả ba secret (`SUPABASE_SERVICE_ROLE_KEY`, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`) đã có, Stream trả 200.
-- App máy tính bản **1.0.16** (khoá theo mã máy thật; địa chỉ giangduonghoahoc; icon logo Giảng đường): vỏ Electron tải thẳng trang web, cửa sổ được hệ điều hành chống chụp/quay, dò phần mềm quay, tự cập nhật (Windows) qua R2.
-
-M còn phải làm (soát lại 2026-09-10 bằng `/api/trang-thai`):
-
-1. ~~Quyết định `REQUIRE_APP`** trong `web/index.html` (đang `false`). Bật `true` là **khoá sạch điện thoại và máy tính bảng**, vì app chỉ có bản Windows/macOS. Đã chốt 11/9: dùng BAT_BUOC_APP = video, chỉ video bài giảng cần app.~~ **Xong.**
-2. Chạy đủ luồng test bằng app thật 1.0.16 trở lên (khoá theo mã máy), xem cột "đã gắn máy (app)" trong danh sách sinh viên.
-
-Đã xong hết phần cài đặt máy chủ — không còn gì treo:
-
-- **SQL:** v9, v10, v10b, v11, v12, v14, v16, v17, v18, v19, v20, v21, v22 — `/api/trang-thai` báo `true` cả loạt. **v23 (`schema_v23_hoi_dap_rieng.sql`) chưa chạy** — chạy xong thì mục Hỏi đáp riêng mới sống.
-- **Secret của Worker:** đủ ba (`SUPABASE_SERVICE_ROLE_KEY` dài 219 ký tự, `CF_ACCOUNT_ID`, `CF_STREAM_TOKEN`); Cloudflare Stream trả 200.
-- **Kho tệp bài nộp:** kho bainop đã tạo được (một số dự án Supabase khoá storage.objects, dự án này thì không).
-- **Hồ sơ admin trùng:** đã dọn — `doc_ho_so.so_dong = 1`.
-
-Cách tự kiểm sau này, khỏi mở Supabase:
-
-```
-curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
-```
-
-Đã xong: m chạy v10b, câu kiểm tra cho thấy `sv.thu@example.com` đã đi trọn luồng lúc 17:39 (08/9): `must_change_pw = false`, `onboarded_at` có giờ, tên "Bành Thị Lệ Xuân", giới tính nữ → giao diện Peach. Lần "chưa thấy" trước đó là app/trình duyệt còn giữ trang cũ. Muốn xem lại luồng lần đầu thì đặt lại bằng `update public.profiles set must_change_pw = true, onboarded_at = null where email = 'sv.thu@example.com';`.
-
----
-
-.
+số mũ dương rời (`× 10 5`), và ca `donSoMu` không được thò tay vào trong `$…$`.
 
 - `web/so-bai-tap.html` dựng lại ở **đợt 75**.
 
@@ -499,6 +216,8 @@ ngoài dấu căn, **sai hẳn về Toán**. Chi tiết ở `..\So_Bai_Tap_HUS\N
 - `web/so-bai-tap.html` dựng lại ở **đợt 73** → nút *Giao cho lớp* xuất PDF có công thức đúng.
 - `web/sheet.css` không đổi.
 - `web/_test_congthuc.html` là trang thử tại máy, đã nằm trong `.gitignore` (`web/_test_*`).
+
+---
 
 ---
 
@@ -519,6 +238,8 @@ Chi tiết ở `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` (đợt 71).
 
 ---
 
+---
+
 ## 2026-09-16 — Chốt công thức thành LaTeX ở kho bài (đợt 70)
 
 **Đã chốt hướng đi:** **PDF vẫn là định dạng cho sinh viên** — không đổi sang Word, nên chuỗi bảo vệ
@@ -534,6 +255,8 @@ vì đã biết chắc cái gì nằm dưới căn chứ không đoán từ ch�
 
 ---
 
+---
+
 ## 2026-09-15 (khuya) — Sửa dáng căn thức (đợt 69)
 
 M báo *"trông tởm quá"*: gạch phủ bị đẩy vọt lên chồng vào dòng trên, ở chỗ biểu thức có `10⁻⁵`.
@@ -546,6 +269,8 @@ Hai lỗi CSS: `<sup>/<sub>` làm phồng hộp dòng (thiếu `line-height: 0`)
 Đang treo quyết định của m: có chuyển định dạng SV nhận từ **PDF sang Word** không.
 Word vẽ công thức đẹp hơn hẳn, nhưng .docx **phá chuỗi bảo vệ** (sửa được, chép được, không dấu chìm,
 không qua trình xem) — trái với yêu cầu "bảo lưu quy trình bảo mật" m đã chốt trước đó.
+
+---
 
 ---
 
@@ -567,6 +292,8 @@ không thì xuất PDF từ tab nền ra bản thiếu căn.
 
 ---
 
+---
+
 ## 2026-09-15 (chiều) — Căn thức và phân số hiển thị chuẩn trong phiếu đẩy lên lớp
 
 **M báo:** bài tính pH có căn bậc hai, đẩy lên lớp thì *"không hiển thị toàn bộ căn"* — chỉ có dấu √, không có gạch phủ.
@@ -584,6 +311,8 @@ Bên web:
 **Lưu ý:** SVG nền và `calc()` trong gradient thì html2canvas KHÔNG vẽ (căn biến mất / thành khối đen) — phải dùng gradient mốc phần trăm.
 
 **M còn phải làm:** phiếu pH đã đẩy lên trước đó là PDF cũ — mở Sổ (bản web hoặc artifact đã publish lại) và **Giao cho lớp** lại phiếu đó.
+
+---
 
 ---
 
@@ -661,6 +390,8 @@ trang học hiện lời nhắc trong mục Hỏi đáp.
 
 ---
 
+---
+
 ## 2026-09-14 (tối) — Thiết kế lại khung Hỏi bài của sinh viên
 
 **M hỏi:** đã code giao diện hỏi đáp bên sinh viên chưa, làm cho thông minh, và **chèn logo cùng bộ tranh trong folder** vào.
@@ -679,6 +410,8 @@ trang học hiện lời nhắc trong mục Hỏi đáp.
 ### Đã test
 
 Trong bản chạy thử: tranh ra đúng `img/themes/peach/ask-teacher.svg` (đúng giao diện đang chọn), đếm đúng *3 câu · 2 đã trả lời*, ô soạn mang `mat-girl-00.jpg`, hai câu trả lời đều dùng `img/logo.png`, một chấm chờ. Khổ 375px: **không phần tử nào tràn**, trang không tràn ngang.
+
+---
 
 ---
 
@@ -703,6 +436,8 @@ Lớp thứ hai mới là lớp quan trọng: nếu m đã trót bật cờ cho 
 **Đã test:** dựng dữ liệu thử với đáp án **cố ý bật** `cho_tai:true` → phiếu bài tập có nút Tải về, đáp án **không có nút**.
 
 **Còn để ngỏ, chờ m quyết:** loại **Bài giảng** (`lecture`) hiện vẫn bật cho tải được. M chỉ nói tới phiếu bài tập nên t giữ nguyên; mặc định vẫn tắt.
+
+---
 
 ---
 
@@ -736,6 +471,8 @@ Không cần SQL mới: luật RLS sẵn có đã cho giảng viên đọc hết
 
 ---
 
+---
+
 ## 2026-09-13 (chiều) — Xem bài đã điền, sửa kết luận của máy, thống kê câu hay sai
 
 **Vá lỗ hổng t để lại:** máy chấm xong chỉ hiện "3/4", giảng viên **không mở ra xem được sinh viên gõ chữ gì** — nên cái nhãn *cần xem lại* ở câu gần đúng hoàn toàn vô dụng. Nêu hai lượt trước, giờ mới làm.
@@ -755,6 +492,8 @@ Sửa luôn chữ nghĩa: bài điền trên phiếu trước ghi "không có t�
 **Đã test** trong bản chạy thử quản trị: mở bài của Nguyễn Minh Anh ra đúng "2/4 câu đúng · 1 câu gần đúng", bảng liệt kê đủ bốn câu kèm đáp án; bấm đổi câu 4 từ *gần đúng* sang *đúng* → thành **3/4**, hàng tô hồng biến mất, bảng chấm ngoài cập nhật theo. Tab Câu hay sai ra "khó nhất: câu 2", câu 2 có 0 đúng / 2 sai và bị tô hồng.
 
 **M phải làm:** chạy `schema_v22_xem_bai_thong_ke.sql` trong Supabase.
+
+---
 
 ---
 
@@ -781,6 +520,8 @@ Ba mảnh: (1) `doSend` gửi HTML + viết `web/sheet.css` (đang thiếu, tran
 Chỗ chưa chắc: phiếu **dựng bằng JS lúc chạy** nên nhìn mã tĩnh không biết mỗi câu được đánh dấu bằng thẻ gì — phải mở sổ soi DOM thật rồi mới dám hứa mảnh 2. Mảnh 1 thì chắc chắn làm được.
 
 Đề xuất chia ba bước, bước nào cũng dùng được ngay, để không phải đánh cược cả cục.
+
+---
 
 ---
 
@@ -828,6 +569,8 @@ Bản thử quay lại dùng **phiếu PDF thật**: 1 trang vẽ xong, không c
 
 ---
 
+---
+
 ## 2026-09-12 (chiều) — Sinh viên điền thẳng vào phiếu, máy chấm đúng/sai
 
 **M chọn:** khoanh ô trên PDF (không phải làm lại phiếu dạng web); điểm vào thẳng bảng điểm, ghi rõ máy chấm; câu gần đúng đẩy sang hàng chờ. Giữa chừng m chốt thêm: **chỉ cần đúng/sai, chưa cần điểm cụ thể**.
@@ -868,6 +611,8 @@ Supabase → SQL Editor → dán cả `schema_v20_o_tra_loi.sql` → Run. Chưa 
 
 ---
 
+---
+
 ## 2026-09-12 — Bảng điểm cả lớp, nhắc hạn nộp, hồ sơ từng sinh viên
 
 **M nói:** sợ không có thời gian chấm, nhưng cứ xây 1-2-3; và gợi ý hướng **cho sinh viên tự chấm theo đáp án**.
@@ -903,6 +648,8 @@ Bằng hai bộ chạy thử, dò thẳng DOM. Bảng điểm ra đúng ba trư�
 
 ---
 
+---
+
 ## 2026-09-11 (tối) — Thêm được vào màn hình chính điện thoại
 
 **M hỏi:** "app trên điện thoại à, có logo này nọ không?"
@@ -920,6 +667,8 @@ Bằng hai bộ chạy thử, dò thẳng DOM. Bảng điểm ra đúng ba trư�
 **Đã test** (khổ 375px trong pane trình duyệt): manifest trả 200, cả bốn icon 200 kèm `image/png`; trang học đọc đúng tên "Giảng đường Hóa học" / "Giảng đường" / `standalone`; thẻ theme-color đang là `#f7d9c8` (Peach) chứ không phải giá trị mint tĩnh trong HTML → xác nhận phần đổi màu động chạy. Trang quản trị đọc đúng manifest riêng, `start_url quan-tri`.
 
 **Giới hạn phải nói với sinh viên:** icon ngoài màn hình chính **không phải** ứng dụng máy tính — video bài giảng vẫn bị chặn, và trên điện thoại không có chống chụp màn hình (chỉ app Electron mới có).
+
+---
 
 ---
 
@@ -958,6 +707,8 @@ Thêm khối `@media (max-width:640px)`: tab cuộn ngang, thanh công cụ xu�
 ### Đã test
 
 Dò DOM trong pane trình duyệt: hai tab mới hiện đúng bảng và thẻ; **chấm điểm thật** (gõ 7,5 + nhận xét → Lưu → dòng đổi sang "đã chấm"); **trả lời thật** (gửi trả lời → nhãn tab tụt từ 2 xuống 1, câu đã trả lời xuống cuối); bật/tắt "Nhận bài nộp" rồi mở lại hộp thoại thấy nhớ đúng; chuông báo hiện "Bài của bạn đã được chấm · 8,5" và "Giảng viên đã trả lời câu hỏi của bạn" (tham số `?chuong=1`).
+
+---
 
 ---
 
@@ -1000,6 +751,8 @@ Bằng bộ chạy thử tại máy, dò thẳng DOM: khung nộp bài + hỏi b
 
 ---
 
+---
+
 ## 2026-09-10 (khuya) — Bộ chạy thử trang học ngay tại máy
 
 **M cần:** một bản trang học của sinh viên chạy tại máy để tự thử vài luồng.
@@ -1017,6 +770,8 @@ Bằng bộ chạy thử tại máy, dò thẳng DOM: khung nộp bài + hỏi b
 **Đã test:** ba luồng chụp màn hình thật trong pane trình duyệt — mặc định (nữ, Peach, nhân vật nữ), `?onb=1` (màn "Đặt mật khẩu của riêng bạn"), `?g=nam&het=1` (nam, Mint, nhân vật nam). Kiểm cú pháp: khối script chính của bản thử dài đúng 88 485 ký tự, y hệt `web/index.html`.
 
 **Lưu ý:** `web/_test_*.html` đã nằm trong `.gitignore` và trang thật trả 404 cho nó — bản thử không lộ ra ngoài.
+
+---
 
 ---
 
@@ -1042,6 +797,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-10 (chiều) — Giờ xem và ước tính hoá đơn ngay trong Kho tệp
 
 **M hỏi:** "còn thông số giờ xem và ước tính con số phải trả luôn trong kho tệp quản trị đi, t cần biết t đang phải trả bao nhiêu".
@@ -1061,6 +818,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-10 — Bảng dung lượng trong tab Kho tệp
 
 **M hỏi:** video up lên lưu trên cloud đúng không, xem dung lượng ở đâu?
@@ -1071,6 +830,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - Ảnh đại diện · Supabase + ô tổng có thanh phần trăm so với 1 GB gói miễn phí.
 
 **Trạng thái SQL:** `/api/trang-thai` báo v9, v10, v11, v12, v14, v16, v17 đều đã chạy — không còn file nào chờ.
+
+---
 
 ---
 
@@ -1094,6 +855,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-09 (khuya, sau) — Khoá máy theo mã máy thật (app 1.0.16)
 
 **M hỏi:** cài bản app mới xong tài khoản SV bị đòi gỡ thiết bị, phiền; có phải gắn theo IP không?
@@ -1112,6 +875,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-09 (khuya) — Nối xong Cloudflare Stream: bẫy Ctrl+V trong ô nhập khoá
 
 **Triệu chứng:** thêm video báo `khong_xin_duoc_cho`; dò ra `/api/trang-thai` cho thấy ngay cả lệnh CHỈ ĐỌC `GET /stream?per_page=1` cũng trả **HTTP 400** → lỗi không ở phần tus mà ở khoá.
@@ -1126,6 +891,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-09 (đêm) — Tải video lớn tới 30 GB ngay trong trang quản trị
 
 **M hỏi:** video trên 200 MB thì sao (bài giảng cả buổi thường 0,5–2 GB).
@@ -1136,6 +903,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - `HUONG_DAN_VIDEO.md`: viết lại mục B (B1 tải thẳng mọi cỡ, B2 dự phòng qua Hosted videos), thêm hai dòng xử lý lỗi.
 
 **Chưa test với tệp thật** — cần m thử một video lớn rồi báo lại.
+
+---
 
 ---
 
@@ -1153,6 +922,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-09 (tối) — Video bài giảng qua Cloudflare Stream (link ký, không tải được)
 
 **M yêu cầu:** ưu tiên video; hướng dẫn thật kỹ vì chưa làm bao giờ.
@@ -1164,6 +935,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - `schema_v14_video.sql`: bảng `cau_hinh_he_thong` (RLS bật, không luật). `HUONG_DAN_VIDEO.md`: từng bước bật Stream, lấy Account ID, tạo token, `wrangler secret put`, tải video hai cách, kiểm tra, bảng xử lý lỗi, chi phí.
 
 **Đã test:** ký/xác minh token trong Node bằng WebCrypto (header/payload/kid/exp đúng, luatIp v4/v6 đúng); `wrangler deploy --dry-run` bundle 18 KiB; trang thử `?st=1` mở đúng nhánh Stream và hiện lỗi thân thiện. **Chưa** test với Stream thật — chờ m bật Stream và dán 2 secret.
+
+---
 
 ---
 
@@ -1180,6 +953,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-09 (chiều) — Khung "khoảnh khắc" cho chỗ trống và lúc hoàn thành
 
 **M yêu cầu:** ảnh ở "Bài tập cần làm" lọt thỏm bé tí, không cân — thiết kế lại chỗ đó cho ổn, không chỉ vá một chỗ.
@@ -1190,6 +965,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - Trang thử có thêm `?het=1` (mọi tài liệu đã xem xong) để xem các trạng thái này.
 
 **Đã test** (trang thử `?g=nam&het=1`, 768 px): thẻ Bài tập cần làm rộng 621 px, ảnh chiếm 272 px; trang Bài tập và Tiến độ ảnh chiếm đúng nửa thẻ, chữ cân bên cạnh; nút "Xem bài giảng" chuyển trang.
+
+---
 
 ---
 
@@ -1209,6 +986,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-09 (sáng) — Đổi tên "Giảng đường Hóa học", logo, nhân vật chìm vào thẻ
 
 **M yêu cầu:** nhân vật phải là ảnh chìm, lớn hơn, liền khối với giao diện (không khung); đổi tên "Góc học tập" → **Giảng đường Hóa học**; gắn logo (ảnh tròn màu nước: bình tam giác, lá, phân tử, sách, câu "Hóa học khó, có Phạm Ngọc lo"), để to cho dễ xem.
@@ -1219,6 +998,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - Logo: m chép `design-reference/logo-giang-duong.png.png` (1254×1254, nền trắng, 1,7 MB). T cắt ô vuông 1130 px ở giữa, vẽ qua mặt nạ tròn → PNG nền ngoài vòng trong suốt: `web/img/logo.png` 400 px (295 KB) dùng ở cột trái (64 px, rail 52 px, điện thoại 46 px), trang đăng nhập (168 px), trang tải app (140 px); `web/img/favicon.png` 128 px thay favicon ô vuông xanh cũ. Thiếu tệp thì trang vẫn tự lùi về icon lá / hình lớp học. Bản 512 px làm icon app đã dựng sẵn ở thư mục tạm, **chưa** đưa vào app (đổi icon app cần phát bản 1.0.14, chờ m gật).
 
 **Đã test** (trang thử): hero nam/nữ đổi theo nhân vật, tan mép đúng; tiêu đề trang, cột trái, trang đăng nhập hiện tên mới; fallback khi thiếu logo chạy đúng.
+
+---
 
 ---
 
@@ -1239,6 +1020,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-08 (khuya) — Bốn giao diện cho sinh viên tự chọn
 
 **M yêu cầu:** đưa bộ `design-reference/StudentHome_4_Themes` (ChatGPT dựng) vào, "cho sv tha hồ chọn".
@@ -1255,6 +1038,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-08 (đêm) — Tạo tài khoản ngay trên trang quản trị; logo app mới
 
 **M yêu cầu:** (1) vào web quản trị tạo và cấp tài khoản trực tiếp cho từng khoá học, tạo xong thấy ngay trong danh sách lớp; (2) icon app xấu, đổi logo.
@@ -1265,6 +1050,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - Logo app: ô vuông bo góc xanh ngọc đậm (`#1d9aa4 → #0a5058`, ánh sáng nhẹ góc trên) + minh hoạ "lớp học" (sách + mũ tốt nghiệp) của bộ icon, dựng bằng GDI+ từ PNG 512 của gói → `app/build/icon.png` (512 px, electron-builder tự sinh .ico/.icns); `web/img/favicon.png` 256 px gắn vào cả ba trang. App lên **1.0.13** (tag `v1.0.13`) để máy Windows đang cài 1.0.12 tự cập nhật; Mac tải lại từ `/tai-app`. Icon trên thanh tác vụ Windows có thể còn hiện hình cũ tới khi Windows làm mới bộ đệm icon (đăng xuất/vào lại).
 
 **Đã test:** `npx wrangler deploy --dry-run` dựng bundle OK (Worker 8,5 KiB + 63 file tĩnh, binding ASSETS); cú pháp quan-tri.html và worker.js OK. **Chưa** test tạo tài khoản thật vì máy chủ chưa có khoá — m dán khoá xong thử với một email trước.
+
+---
 
 ---
 
@@ -1289,6 +1076,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-08 (chiều) — Trang chủ "Hôm nay", chuông, Ctrl+K, làm lại quản trị
 
 **M chọn** làm cả 4 đề xuất (1 2 3 4) với điều kiện: giờ giấc phải sửa dễ, không cứng nhắc vì bài giảng đẩy lên không theo lịch cố định.
@@ -1299,6 +1088,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 - Quản trị: nút Ghim, ô giờ bắt đầu, hộp "✎ Lớp & thông báo", tab **Theo dõi** (ai xem gì lúc nào), làm lại toàn bộ giao diện theo hệ thiết kế của trang học (Be Vietnam Pro, icon một nét), chip thanh đầu không xuống dòng.
 - `web/_headers`: HTML `no-cache, must-revalidate` — sửa xong mở lại là thấy, không cần Ctrl+F5.
 - Snipping Tool / Game Bar / QuickTime **chỉ mở** thì nhắc nhẹ, không tính vi phạm (m lo sinh viên khiếu nại); phần mềm quay thật sự (OBS, Bandicam…) mới tính.
+
+---
 
 ---
 
@@ -1320,6 +1111,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-08 — Bảo mật cho sinh viên: khoá thiết bị, canh gác chụp, tự đăng xuất, giao diện laptop
 
 **M yêu cầu:** tài liệu / PDF chặn tải, video chỉ xem, **mỗi tài khoản một thiết bị**, cảnh báo khi bấm Print Screen và "phải doạ nó mới sợ", 5 phút không thao tác thì đăng xuất, giao diện đẹp hơn cho laptop.
@@ -1335,6 +1128,8 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-08 (sáng) — "Giao cho lớp", đợt 62–63 của Sổ, vụ mất 12 câu
 
 - Sổ Bài Tập bản web có nút **📤 Giao cho lớp** ở cột trái (nhóm Xuất): đẩy phiếu / đáp án lên buổi học không qua tải file. M chọn "**Chỉ bản đọc trên web, bỏ PDF**" cho bước tiếp (chưa làm: cần `web/sheet.css` + đổi `doSend` trong `shim_supabase.js` lưu HTML `#sheet` vào `material_contents.body`).
@@ -1344,12 +1139,16 @@ Ba cái bẫy đã gặp: (1) `--screenshot` và `--user-data-dir` phải là **
 
 ---
 
+---
+
 ## 2026-09-07 — Dựng hệ thống lớp học online
 
 - Supabase: `schema.sql` (profiles, classes, enrollments, sessions, materials, material_contents, kho tệp `tailieu`), `schema_v2.sql`, `schema_v3_so.sql` (kho của Sổ trên Supabase); RLS chặn ở máy chủ; `tao_du_lieu_thu.sql`, `kiem_tra_quyen.sql`.
 - `web/index.html` (sinh viên), `web/quan-tri.html` (giảng viên), `web/so-bai-tap.html` (Sổ Bài Tập bản web, sinh từ mã nguồn bằng `build_web_so.js` + `shim_supabase.js` giả `window.claude`).
 - Đưa lên Cloudflare Workers, chỉ đăng thư mục `web/`.
 - `HUONG_DAN.md`: dựng từ đầu và vận hành hằng ngày.
+
+---
 
 ---
 
