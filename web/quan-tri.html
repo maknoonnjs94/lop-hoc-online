@@ -2424,7 +2424,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.innerHTML = '<div class="mats"><div class="bar" style="margin-bottom:6px"><b style="font-size:16px">Đăng ký mới từ trang công khai</b><span class="pill on">' + choDK.length + '</span><span class="grow"></span><span class="hint" style="margin:0">Duyệt = tạo tài khoản + ghi danh + mật khẩu tạm để m gửi Zalo.</span></div>'
       + '<table class="roster"><thead><tr><th>Họ tên</th><th>Mã SV</th><th>Email</th><th>Zalo / ĐT</th><th>Khoá muốn học</th><th>Ghi chú</th><th>Lúc</th><th></th></tr></thead><tbody>'
       + choDK.map(function (d) {
-        return '<tr><td><b>' + esc(d.ho_ten) + '</b></td><td><code>' + esc(mssvCua(d) || '—') + '</code></td><td>' + esc(d.email) + '</td><td>' + esc(d.sdt || '') + '</td><td>' + khoaDsCua(d).map(function (k) { return '<span class="pill" style="margin:0 4px 4px 0">' + esc(k) + '</span>'; }).join('') + '</td><td class="hint" style="margin:0;max-width:220px">' + esc(d.ghi_chu || '') + '</td><td>' + esc(new Date(d.tao_luc).toLocaleString('vi-VN')) + '</td>'
+        return '<tr><td><b>' + esc(d.ho_ten) + '</b></td><td><code>' + esc(mssvCua(d) || '—') + '</code></td><td>' + esc(d.email) + '</td><td>' + esc(d.sdt || '') + '</td><td>' + khoaDsCua(d).map(function (k) { var xong = Array.isArray(d.khoa_da_duyet) && d.khoa_da_duyet.indexOf(k) >= 0; return '<span class="pill' + (xong ? ' on' : '') + '" style="margin:0 4px 4px 0" title="' + (xong ? 'Đã duyệt' : 'Chờ duyệt') + '">' + (xong ? '✓ ' : '') + esc(k) + '</span>'; }).join('') + '</td><td class="hint" style="margin:0;max-width:220px">' + esc(d.ghi_chu || '') + '</td><td>' + esc(new Date(d.tao_luc).toLocaleString('vi-VN')) + '</td>'
           + '<td style="text-align:right;white-space:nowrap"><button class="btn sm primary" data-dk="duyet" data-id="' + d.id + '">✓ Duyệt</button> <button class="btn sm" data-dk="tu_choi" data-id="' + d.id + '">Từ chối</button></td></tr>';
       }).join('') + '</tbody></table></div>';
   }
@@ -2454,15 +2454,24 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if (r0.error) toast('Lỗi: ' + r0.error.message); else { toast('Đã từ chối.'); await loadChoDangKy(); }
       return;
     }
-    var lopMacDs = lopKhopDs(khoaDsCua(d)); if (!lopMacDs.length && curClass) lopMacDs = [curClass];
+    /* mỗi khoá đăng ký một dòng: [tick] tên khoá → chọn lớp (gợi ý sẵn lớp khớp tên). KHÔNG tick sẵn — duyệt khoá nào chọn khoá đó;
+       khoá chưa duyệt vẫn nằm ở hàng chờ (khoa_da_duyet ghi những khoá đã xong). */
+    var dsKhoa = khoaDsCua(d), daDuyet = Array.isArray(d.khoa_da_duyet) ? d.khoa_da_duyet : [];
+    var conLai = dsKhoa.filter(function (k) { return daDuyet.indexOf(k) < 0; });
+    if (!conLai.length) conLai = ['Khác / chưa rõ'];
+    var lopOpt = function (macDinh) { return '<option value="">— chọn lớp —</option>' + classes.filter(function (c) { return !c.archived; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === macDinh ? ' selected' : '') + '>' + esc(c.name) + (Number(c.hoc_phi) > 0 ? ' · ' + vnd(c.hoc_phi) : '') + '</option>'; }).join(''); };
     dialog('Duyệt đăng ký · ' + d.ho_ten,
-      '<p class="hint">Email <b>' + esc(d.email) + '</b> · Mã SV <b>' + esc(mssvCua(d) || '—') + '</b> · Zalo <b>' + esc(d.sdt || '—') + '</b> · muốn học <b>' + esc(d.khoa || '—') + '</b>' + (d.ghi_chu ? '<br>Ghi chú: ' + esc(d.ghi_chu) : '') + '</p>'
-      + '<div class="f" style="margin-bottom:12px"><div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Ghi danh vào lớp (tick nhiều được — em ấy đăng ký ' + khoaDsCua(d).length + ' khoá)</div><div id="fDkLops" style="display:grid;gap:6px">' + classes.filter(function (c) { return !c.archived; }).map(function (c) { return '<label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600"><input type="checkbox" value="' + c.id + '"' + (lopMacDs.indexOf(c.id) >= 0 ? ' checked' : '') + '>' + esc(c.name) + (Number(c.hoc_phi) > 0 ? ' <small style="color:var(--muted);font-weight:500">· học phí ' + vnd(c.hoc_phi) + '</small>' : '') + '</label>'; }).join('') + '</div></div>'
+      '<p class="hint">Email <b>' + esc(d.email) + '</b> · Mã SV <b>' + esc(mssvCua(d) || '—') + '</b> · Zalo <b>' + esc(d.sdt || '—') + '</b>' + (d.ghi_chu ? '<br>Ghi chú: ' + esc(d.ghi_chu) : '') + (daDuyet.length ? '<br>Đã duyệt trước đó: <b>' + esc(daDuyet.join(', ')) + '</b>' : '') + '</p>'
+      + '<div class="f" style="margin-bottom:12px"><div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Tick khoá muốn duyệt lần này và chọn lớp tương ứng</div><div id="fDkDong" style="display:grid;gap:8px">'
+      + conLai.map(function (k, i) { return '<div style="display:grid;grid-template-columns:auto 1fr 1.2fr;gap:10px;align-items:center"><input type="checkbox" id="fDkT' + i + '" data-khoa="' + esc(k) + '"><label for="fDkT' + i + '" style="margin:0;font-size:14px;font-weight:700;color:var(--ink)">' + esc(k) + '</label><select data-lop="' + i + '" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:var(--r-s);background:var(--paper);font-size:13.5px;color:var(--ink)">' + lopOpt(lopKhopMot(k)) + '</select></div>'; }).join('')
+      + '</div><small style="display:block;margin-top:6px;color:var(--muted)">Khoá không tick vẫn ở hàng chờ, duyệt sau được. Chọn lớp là chọn đúng lớp/khoá mà em ấy sẽ học.</small></div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Họ tên<input id="fDkTen" value="' + esc(d.ho_ten) + '"></label><label class="f">Mã sinh viên<input id="fDkMssv" value="' + esc(mssvCua(d)) + '" placeholder="22001234"><small>Sinh viên tự khai trên form — kiểm lại trước khi duyệt; mã này dùng trong nội dung chuyển khoản học phí.</small></label></div>'
       + '<p class="hint">Mật khẩu khởi tạo <b>chính là mã sinh viên</b> ở trên (mã dưới 6 ký tự thì máy tự sinh). Lần đầu đăng nhập sinh viên phải tự đổi mật khẩu. Đồng hồ học phí (nếu lớp có thu) bắt đầu từ hôm nay.</p>',
       async function () {
-        var lops = [].map.call(document.querySelectorAll('#fDkLops input:checked'), function (i) { return i.value; });
-        if (!lops.length) { msg($('dlgMsg'), 'Tick ít nhất một lớp.'); return false; }
+        var chon = [].map.call(document.querySelectorAll('#fDkDong input[type=checkbox]:checked'), function (i) { var sel = document.querySelector('#fDkDong select[data-lop="' + i.id.slice(4) + '"]'); return { khoa: i.dataset.khoa, lop: sel ? sel.value : '' }; });
+        if (!chon.length) { msg($('dlgMsg'), 'Tick ít nhất một khoá để duyệt.'); return false; }
+        if (chon.some(function (x) { return !x.lop; })) { msg($('dlgMsg'), 'Khoá đã tick phải chọn lớp.'); return false; }
+        var lops = chon.map(function (x) { return x.lop; }).filter(function (x, i, a) { return a.indexOf(x) === i; });
         /* lớp đầu: tạo tài khoản (hoặc ghi danh nếu email đã có); các lớp sau: API thấy email đã có → chỉ ghi danh thêm */
         var r = null, loiLop = [];
         for (var li = 0; li < lops.length; li++) {
@@ -2473,7 +2482,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           if (!r1.ok) { if (li === 0) { msg($('dlgMsg'), (LOI_API[r1.reason] || r1.reason || 'Không tạo được') + (r1.chi_tiet ? ' — ' + r1.chi_tiet : '')); return false; } loiLop.push(kq.lop || lops[li]); continue; }
           if (!r) r = r1;
         }
-        await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lops[0] }).eq('id', d.id);
+        /* ghi khoá đã duyệt; còn khoá chưa duyệt thì đơn ở lại hàng chờ */
+        var daXong = daDuyet.concat(chon.map(function (x) { return x.khoa; })).filter(function (x, i, a) { return a.indexOf(x) === i; });
+        var xongHet = dsKhoa.every(function (k) { return daXong.indexOf(k) >= 0; });
+        var capNhat = { khoa_da_duyet: daXong, class_id: lops[0] };
+        if (xongHet) { capNhat.trang_thai = 'da_duyet'; capNhat.duyet_luc = new Date().toISOString(); }
+        var ru = await sb.from('dang_ky').update(capNhat).eq('id', d.id);
+        if (ru.error && /khoa_da_duyet/.test(ru.error.message || '')) {   /* chưa chạy v27d: không nhớ được từng khoá → coi như xong cả đơn */
+          await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lops[0], ghi_chu_gv: 'Đã duyệt: ' + chon.map(function (x) { return x.khoa; }).join(', ') }).eq('id', d.id);
+        }
         var tenLop = lops.map(function (id) { return (classes.filter(function (c) { return c.id === id; })[0] || {}).name || ''; }).filter(Boolean).join(', ');
         if (loiLop.length) r.canh_bao = (r.canh_bao ? r.canh_bao + ' ' : '') + 'Chưa ghi danh được vào: ' + loiLop.join(', ') + '.';
         var tin = r.da_co
@@ -2483,11 +2500,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           dialog('Đã duyệt · gửi Zalo cho ' + d.ho_ten,
             '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'
             + '<div class="bar"><button type="button" class="btn sm primary" id="fDkChep">📋 Chép tin nhắn</button>' + (d.sdt ? '<a class="btn sm" target="_blank" rel="noopener" href="https://zalo.me/' + esc(String(d.sdt).replace(/[^0-9]/g, '')) + '">Mở Zalo ' + esc(d.sdt) + '</a>' : '') + '</div>'
+            + (xongHet ? '' : '<p class="hint">Đơn vẫn ở hàng chờ với khoá chưa duyệt: <b>' + esc(dsKhoa.filter(function (k) { return daXong.indexOf(k) < 0; }).join(', ')) + '</b>.</p>')
             + (r.canh_bao ? '<p class="hint" style="color:var(--danger)">' + esc(r.canh_bao) + '</p>' : ''),
             async function () { return true; }, 'Xong');
         }, 50);
         await loadChoDangKy(); await loadRoster();
-      }, 'Tạo tài khoản & ghi danh');
+      }, 'Duyệt khoá đã tick');
   });
   $('dlgBody').addEventListener('click', async function (e) {
     if (!e.target.closest('#fDkChep')) return;

@@ -506,7 +506,7 @@ async function coHam(env, ten, than) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27, v27b, v27c, v27d] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -532,7 +532,10 @@ async function kiemSchema(env) {
     coHam(env, 'so_khoa_hoc', JSON.stringify({ s: '1' })),
     coCot(env, 'trang_cong_khai', 'khoa'),
     coCot(env, 'enrollments', 'da_dong_at,mien,han_dong'),
-    coCot(env, 'dang_ky', 'trang_thai')
+    coCot(env, 'dang_ky', 'trang_thai'),
+    coCot(env, 'dang_ky', 'mssv'),
+    coCot(env, 'dang_ky', 'khoa_ds'),
+    coCot(env, 'dang_ky', 'khoa_da_duyet')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -553,6 +556,9 @@ async function kiemSchema(env) {
     v25_trang_cong_khai: v25,
     v26_hoc_phi: v26,
     v27_dang_ky: v27,
+    v27b_mssv: v27b,
+    v27c_khoa_ds: v27c,
+    v27d_duyet_tung_khoa: v27d,
     ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }
