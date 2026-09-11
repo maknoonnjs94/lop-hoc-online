@@ -52,6 +52,11 @@ const stub = `<script>
 
   var profile = { id:'u1', full_name: onb ? '' : (g === 'nu' ? 'Nguyễn Minh Anh' : 'Trần Quốc Bảo'), role:'student', active:true, gender: onb ? '' : g, theme:'', major: onb ? '' : 'Hóa dược', birth_year: onb ? null : 2005, student_no:'23001234', must_change_pw: onb, onboarded_at: onb ? null : d(-30*864e5) };
   var classes = [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9). Mang máy tính cầm tay.' }];
+  /* ?hp=chua_han|qua_han|da_dong|bao — học phí lớp c1 (v26); ?lop2=1 thêm lớp c2 không thu để thấy khoá theo từng lớp */
+  var hpKieu = P.get('hp') || '';
+  if (P.get('lop2') === '1') classes.push({ id:'c2', name:'Hóa hữu cơ K68', subject:'Hóa hữu cơ', archived:false, notice:'' });
+  function ngayCong(n){ var t = new Date(); t.setDate(t.getDate() + n); return t.toISOString().slice(0, 10); }
+  var hpDong = { class_id:'c1', ten:'Hóa phân tích K68', hoc_phi:1500000, han: hpKieu === 'qua_han' ? ngayCong(-3) : ngayCong(5), da_dong_at: hpKieu === 'da_dong' ? d(-864e5) : null, so_tien: hpKieu === 'da_dong' ? 1500000 : null, mien:false, bao_chuyen_at: hpKieu === 'bao' ? d(-36e5) : null, trang_thai: hpKieu === 'da_dong' ? 'da_dong' : (hpKieu === 'qua_han' ? 'qua_han' : 'chua_han'), mssv:'23001234', ngan_hang:{ bin:'970422', ma:'MB', ten_nh:'MB Bank', stk:'0123456789', ten_tk:'PHAM ANH NGOC', co_qr_anh:false } };
   var sessions = [
     { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2, làm câu 1–6 phiếu bài tập.', created_at:d(-2*864e5), materials:[
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu và điểm tương đương', order_no:0, created_at:d(-2*864e5) },
@@ -123,10 +128,13 @@ const stub = `<script>
   function q(data){ var o = {}; ['select','eq','order','maybeSingle','upsert','update','insert','not','is','in','limit','single'].forEach(function(k){ o[k] = function(){ return o; }; }); o.then = function(a, b){ return Promise.resolve({ data:data, error:null }).then(a, b); }; return o; }
   window.supabase = { createClient: function(){ return {
     auth: { getSession: function(){ return Promise.resolve({ data:{ session:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } } } }); }, onAuthStateChange: function(){}, signOut: function(){ alert('Đây là bản thử — thật thì sẽ đăng xuất.'); return Promise.resolve({}); }, signInWithPassword: function(){ return Promise.resolve({ data:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } }, error:null }); }, updateUser: function(){ return Promise.resolve({ data:{}, error:null }); }, resetPasswordForEmail: function(){ return Promise.resolve({ error:null }); } },
-    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return qHoi(); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
+    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return qHoi(); if (t === 'trang_cong_khai') return q({ noi_dung:{ zalo:'0912 345 678' } }); if (t === 'sessions' && hpKieu === 'qua_han' && false) return q([]); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
     rpc: function(name, a){ if (name === 'hoan_tat_ho_so') { Object.assign(profile, { full_name:a.p_full_name, gender:a.p_gender, birth_year:a.p_birth_year, major:a.p_major, onboarded_at:new Date().toISOString(), theme: a.p_gender === 'nu' ? 'peach' : 'mint' }); } if (name === 'da_doi_mat_khau') profile.must_change_pw = false; if (name === 'dat_anh_dai_dien') profile.avatar_path = a.p_path;
       if (name === 'nop_bai') { baiNop = [{ material_id:a.p_material, nop_luc:new Date().toISOString(), loi_nhan:a.p_loi_nhan, tep:a.p_tep, cham_luc:null, diem:null, nhan_xet:'' }]; }
       if (name === 'rut_bai') baiNop = [];
+      if (name === 'hoc_phi_cua_toi') return Promise.resolve({ data: hpKieu ? [hpDong].concat(P.get('lop2') === '1' ? [{ class_id:'c2', ten:'Hóa hữu cơ K68', hoc_phi:0, han:null, trang_thai:'mien', mssv:'23001234', ngan_hang:null }] : []) : [], error:null });
+      if (name === 'bao_da_chuyen') { hpDong.bao_chuyen_at = new Date().toISOString(); return Promise.resolve({ data:null, error:null }); }
+      if (name === 'anh_qr_hoc_phi') return Promise.resolve({ data:'', error:null });
       if (name === 'nop_bai_o') {
         var ket = {}, dg = 0, gan = 0, soO = O_PHIEU.length;
         O_PHIEU.forEach(function (o) {

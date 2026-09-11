@@ -99,3 +99,9 @@ Những thứ này phải thử trên bản thật ở `lop-hoc-online.giangduon
 Mở `tao-ban-thu.js`, phần `sessions` / `views` / `profile` ở đầu file — sửa tên buổi, tên tài liệu, tiến độ tuỳ ý, rồi chạy lại `chay-thu.cmd`.
 
 Bản thử ghi ra `web/_test_hoc.html` (trang học thật là `web/hoc.html`; `index.html` giờ là trang công khai). Bản thử giả lập app; thêm `?web=1` để xem màn "cần mở bằng app" như sinh viên mở bằng trình duyệt. Tệp đó nằm trong `.gitignore` nên không bị đẩy lên GitHub và **không có trên trang thật** (đã kiểm: trang thật trả 404).
+
+
+## Học phí (v26)
+
+Trang học: `?hp=chua_han` (nhắc còn 5 ngày) · `?hp=qua_han` (khoá màn học phí, QR VietQR thật) · `?hp=da_dong` · `?hp=bao` (đã báo chuyển); thêm `&lop2=1` để có lớp thứ hai không thu → thấy khoá theo từng lớp.
+Quản trị: tab Sinh viên có cột Học phí (u1 quá hạn + báo chuyển, u2 đã đóng, u3 còn hạn), nút 💳 Nhận học phí; `?hp=0` giả lớp chưa có cột (chưa chạy v26), `?bank=0` giả chưa đặt ngân hàng.

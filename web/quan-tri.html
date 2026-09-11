@@ -156,6 +156,13 @@
   .pill{ font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; border:1px solid var(--line-2); white-space:nowrap; color:var(--muted); background:var(--surface) }
   .pill.on{ background:var(--ok-soft); border-color:transparent; color:var(--ok) }
   .pill.off{ background:var(--accent-soft); border-color:transparent; color:var(--accent) }
+  .pill.no{ background:var(--danger-soft); border-color:transparent; color:var(--danger) }
+  .hpcol{ display:flex; flex-direction:column; gap:6px; min-width:150px }
+  .hpcol .nut{ display:flex; gap:4px; flex-wrap:wrap }
+  .hpcol .nut .btn{ padding:4px 8px; font-size:12px }
+  .bankqr{ display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-top:6px }
+  .bankqr img{ width:150px; height:150px; border:1px solid var(--line); border-radius:10px; background:#fff }
+  .hptom{ font-size:12.5px; color:var(--muted); margin-left:6px }
   .mats{ padding:10px 10px 12px }
   .mats .bar{ margin:2px 0 10px }
   .mat{ display:flex; align-items:center; gap:12px; padding:9px 10px; border-radius:var(--r-m); transition:background .12s }
@@ -499,6 +506,8 @@
           <div class="bar">
             <b>Sinh viên trong lớp</b>
             <span class="grow"></span>
+            <span class="hptom" id="hpTom"></span>
+            <button class="btn" id="bankBtn" title="Ngân hàng nhận học phí: sinh viên thấy mã VietQR có sẵn số tiền và nội dung">💳 Nhận học phí</button>
             <button class="btn" id="addStuBtn">＋ Thêm bằng email</button>
             <button class="btn primary" id="newStuBtn">＋ Tạo tài khoản mới</button>
           </div>
@@ -707,12 +716,25 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     dialog('Đổi tên lớp',
       '<label class="f">Tên lớp<input id="fName" value="' + esc(c.name) + '"></label>'
       + '<label class="f">Môn<input id="fSubj" value="' + esc(c.subject || '') + '"></label>'
+      + '<div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Học phí (VND, 0 = không thu)<input id="fHocPhi" type="number" min="0" step="1000" value="' + (Number(c.hoc_phi) || 0) + '"></label>'
+      + '<label class="f">Được nợ (ngày, kể từ khi ghi danh hoặc từ lúc bắt đầu thu)<input id="fHanNgay" type="number" min="0" max="365" value="' + (c.han_ngay == null ? 14 : c.han_ngay) + '"></label></div>'
+      + '<small style="display:block;margin:-6px 0 12px;color:var(--muted)">Quá hạn chưa đóng: sinh viên chỉ thấy màn học phí của <b>khoá này</b> (các khoá khác vẫn học). Xác nhận đã nhận ở tab Sinh viên. Ngân hàng nhận tiền đặt ở nút 💳.</small>'
       + '<label class="f">Thông báo cho sinh viên<textarea id="fNotice" placeholder="Hiện trên đầu trang học của mọi sinh viên trong lớp. Để trống là không hiện.">' + esc(c.notice || '') + '</textarea>'
       + '<small>Viết tự do: lịch thay đổi, nhắc nộp bài, link họp… Sinh viên đang mở app nhận ngay.</small></label>',
       async function () {
-        var r = await sb.from('classes').update({ name: val('fName'), subject: val('fSubj'), notice: val('fNotice') }).eq('id', c.id);
+        var hp = Math.max(0, Math.round(Number(val('fHocPhi')) || 0)), hn = Math.max(0, Math.round(Number(val('fHanNgay')) || 0));
+        var moi = { name: val('fName'), subject: val('fSubj'), notice: val('fNotice'), hoc_phi: hp, han_ngay: hn };
+        /* đổi mức thu (kể cả từ 0 lên) → hạn của sinh viên đã ghi danh tính từ hôm nay, không bị quá hạn ngay */
+        if (hp !== (Number(c.hoc_phi) || 0)) moi.hoc_phi_tu = new Date().toISOString();
+        var r = await sb.from('classes').update(moi).eq('id', c.id);
+        if (r.error && /hoc_phi|han_ngay/.test(r.error.message || '')) {
+          r = await sb.from('classes').update({ name: val('fName'), subject: val('fSubj'), notice: val('fNotice') }).eq('id', c.id);
+          if (!r.error) toast('Đã lưu tên/thông báo. Học phí cần chạy schema_v26_hoc_phi.sql trước.');
+        } else if (!r.error) {
+          toast(hp > 0 ? 'Đã lưu. Học phí ' + vnd(hp) + ', được nợ ' + hn + ' ngày.' : 'Đã lưu.');
+          if (hp > 0) { try { var nhk = await sb.rpc('doc_ngan_hang'); if (!nhk.error && !(nhk.data && (nhk.data.stk || nhk.data.qr_anh))) toast('Chưa đặt ngân hàng nhận tiền — sinh viên sẽ không có QR để chuyển.', '💳 Đặt ngay', moNganHang); } catch (x) {} }
+        }
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
-        toast('Đã lưu.');
         await loadClasses();
       });
   });
@@ -2294,6 +2316,106 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ---------------- sinh viên ---------------- */
   var coHoSo = true; /* false khi máy chủ chưa chạy schema_v10_ho_so.sql */
   var GIOI = { nam: 'Nam', nu: 'Nữ', khac: 'Khác' };
+  /* ================= HỌC PHÍ (v26) ================= */
+  var coHocPhi = false;
+  function vnd(n) { n = Math.round(Number(n) || 0); return n.toLocaleString('vi-VN') + ' ₫'; }
+  function ngayD(s) { if (!s) return ''; var d = new Date(String(s).length <= 10 ? s + 'T00:00:00' : s); return isNaN(d) ? '' : d.toLocaleDateString('vi-VN'); }
+  function hanCua(e, lop) {
+    if (e.han_dong) return e.han_dong;
+    var moc = new Date(e.joined_at || Date.now()); if (lop.hoc_phi_tu && new Date(lop.hoc_phi_tu) > moc) moc = new Date(lop.hoc_phi_tu);
+    moc.setDate(moc.getDate() + (lop.han_ngay == null ? 14 : Number(lop.han_ngay)));
+    return moc.toISOString().slice(0, 10);
+  }
+  function ttHocPhi(e, lop) {
+    if (!(Number(lop.hoc_phi) > 0) || e.mien) return 'mien';
+    if (e.da_dong_at) return 'da_dong';
+    var h = new Date(hanCua(e, lop) + 'T00:00:00'), t = new Date(); t.setHours(0, 0, 0, 0);
+    return h >= t ? 'chua_han' : 'qua_han';
+  }
+  function conNgayHP(e, lop) { var h = new Date(hanCua(e, lop) + 'T00:00:00'), t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((h - t) / 864e5); }
+  function hpTomTat(ds, lop) {
+    var c = { mien: 0, da_dong: 0, chua_han: 0, qua_han: 0, bao: 0 };
+    ds.forEach(function (e) { if ((e.profiles || {}).role && (e.profiles || {}).role !== 'student') return; c[ttHocPhi(e, lop)]++; if (e.bao_chuyen_at && !e.da_dong_at) c.bao++; });
+    return vnd(lop.hoc_phi) + ' · ' + c.da_dong + ' đã đóng · ' + c.chua_han + ' còn hạn · ' + c.qua_han + ' quá hạn' + (c.bao ? ' · ' + c.bao + ' báo đã chuyển' : '') + (c.mien ? ' · ' + c.mien + ' miễn' : '');
+  }
+  function oHocPhi(e, lop) {
+    var tt = ttHocPhi(e, lop), sv = e.student, o = '<div class="hpcol">';
+    if (tt === 'mien') o += '<span class="pill">miễn</span><div class="nut"><button class="btn sm" data-hp="bo_mien" data-sv="' + sv + '">Thu lại</button></div>';
+    else if (tt === 'da_dong') o += '<span class="pill on" title="' + esc(e.ghi_chu_hp || '') + '">đã đóng ' + esc(ngayD(e.da_dong_at)) + (e.so_tien != null ? ' · ' + vnd(e.so_tien) : '') + '</span><div class="nut"><button class="btn sm" data-hp="hoan_tac" data-sv="' + sv + '">Hoàn tác</button></div>';
+    else {
+      var n = conNgayHP(e, lop);
+      o += (tt === 'qua_han' ? '<span class="pill no">quá hạn ' + (-n) + ' ngày — đang khoá</span>' : '<span class="pill off">còn ' + n + ' ngày (hạn ' + esc(ngayD(hanCua(e, lop))) + ')</span>')
+        + (e.bao_chuyen_at ? '<span class="pill on" title="Sinh viên bấm Tôi đã chuyển">SV báo đã chuyển ' + esc(new Date(e.bao_chuyen_at).toLocaleString('vi-VN')) + '</span>' : '')
+        + '<div class="nut"><button class="btn sm primary" data-hp="da_nhan" data-sv="' + sv + '">✓ Đã nhận</button><button class="btn sm" data-hp="gia_han" data-sv="' + sv + '">Gia hạn</button><button class="btn sm" data-hp="mien" data-sv="' + sv + '">Miễn</button></div>';
+    }
+    return o + '</div>';
+  }
+  async function xuLyHocPhi(hd, sv) {
+    var e = roster.filter(function (x) { return x.student === sv; })[0] || {}, p = e.profiles || {}, lop = classes.filter(function (x) { return x.id === curClass; })[0] || {};
+    var ten = p.full_name || p.email || 'sinh viên', luu = {};
+    if (hd === 'da_nhan') {
+      var s = prompt('Đã nhận học phí của ' + ten + '. Số tiền (VND):', String(Math.round(Number(lop.hoc_phi) || 0)));
+      if (s == null) return;
+      luu = { da_dong_at: new Date().toISOString(), so_tien: Math.max(0, Math.round(Number(String(s).replace(/[^0-9]/g, '')) || 0)) };
+    } else if (hd === 'hoan_tac') {
+      if (!confirm('Bỏ đánh dấu đã đóng của ' + ten + '? Hạn cũ vẫn giữ nguyên.')) return;
+      luu = { da_dong_at: null, so_tien: null };
+    } else if (hd === 'gia_han') {
+      var g = prompt('Gia hạn cho ' + ten + ' thêm bao nhiêu ngày (tính từ hôm nay hoặc từ hạn hiện tại nếu còn hạn)?', '7');
+      if (g == null) return;
+      var them = Math.max(1, Math.round(Number(g) || 0)), goc = new Date(hanCua(e, lop) + 'T00:00:00'), hn = new Date(); hn.setHours(0, 0, 0, 0);
+      var tu = goc > hn ? goc : hn; tu.setDate(tu.getDate() + them);
+      luu = { han_dong: tu.toISOString().slice(0, 10) };
+    } else if (hd === 'mien') {
+      if (!confirm('Miễn học phí khoá này cho ' + ten + '?')) return;
+      luu = { mien: true };
+    } else if (hd === 'bo_mien') luu = { mien: false };
+    var r = await sb.from('enrollments').update(luu).eq('class_id', curClass).eq('student', sv);
+    if (r.error) { toast('Không lưu được: ' + r.error.message); return; }
+    toast(hd === 'da_nhan' ? 'Đã ghi nhận. Khoá mở lại cho ' + ten + ' ngay.' : hd === 'gia_han' ? 'Đã gia hạn tới ' + ngayD(luu.han_dong) + '.' : 'Đã lưu.');
+    await loadRoster();
+  }
+  /* ngân hàng nhận tiền — VietQR: sinh viên thấy mã có sẵn số tiền + nội dung; hoặc ảnh QR tự tải */
+  var NGAN_HANG = [['970436', 'VCB', 'Vietcombank'], ['970415', 'ICB', 'VietinBank'], ['970418', 'BIDV', 'BIDV'], ['970405', 'VBA', 'Agribank'], ['970407', 'TCB', 'Techcombank'], ['970422', 'MB', 'MB Bank'], ['970416', 'ACB', 'ACB'], ['970432', 'VPB', 'VPBank'], ['970423', 'TPB', 'TPBank'], ['970403', 'STB', 'Sacombank'], ['970437', 'HDB', 'HDBank'], ['970441', 'VIB', 'VIB'], ['970443', 'SHB', 'SHB'], ['970426', 'MSB', 'MSB'], ['970448', 'OCB', 'OCB'], ['970440', 'SEAB', 'SeABank'], ['970431', 'EIB', 'Eximbank'], ['970449', 'LPB', 'LPBank'], ['970428', 'NAB', 'Nam A Bank'], ['970454', 'VCCB', 'BVBank'], ['970409', 'BAB', 'Bac A Bank'], ['970412', 'PVCB', 'PVcomBank'], ['970427', 'VAB', 'VietABank'], ['970425', 'ABB', 'ABBank'], ['970452', 'KLB', 'KienlongBank'], ['970429', 'SCB', 'SCB'], ['970419', 'NCB', 'NCB']];
+  function khongDauHoa(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase().replace(/[^A-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); }
+  function bankQrUrl(bin, stk, ten, tien) { return 'https://img.vietqr.io/image/' + encodeURIComponent(bin) + '-' + encodeURIComponent(stk) + '-compact2.png?amount=' + (tien || 0) + '&addInfo=' + encodeURIComponent('HP 23001234 HPT') + (ten ? '&accountName=' + encodeURIComponent(ten) : ''); }
+  async function moNganHang() {
+    var nh = {};
+    try { var r0 = await sb.rpc('doc_ngan_hang'); if (r0.error) { toast(/doc_ngan_hang/.test(r0.error.message) ? 'Chạy schema_v26_hoc_phi.sql trước.' : r0.error.message); return; } nh = r0.data || {}; } catch (x) { toast('Chạy schema_v26_hoc_phi.sql trước.'); return; }
+    dialog('Ngân hàng nhận học phí',
+      '<label class="f">Ngân hàng<select id="fBank"><option value="">— chọn —</option>' + NGAN_HANG.map(function (b) { return '<option value="' + b[0] + '"' + (nh.bin === b[0] ? ' selected' : '') + '>' + b[2] + ' (' + b[1] + ')</option>'; }).join('') + '</select></label>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Số tài khoản<input id="fStk" inputmode="numeric" value="' + esc(nh.stk || '') + '"></label>'
+      + '<label class="f">Tên chủ tài khoản (không dấu)<input id="fTenTk" value="' + esc(nh.ten_tk || '') + '" placeholder="PHAM ANH NGOC"></label></div>'
+      + '<div class="bankqr"><div id="bankXem"></div><div style="flex:1;min-width:200px;font-size:12.5px;color:var(--muted);line-height:1.5">Mã QR sinh viên thấy sẽ có sẵn <b>số tiền của khoá</b> và <b>nội dung HP + mã SV + tên lớp viết tắt</b> (mẫu bên: HP 23001234 HPT) — m chỉ việc đối chiếu sao kê rồi bấm ✓ Đã nhận.<br><br>Không dùng VietQR? Tải ảnh QR của app ngân hàng: <label class="btn sm" style="cursor:pointer">📷 Chọn ảnh<input type="file" id="fQrAnh" accept="image/*" hidden></label> <button type="button" class="btn sm" id="fQrBo"' + (nh.qr_anh ? '' : ' disabled') + '>Bỏ ảnh</button><input type="hidden" id="fQrGia" value="' + esc(nh.qr_anh || '') + '"></div></div>',
+      async function () {
+        var sel = $('fBank'), b = NGAN_HANG.filter(function (x) { return x[0] === sel.value; })[0];
+        var stk = val('fStk').replace(/\s+/g, ''), tenTk = khongDauHoa(val('fTenTk')), anh = $('fQrGia').value;
+        if (!(b && stk) && !anh) { msg($('dlgMsg'), 'Chọn ngân hàng + số tài khoản, hoặc tải một ảnh QR.'); return false; }
+        var p = { bin: b ? b[0] : '', ma: b ? b[1] : '', ten_nh: b ? b[2] : '', stk: stk, ten_tk: tenTk };
+        if (anh) p.qr_anh = anh;
+        var r = await sb.rpc('luu_ngan_hang', { p: p });
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã lưu ngân hàng nhận học phí.');
+      });
+    bankVeXem();
+  }
+  function bankVeXem() {
+    if (!$('fBank') || !$('bankXem')) return;
+    var sel = $('fBank'), stk = val('fStk').replace(/\s+/g, ''), anh = $('fQrGia').value;
+    $('bankXem').innerHTML = anh ? '<img src="' + esc(anh) + '" alt=""><div class="hptom">ảnh QR tự tải</div>' : (sel.value && stk ? '<img src="' + esc(bankQrUrl(sel.value, stk, khongDauHoa(val('fTenTk')), 0)) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'hptom\',textContent:\'Không tải được mẫu QR (mạng?)\'}))"><div class="hptom">mẫu VietQR (chưa có số tiền)</div>' : '<div class="hptom">Chọn ngân hàng + số tài khoản để xem mẫu</div>');
+  }
+  $('dlgBody').addEventListener('input', function (e) { if (/^(fBank|fStk|fTenTk)$/.test(e.target.id)) bankVeXem(); });
+  $('dlgBody').addEventListener('change', function (e) {
+    if (e.target.id !== 'fQrAnh') return;
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var img = new Image(), url = URL.createObjectURL(f);
+    img.onload = function () { URL.revokeObjectURL(url); var MAX = 480, k = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight)); var c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k); var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); var d = c.toDataURL('image/png'); if (d.length > 150 * 1024) d = c.toDataURL('image/jpeg', 0.85); $('fQrGia').value = d; $('fQrBo').disabled = false; bankVeXem(); };
+    img.src = url;
+  });
+  $('dlgBody').addEventListener('click', function (e) { if (e.target.closest('#fQrBo')) { $('fQrGia').value = ''; $('fQrBo').disabled = true; bankVeXem(); } });
+
+  $('bankBtn').addEventListener('click', moNganHang);
+
   function oHoSo(p) {
     if (!coHoSo) return '<small style="color:var(--muted)">chạy schema_v10 để xem</small>';
     if ((p.role || 'student') !== 'student') return '<small style="color:var(--muted)">—</small>';
@@ -2373,8 +2495,10 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var box = $('roster');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     var r = await sb.from('enrollments')
-      .select('student, joined_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
+      .select('student, joined_at, han_dong, da_dong_at, so_tien, mien, bao_chuyen_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
       .eq('class_id', curClass);
+    coHocPhi = !(r.error && /han_dong|da_dong_at|so_tien|mien|bao_chuyen_at/.test(r.error.message || ''));
+    if (!coHocPhi) r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)').eq('class_id', curClass);
     if (r.error && /gender|birth_year|major|must_change_pw|onboarded_at/.test(r.error.message || '')) {
       coHoSo = false;
       r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role)').eq('class_id', curClass);
@@ -2395,12 +2519,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
     var ngay = function (s) { try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; } };
-    box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th><th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
+    var lopHP = classes.filter(function (x) { return x.id === curClass; })[0] || {}, thuHP = coHocPhi && (Number(lopHP.hoc_phi) || 0) > 0;
+    $('hpTom').textContent = thuHP ? hpTomTat(roster, lopHP) : (coHocPhi ? 'Lớp không thu học phí' : '');
+    box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th>' + (thuHP ? '<th>Học phí</th>' : '') + '<th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'
       + roster.map(function (e) {
         var p = e.profiles || {}, r = p.role || 'student', self = e.student === me.id;
         return '<tr><td><button type="button" class="tenSV" data-hs="' + e.student + '">' + esc(p.full_name || '(chưa đặt tên)') + '</button>'
           + (p.active === false ? ' <span class="pill off">đang khoá</span>' : '')
-          + '</td><td>' + oHoSo(p) + '</td><td>' + esc(p.email || '') + '</td>'
+          + '</td><td>' + oHoSo(p) + '</td><td>' + esc(p.email || '') + '</td>' + (thuHP ? '<td>' + (r === 'student' ? oHocPhi(e, lopHP) : '<span class="pill">—</span>') + '</td>' : '')
           + '<td><span class="pill ' + (r === 'student' ? '' : 'on') + '">' + (ROLE[r] || r) + '</span>'
           + (self ? '' : ' <button class="btn sm" data-role="' + (r === 'student' ? 'teacher' : 'student')
               + '" data-id="' + e.student + '" title="Đổi quyền của người này">'
@@ -2458,6 +2584,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       else { toast('Đã gỡ thiết bị. Sinh viên đăng nhập lại được rồi.'); await loadRoster(); }
       return;
     }
+    var hpb = e.target.closest('button[data-hp]');
+    if (hpb) { await xuLyHocPhi(hpb.dataset.hp, hpb.dataset.sv); return; }
     var b = e.target.closest('button[data-rm]'); if (!b) return;
     var r = await sb.from('enrollments').delete().eq('class_id', curClass).eq('student', b.dataset.rm);
     if (r.error) toast('Lỗi: ' + r.error.message); else { toast('Đã bỏ khỏi lớp.'); await loadRoster(); }

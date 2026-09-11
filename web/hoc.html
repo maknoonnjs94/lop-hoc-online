@@ -295,6 +295,32 @@
   .gentle .ico{ font-size:20px; color:var(--ok); flex:none }
   .pempty{ display:flex; align-items:center; gap:12px; padding:22px 0; color:var(--muted) }
   .pempty .ico{ font-size:26px; color:var(--line-2) }
+  /* ---------- học phí ---------- */
+  .hp{ max-width:760px; margin:0 auto }
+  .hp .pcard{ padding:28px }
+  .hp .tt{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px }
+  .hp .tt .pill{ display:inline-block; padding:5px 11px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; background:var(--accent-soft); color:var(--accent) }
+  .hp .tt .pill.khoa{ background:var(--danger-soft); color:var(--danger) }
+  .hp .tt .pill.ok{ background:var(--ok-soft); color:var(--ok) }
+  .hp h1{ font-size:clamp(24px,2.6vw,32px); letter-spacing:-.02em; line-height:1.15 }
+  .hp .lead{ color:var(--muted); margin:8px 0 22px; font-size:15px }
+  .hp .grid2{ display:grid; grid-template-columns:auto 1fr; gap:26px; align-items:start }
+  @media (max-width:640px){ .hp .grid2{ grid-template-columns:1fr } }
+  .hp .qr{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center }
+  .hp .qr img{ width:232px; height:232px; border-radius:16px; background:#fff; padding:10px; border:1px solid var(--line); box-shadow:var(--shadow-1) }
+  .hp .qr small{ color:var(--muted); font-size:12.5px; max-width:232px; line-height:1.4 }
+  .hp .so{ font-size:clamp(28px,3.4vw,40px); font-weight:900; letter-spacing:-.02em; color:var(--primary); font-variant-numeric:tabular-nums; line-height:1.1 }
+  .hp dl{ margin:14px 0 0; display:grid; grid-template-columns:auto 1fr; gap:7px 14px; font-size:14.5px; align-items:center }
+  .hp dt{ color:var(--muted); font-weight:600; font-size:13px } .hp dd{ margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0 }
+  .hp code{ font:600 14px/1.3 ui-monospace, Consolas, monospace; background:var(--tint); padding:4px 8px; border-radius:8px; letter-spacing:.02em }
+  .hp .chep{ min-height:0; padding:4px 9px; font-size:12px; border-radius:8px; background:var(--tint-alt); color:var(--primary); border:1px solid var(--line) }
+  .hp ol{ margin:18px 0 0; padding-left:20px; color:var(--ink-2); font-size:14px; line-height:1.6 } .hp ol li{ margin-bottom:4px }
+  .hp .acts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:20px }
+  .hp .ghi{ margin-top:12px; font-size:13.5px; color:var(--muted) }
+  .hp .ghi b{ color:var(--ok) }
+  .hpnhac{ grid-column:1/-1; display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px; border-radius:var(--r-m); background:var(--accent-soft); border-left:3px solid var(--accent); font-size:14px; color:var(--ink-2) }
+  .hpnhac b{ color:var(--ink) } .hpnhac .grow{ flex:1 } .hpnhac .btn{ min-height:36px; padding:6px 14px; font-size:13.5px }
+  #classBar button.khoa::after{ content:" 🔒"; font-size:12px }
   .notice{ padding:14px 16px; border-radius:var(--r-m); background:var(--accent-soft); border-left:3px solid var(--accent); color:var(--ink-2); font-size:14px; white-space:pre-wrap; line-height:1.55 }
   .notice b{ display:block; font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); margin-bottom:4px }
 
@@ -782,6 +808,8 @@
           <div class="heading"><h1>Tiến độ</h1><p>Bạn đã đi được tới đâu.</p></div>
           <div id="progressBody"></div>
         </section>
+
+        <section id="viewHocPhi" hidden><div class="hp" id="hpBox"></div></section>
 
         <section id="viewHoi" hidden>
           <div class="heading"><h1>Hỏi đáp</h1><p>Câu hỏi thường gặp, thắc mắc của cả lớp theo từng buổi, và những câu bạn đã hỏi.</p></div>
@@ -1325,7 +1353,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     batDauCanhGac();
     docMocLanTruoc();
     xinQuyenThongBao();
-    loadClasses().then(batNhacBuoi);
+    taiHocPhi().then(function () { return loadClasses(); }).then(batNhacBuoi);
   }
 
   /* ---------------- lần đầu: đổi mật khẩu + khai hồ sơ ---------------- */
@@ -1391,7 +1419,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var bar = $('classBar');
     if (!classes.length) { bar.innerHTML = ''; $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">' + lic('classroom', 72) + '<span>Chưa có lớp nào. Giảng viên cần thêm em vào lớp trước.</span></div></div>'; return; }
     curClass = curClass && classes.some(function (c) { return c.id === curClass; }) ? curClass : classes[0].id;
-    bar.innerHTML = classes.map(function (c) { return '<button type="button" data-c="' + c.id + '" class="' + (c.id === curClass ? 'on' : '') + '">' + esc(c.name) + '</button>'; }).join('');
+    bar.innerHTML = classes.map(function (c) { return '<button type="button" data-c="' + c.id + '" class="' + (c.id === curClass ? 'on' : '') + (bKhoaHP(c.id) ? ' khoa' : '') + '" title="' + (bKhoaHP(c.id) ? 'Khoá này đang tạm đóng vì chưa nhận được học phí' : '') + '">' + esc(c.name) + '</button>'; }).join('');
     bar.style.display = classes.length === 1 ? 'none' : '';
     capNhatTenLop();
     await loadSessions();
@@ -1406,19 +1434,114 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var b = e.target.closest('button[data-c]'); if (!b) return;
     curClass = b.dataset.c; curSes = null;
     [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
+    /* đang ở màn học phí mà chuyển sang khoá không bị khoá → về trang chủ của khoá đó */
+    if (view === 'hocphi' && !bKhoaHP(curClass)) goView('home');
     capNhatTenLop(); loadSessions();
+  });
+
+  /* ---------------- học phí (v26) ----------------
+     Mỗi khoá tính riêng: mien | da_dong | chua_han | qua_han. Quá hạn → khoá này chỉ còn màn học phí,
+     máy chủ cũng không trả buổi/tài liệu/vé video của khoá đó; các khoá khác vẫn học. Giảng viên miễn. */
+  var hocPhi = {}, hpQrAnh = null, hpZalo = null, hpTimer = null;
+  async function taiHocPhi() {
+    hocPhi = {};
+    if (!sb || !me || laGV()) return;
+    try {
+      var r = await sb.rpc('hoc_phi_cua_toi');
+      if (!r.error) (r.data || []).forEach(function (x) { hocPhi[x.class_id] = x; });
+    } catch (e) {}
+  }
+  function hpCua(cid) { return hocPhi[cid] || null; }
+  function bKhoaHP(cid) { var x = hpCua(cid); return !!(x && x.trang_thai === 'qua_han') && !laGV(); }
+  function vnd(n) { n = Math.round(Number(n) || 0); return n.toLocaleString('vi-VN') + ' ₫'; }
+  function ngayVN(s) { if (!s) return ''; var d = new Date(String(s).length <= 10 ? s + 'T00:00:00' : s); return isNaN(d) ? '' : d.toLocaleDateString('vi-VN'); }
+  function conNgay(han) { if (!han) return 0; var d = new Date(han + 'T00:00:00'), t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((d - t) / 864e5); }
+  function khongDau(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D'); }
+  /* nội dung chuyển khoản: HP <mã SV> <chữ cái đầu tên lớp> — tối đa 25 ký tự, không dấu, để giảng viên đối chiếu */
+  function hpNoiDung(x) {
+    var tat = khongDau(x.ten).split(/\s+/).filter(function (w) { return /^[A-Za-z]/.test(w); }).map(function (w) { return w.charAt(0); }).join('').toUpperCase().slice(0, 6);
+    return ('HP ' + khongDau(x.mssv || '').replace(/\s+/g, '') + (tat ? ' ' + tat : '')).slice(0, 25).trim();
+  }
+  function hpQrUrl(x, nd) {
+    var nh = x.ngan_hang || {};
+    if (!nh.bin || !nh.stk) return '';
+    return 'https://img.vietqr.io/image/' + encodeURIComponent(nh.bin) + '-' + encodeURIComponent(nh.stk) + '-compact2.png?amount=' + Math.round(Number(x.hoc_phi) || 0)
+      + '&addInfo=' + encodeURIComponent(nd) + (nh.ten_tk ? '&accountName=' + encodeURIComponent(nh.ten_tk) : '');
+  }
+  /* nhắc trên trang chủ khi còn hạn (hoặc đã báo chuyển, chờ xác nhận) */
+  function hpNhac(cid) {
+    var x = hpCua(cid); if (!x || (x.trang_thai !== 'chua_han')) return '';
+    var n = conNgay(x.han);
+    return '<div class="hpnhac"><span>' + lic('grades', 34) + '</span><span><b>Học phí ' + esc(x.ten) + ':</b> ' + vnd(x.hoc_phi)
+      + (x.bao_chuyen_at ? ' · bạn đã báo chuyển ' + esc(ngayVN(x.bao_chuyen_at)) + ', chờ giảng viên xác nhận' : ' · hạn ' + esc(ngayVN(x.han)) + (n > 0 ? ' (còn ' + n + ' ngày)' : ' (hôm nay)'))
+      + '</span><span class="grow"></span><button type="button" class="btn" data-hp="' + cid + '">Xem cách chuyển</button></div>';
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('button[data-hp]'); if (b) { goView('hocphi'); } });
+  async function veHocPhi() {
+    var box = $('hpBox'), x = hpCua(curClass);
+    if (!x) { box.innerHTML = '<div class="pcard"><h1>Không có học phí phải đóng</h1><p class="lead">Khoá này không thu học phí hoặc bạn đã đóng.</p><div class="acts"><button type="button" class="btn" id="hpVe">← Về trang chủ</button></div></div>'; return; }
+    var khoa = x.trang_thai === 'qua_han', nd = hpNoiDung(x), nh = x.ngan_hang || {}, url = hpQrUrl(x, nd), n = conNgay(x.han);
+    if (!url && nh.co_qr_anh && hpQrAnh == null) { try { var ra = await sb.rpc('anh_qr_hoc_phi'); hpQrAnh = (ra && ra.data) || ''; } catch (e) { hpQrAnh = ''; } }
+    var anh = url || (hpQrAnh && /^data:image\//.test(hpQrAnh) ? hpQrAnh : '');
+    if (hpZalo == null) { try { var rz = await sb.from('trang_cong_khai').select('noi_dung').eq('khoa', 'lien_he').maybeSingle(); var lh = (rz && rz.data && rz.data.noi_dung) || {}; hpZalo = lh.zalo_link || (lh.zalo ? 'https://zalo.me/' + String(lh.zalo).replace(/[^0-9]/g, '') : ''); } catch (e) { hpZalo = ''; } }
+    var pill = x.trang_thai === 'da_dong' ? '<span class="pill ok">Đã đóng</span>' : x.trang_thai === 'mien' ? '<span class="pill ok">Không thu</span>' : khoa ? '<span class="pill khoa">Đang tạm đóng</span>' : '<span class="pill">Còn ' + Math.max(0, n) + ' ngày</span>';
+    var lead = x.trang_thai === 'da_dong' ? 'Đã nhận ' + vnd(x.so_tien || x.hoc_phi) + ' ngày ' + ngayVN(x.da_dong_at) + '. Cảm ơn bạn.'
+      : khoa ? 'Quá hạn ' + ngayVN(x.han) + ' mà chưa nhận được học phí nên bài giảng, tài liệu và bài tập của khoá này tạm đóng. Chuyển xong, giảng viên xác nhận là mở lại ngay — các khoá khác của bạn không ảnh hưởng.'
+      : 'Hạn đóng ' + ngayVN(x.han) + '. Quét mã bằng app ngân hàng, số tiền và nội dung đã điền sẵn.';
+    var coBank = !!(nh.bin && nh.stk) || !!anh;
+    box.innerHTML = '<div class="pcard"><div class="tt">' + pill + '</div><h1>Học phí · ' + esc(x.ten) + '</h1><p class="lead">' + esc(lead) + '</p>'
+      + (x.trang_thai === 'da_dong' || x.trang_thai === 'mien' ? '' :
+        '<div class="grid2">'
+        + '<div class="qr">' + (anh ? '<img src="' + esc(anh) + '" alt="Mã QR chuyển khoản" draggable="false">' : '<div style="width:232px;height:232px;border:1px dashed var(--line);border-radius:16px;display:grid;place-items:center;color:var(--muted);font-size:13px;text-align:center;padding:16px">Giảng viên chưa đặt thông tin nhận tiền — nhắn Zalo để được hướng dẫn</div>')
+        + '<small>' + (url ? 'Mở app ngân hàng → quét mã. Số tiền và nội dung đã có sẵn.' : (anh ? 'Quét mã rồi nhập đúng số tiền và nội dung bên cạnh.' : '')) + '</small></div>'
+        + '<div><div class="so">' + vnd(x.hoc_phi) + '</div><dl>'
+        + (nh.ten_nh ? '<dt>Ngân hàng</dt><dd>' + esc(nh.ten_nh) + '</dd>' : '')
+        + (nh.stk ? '<dt>Số tài khoản</dt><dd><code>' + esc(nh.stk) + '</code><button type="button" class="btn chep" data-chep="' + esc(nh.stk) + '">Chép</button></dd>' : '')
+        + (nh.ten_tk ? '<dt>Chủ tài khoản</dt><dd>' + esc(nh.ten_tk) + '</dd>' : '')
+        + '<dt>Nội dung</dt><dd><code>' + esc(nd) + '</code><button type="button" class="btn chep" data-chep="' + esc(nd) + '">Chép</button></dd>'
+        + '<dt>Hạn</dt><dd>' + esc(ngayVN(x.han)) + '</dd></dl>'
+        + '<ol><li>Chuyển đúng số tiền, giữ nguyên nội dung để giảng viên đối chiếu.</li><li>Bấm <b>Tôi đã chuyển</b> bên dưới.</li><li>Giảng viên xác nhận trong ngày' + (khoa ? ' — khoá tự mở lại, trang tự kiểm tra mỗi phút.' : '.') + '</li></ol>'
+        + '<div class="acts">' + (x.bao_chuyen_at ? '' : '<button type="button" class="btn" id="hpBao"' + (coBank ? '' : ' disabled') + '>Tôi đã chuyển</button>')
+        + '<button type="button" class="btn sec" id="hpKiem">Kiểm tra lại</button>'
+        + (hpZalo ? '<a class="btn sec" href="' + esc(hpZalo) + '" target="_blank" rel="noopener">Nhắn Zalo giảng viên</a>' : '')
+        + (khoa ? '' : '<button type="button" class="btn sec" id="hpVe">← Về trang chủ</button>') + '</div>'
+        + (x.bao_chuyen_at ? '<p class="ghi"><b>Đã báo chuyển</b> lúc ' + esc(new Date(x.bao_chuyen_at).toLocaleString('vi-VN')) + ' — chờ giảng viên xác nhận.</p>' : '')
+        + '</div></div>')
+      + (x.trang_thai === 'da_dong' || x.trang_thai === 'mien' ? '<div class="acts"><button type="button" class="btn" id="hpVe">← Về trang chủ</button></div>' : '')
+      + '</div>';
+    clearInterval(hpTimer);
+    if (khoa) hpTimer = setInterval(function () { if (view === 'hocphi' && bKhoaHP(curClass)) hpKiemTra(true); else clearInterval(hpTimer); }, 60000);
+  }
+  async function hpKiemTra(lang) {
+    var truoc = bKhoaHP(curClass);
+    await taiHocPhi();
+    if (truoc && !bKhoaHP(curClass)) { baoChup('Khoá đã mở lại', 'Giảng viên đã xác nhận học phí. Chúc bạn học tốt!', 'ok'); await loadClasses(); goView('home'); return; }
+    if (!lang) { if (bKhoaHP(curClass)) baoChup('Chưa thấy xác nhận', 'Giảng viên chưa xác nhận. Nếu đã chuyển, nhắn Zalo để được mở sớm.', 'info'); veHocPhi(); }
+  }
+  $('hpBox').addEventListener('click', async function (e) {
+    var c = e.target.closest('[data-chep]'); if (c) { try { await navigator.clipboard.writeText(c.dataset.chep); c.textContent = 'Đã chép'; setTimeout(function () { c.textContent = 'Chép'; }, 1500); } catch (x) {} return; }
+    if (e.target.closest('#hpVe')) { goView('home'); return; }
+    if (e.target.closest('#hpKiem')) { hpKiemTra(false); return; }
+    if (e.target.closest('#hpBao')) {
+      var b = e.target.closest('#hpBao'); b.disabled = true;
+      try { var r = await sb.rpc('bao_da_chuyen', { p_class: curClass }); if (r.error) throw r.error; var x = hpCua(curClass); if (x) x.bao_chuyen_at = new Date().toISOString(); baoChup('Đã báo cho giảng viên', 'Giảng viên xác nhận là khoá mở lại. Cảm ơn bạn.', 'ok'); veHocPhi(); }
+      catch (err) { b.disabled = false; baoChup('Chưa gửi được', String(err.message || err), 'err'); }
+    }
   });
 
   /* ---------------- điều hướng ---------------- */
   function goView(v) {
     view = v;
     [].forEach.call($('nav').querySelectorAll('button[data-view]'), function (b) { b.classList.toggle('on', b.dataset.view === v); });
-    ['home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi'].forEach(function (k) { $('view' + k.charAt(0).toUpperCase() + k.slice(1)).hidden = k !== v; });
+    ['home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
     renderView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   $('nav').addEventListener('click', function (e) { var b = e.target.closest('button[data-view]'); if (b) goView(b.dataset.view); });
   function renderView() {
+    /* khoá quá hạn học phí: mọi mục của KHOÁ NÀY chỉ còn màn học phí; các khoá khác không ảnh hưởng */
+    if (bKhoaHP(curClass) && view !== 'hocphi') { goView('hocphi'); return; }
+    if (view === 'hocphi') { veHocPhi(); capNhatChuong(); return; }
     if (view === 'home') renderHome();
     else if (view === 'lessons') { renderNav(); renderMain(); }
     else if (view === 'tasks') renderTasks();
@@ -1578,6 +1701,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + '<div class="gentle"><span class="ico">' + I.sprout + '</span>' + (pct >= 100 && tot ? 'Xong hết rồi. Nghỉ một chút cũng xứng đáng.' : 'Kiên trì mỗi ngày để chinh phục mục tiêu nhé!') + '</div></div>';
     $('homeGrid').innerHTML = html;
     if (classNotice.trim()) $('homeGrid').insertAdjacentHTML('afterbegin', '<div class="notice" style="grid-column:1/-1"><b>Thông báo từ giảng viên</b>' + esc(classNotice.trim()) + '</div>');
+    var nh = hpNhac(curClass); if (nh) $('homeGrid').insertAdjacentHTML('afterbegin', nh);
     $('navTaskN').textContent = nTask; $('navTaskN').hidden = !nTask;
   }
   $('viewHome').addEventListener('click', function (e) {
@@ -1930,7 +2054,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var LOI_STREAM = {
     stream_chua_cau_hinh: 'Máy chủ chưa nối với kho video. Nhắn giảng viên.',
     chua_san_sang: 'Video đang được xử lý, vài phút nữa mở lại nhé.',
-    chua_toi_gio: 'Chưa tới giờ mở video này.', chua_mo: 'Buổi học chưa mở.', khong_trong_lop: 'Bạn không ở trong lớp này.',
+    chua_toi_gio: 'Chưa tới giờ mở video này.', chua_mo: 'Buổi học chưa mở.', khong_trong_lop: 'Bạn không ở trong lớp này.', hoc_phi: 'Khoá học đang tạm đóng vì chưa nhận được học phí.',
     het_luot: 'Bạn đã dùng hết quỹ thời gian xem video này. Cần xem thêm thì nhắn giảng viên.',
     phien_het_han: 'Phiên đăng nhập hết hạn, tải lại trang.', chua_dang_nhap: 'Chưa đăng nhập.', khong_thay: 'Không thấy video này.'
   };

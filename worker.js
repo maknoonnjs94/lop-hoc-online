@@ -261,6 +261,16 @@ async function restOne(env, path) {
   const rows = await r.json();
   return rows[0] || null;
 }
+/* v26: trạng thái học phí của một ghi danh — gọi hàm trang_thai_hoc_phi bằng khoá quản trị; lỗi/vắng hàm thì coi như ổn */
+async function quaHanHocPhi(env, classId, userId) {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/trang_thai_hoc_phi', {
+      method: 'POST', headers: adminHeaders(env), body: JSON.stringify({ p_class: classId, p_student: userId }) });
+    if (!r.ok) return false;
+    const t = await r.json();
+    return t === 'qua_han';
+  } catch (e) { return false; }
+}
 /* cấu hình hệ thống nằm trong Supabase, bảng cau_hinh_he_thong (schema_v14_video.sql) */
 async function docCauHinh(env, khoa) { const r = await restOne(env, '/cau_hinh_he_thong?khoa=eq.' + encodeURIComponent(khoa) + '&select=gia_tri'); return r ? r.gia_tri : null; }
 async function ghiCauHinh(env, khoa, giaTri) {
@@ -351,6 +361,8 @@ async function streamToken(body, request, env) {
     if (m.open_at && new Date(m.open_at).getTime() > Date.now()) return json({ ok: false, reason: 'chua_toi_gio' }, 403, request);
     const e = await restOne(env, '/enrollments?class_id=eq.' + s.class_id + '&student=eq.' + nd.id + '&select=student');
     if (!e) return json({ ok: false, reason: 'khong_trong_lop' }, 403, request);
+    /* v26: quá hạn chưa đóng học phí → không cấp vé (chưa chạy v26 thì hàm vắng → cho qua) */
+    if (await quaHanHocPhi(env, s.class_id, nd.id)) return json({ ok: false, reason: 'hoc_phi' }, 403, request);
   }
 
   /* Quỹ thời gian xem: hết quỹ thì không cấp vé nữa. Giảng viên không bị trừ. */
@@ -447,7 +459,7 @@ async function coHam(env, ten, than) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -471,7 +483,8 @@ async function kiemSchema(env) {
     coHam(env, 'luu_faq', JSON.stringify({ p_id: null, p_class: null, p_hoi: null, p_dap: null })),
     coCot(env, 'sessions', 'deleted_at'),
     coHam(env, 'so_khoa_hoc', JSON.stringify({ s: '1' })),
-    coCot(env, 'trang_cong_khai', 'khoa')
+    coCot(env, 'trang_cong_khai', 'khoa'),
+    coCot(env, 'enrollments', 'da_dong_at,mien,han_dong')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -490,6 +503,7 @@ async function kiemSchema(env) {
     v23_hoi_dap_rieng: v23a && v23b,
     v24_thung_rac_bo_go: v24a && v24b,
     v25_trang_cong_khai: v25,
+    v26_hoc_phi: v26,
     ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }

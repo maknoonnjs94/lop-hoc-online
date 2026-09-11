@@ -20,7 +20,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.16** — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v24** đều `true` trên `/api/trang-thai` (kiểm 11/9, máy chấm thật 10/10 phép qua RPC). **v25 (trang công khai) chờ m chạy.**
+**SQL:** v9 → **v25** đều `true` trên `/api/trang-thai`. **v26 (học phí) chờ m chạy.**
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
@@ -39,6 +39,39 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-12 — Học phí: QR chuyển khoản, nợ 2 tuần, khoá theo từng khoá (v26)
+
+M yêu cầu: đặt học phí VND + QR nhận tiền ở quản trị; tài khoản cấp xong có 2 tuần để chuyển; quá hạn thì giao diện học tạm khoá,
+chỉ hiện QR; đóng xong dùng lại; một SV có thể học 2–3 khoá → "thiết kế cho thông minh".
+
+**Thiết kế:** học phí theo LỚP (`classes.hoc_phi`, `han_ngay`, `hoc_phi_tu`), trạng thái theo GHI DANH (`enrollments.han_dong, da_dong_at,
+so_tien, mien, bao_chuyen_at`). Hàm `han_hoc_phi` = coalesce(han_dong, greatest(joined_at, hoc_phi_tu) + han_ngay); `trang_thai_hoc_phi` →
+mien | da_dong | chua_han | qua_han; `hoc_phi_ok(class)` gắn vào s_read / m_read / mc_read / duoc_xem_tai_lieu → quá hạn là máy chủ
+không trả buổi/tài liệu/nội dung của KHOÁ ĐÓ (khoá khác không ảnh hưởng, GV miễn). Worker: `streamToken` gọi `trang_thai_hoc_phi`
+bằng khoá quản trị → `hoc_phi` 403. Ngân hàng ở `cau_hinh_he_thong.ngan_hang` (chỉ qua `luu_ngan_hang`/`doc_ngan_hang` staff;
+`hoc_phi_cua_toi()` trả cho SV bản không có ảnh, `anh_qr_hoc_phi()` trả ảnh riêng). `bao_da_chuyen(p_class)` cho SV.
+
+**QR:** VietQR `https://img.vietqr.io/image/<BIN>-<STK>-compact2.png?amount=&addInfo=&accountName=` — số tiền + nội dung
+`HP <mã SV> <chữ cái đầu tên lớp>` (≤ 25 ký tự, không dấu, tính ở client cả hai trang) có sẵn trong mã; thử trong pane thấy ảnh
+thật hiện đúng. Dự phòng: ảnh QR tự tải (data URL ≤ 480 px) khi không dùng VietQR. 27 ngân hàng với BIN Napas trong `NGAN_HANG`.
+
+**Trang học:** `taiHocPhi()` trước `loadClasses()`; view mới `hocphi` (`#viewHocPhi`), `renderView` gác: `bKhoaHP(curClass)` →
+ép về hocphi; thẻ lớp bị khoá thêm class `khoa` (🔒); `hpNhac()` dải nhắc trên trang chủ khi còn hạn; màn học phí: QR, số tiền, dl,
+nút Chép, Tôi đã chuyển (rpc), Kiểm tra lại, Nhắn Zalo (đọc `trang_cong_khai.lien_he`), Về trang chủ (khi chỉ xem); khoá thì poll
+60 s, mở lại → toast + về trang chủ. Đổi sang lớp không khoá khi đang ở màn học phí → về home (bẫy gặp khi thử).
+
+**Quản trị:** hộp thoại lớp thêm Học phí + Được nợ (đổi mức → `hoc_phi_tu = now()`; lưu xong chưa có ngân hàng → toast có nút
+💳 Đặt ngay); nút **💳 Nhận học phí** (select 27 NH, STK, tên không dấu tự hoa, mẫu VietQR đổi theo khi gõ, ảnh QR tự tải);
+roster thêm cột Học phí (`oHocPhi`): pill trạng thái + nhãn "SV báo đã chuyển" + ✓ Đã nhận (prompt số tiền) / Gia hạn (prompt ngày) /
+Miễn / Thu lại / Hoàn tác — cập nhật thẳng `enrollments` (policy e_staff); `hpTomTat` trên thanh. Cột thiếu (chưa v26) → tự lùi.
+
+**Thử (stub):** SV `?hp=chua_han|qua_han|da_dong|bao` + `&lop2=1`; QT: u1 quá hạn + báo, u2 đã đóng, u3 còn hạn; ✓ Đã nhận / Gia hạn
+/ hộp ngân hàng / hộp lớp đều chạy. ra-soat 0 lỗi.
+
+**M phải làm:** chạy `schema_v26_hoc_phi.sql`; 💳 đặt ngân hàng; đặt học phí cho lớp thật; thử bằng tài khoản SV trong app.
+
 ---
 
 ## 2026-09-11 (khuya) — Tách trang công khai / học chỉ trong app (v25)

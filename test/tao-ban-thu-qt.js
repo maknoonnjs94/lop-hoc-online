@@ -15,6 +15,7 @@ const stub = `<script>
   var ID = 0, moiId = function(p){ return p + (++ID); };
 
   /* ---------------- kho dữ liệu giả, có thật trong bộ nhớ ---------------- */
+  var NGAN_HANG_THU = P.get('bank') === '0' ? {} : { bin:'970422', ma:'MB', ten_nh:'MB Bank', stk:'0123456789', ten_tk:'PHAM ANH NGOC' };
   var DB = {
     /* v25: trang công khai — ?tck=0 để xem lời nhắc chưa chạy SQL (bảng vắng) */
     trang_cong_khai: P.get('tck') === '0' ? undefined : [
@@ -29,7 +30,7 @@ const stub = `<script>
       { id:'u2', full_name:'Trần Quốc Bảo', email:'quocbao@vnu.edu.vn', role:'student', active:true, student_no:'23001235', gender:'nam', major:'Hóa học', birth_year:2005, onboarded_at:d(-20*864e5), must_change_pw:false, avatar_path:'' },
       { id:'u3', full_name:'Lê Thu Hà', email:'thuha@vnu.edu.vn', role:'student', active:true, student_no:'23001236', gender:'nu', major:'Hóa dược', birth_year:2004, onboarded_at:null, must_change_pw:true, avatar_path:'' }
     ],
-    classes: [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9).', owner:'gv1', created_at:d(-60*864e5) }],
+    classes: [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9).', owner:'gv1', created_at:d(-60*864e5), hoc_phi: P.get('hp') === '0' ? undefined : 1500000, han_ngay: 14, hoc_phi_tu: d(-20*864e5) }],
     sessions: [
       { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2.', created_at:d(-2*864e5) },
       { id:'s2', class_id:'c1', no:4, title:'Cân bằng tạo phức', published:true, pinned:false, starts_at:null, held_on:'2026-09-01', note:'', created_at:d(-7*864e5) },
@@ -50,9 +51,10 @@ const stub = `<script>
       { material_id:'m5', url:null, storage_path:'s2/phieu4.pdf', body:null }
     ],
     enrollments: [
-      { class_id:'c1', student:'u1', joined_at:d(-30*864e5) },
-      { class_id:'c1', student:'u2', joined_at:d(-30*864e5) },
-      { class_id:'c1', student:'u3', joined_at:d(-5*864e5) }
+      /* v26: u1 quá hạn + đã báo chuyển, u2 đã đóng, u3 còn hạn */
+      { class_id:'c1', student:'u1', joined_at:d(-30*864e5), han_dong:null, da_dong_at:null, so_tien:null, mien:false, bao_chuyen_at:d(-2*36e5) },
+      { class_id:'c1', student:'u2', joined_at:d(-30*864e5), han_dong:null, da_dong_at:d(-10*864e5), so_tien:1500000, mien:false, bao_chuyen_at:null },
+      { class_id:'c1', student:'u3', joined_at:d(-5*864e5), han_dong:null, da_dong_at:null, so_tien:null, mien:false, bao_chuyen_at:null }
     ],
     view_events: [
       { user_id:'u1', class_id:'c1', material_id:'m2', session_id:'s1', last_at:d(-36e5), opens:2, progress:{ seconds:900, duration:1500 }, tong_giay:2100, quy_them:0 },
@@ -374,7 +376,7 @@ const stub = `<script>
       signOut: function () { alert('Đây là bản thử — thật thì sẽ đăng xuất.'); return Promise.resolve({}); }
     },
     from: truyVan,
-    rpc: function (ten, a) { return Promise.resolve({ data: rpcChay(ten, a), error: null }); },
+    rpc: function (ten, a) { if (ten === 'doc_ngan_hang') return Promise.resolve({ data: NGAN_HANG_THU, error: null }); if (ten === 'luu_ngan_hang') { NGAN_HANG_THU = a.p; return Promise.resolve({ data: null, error: null }); } return Promise.resolve({ data: rpcChay(ten, a), error: null }); },
     channel: function () { var c = { on: function () { return c; }, subscribe: function () { return c; } }; return c; },
     removeChannel: function () {},
     storage: { from: function (kho) { return {

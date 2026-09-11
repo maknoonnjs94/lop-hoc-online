@@ -376,6 +376,33 @@ Hiện ra một bảng gom hết: đã mở bao nhiêu tài liệu trên tổng 
 
 Dùng trước buổi phụ đạo để biết em nào đang hổng chỗ nào, khỏi phải mở bốn tab.
 
+## Học phí — chuyển khoản QR, được nợ 2 tuần, khoá theo từng khoá
+
+Cần chạy `schema_v26_hoc_phi.sql` một lần (`/api/trang-thai` → `v26_hoc_phi: true`).
+
+**Cài một lần:** Quản trị → tab **Sinh viên** → **💳 Nhận học phí**: chọn ngân hàng, số tài khoản, tên chủ tài khoản (không dấu).
+Từ đó sinh viên thấy **mã VietQR có sẵn số tiền của khoá và nội dung chuyển** `HP <mã SV> <chữ cái đầu tên lớp>` — m chỉ đối chiếu
+sao kê theo mã SV rồi bấm ✓. Không dùng VietQR thì tải ảnh QR của app ngân hàng (sinh viên tự nhập số tiền, nội dung).
+
+**Mỗi lớp:** *Đổi tên lớp* → **Học phí (VND)** và **Được nợ (ngày)**, mặc định 14. Học phí 0 = không thu. Đổi mức thu (kể cả từ 0 lên)
+thì hạn của sinh viên đã ghi danh tính **từ hôm đó**, không ai bị quá hạn ngay.
+
+**Sinh viên thấy gì:** còn hạn → dải nhắc trên trang chủ ("còn N ngày", nút *Xem cách chuyển*) và vẫn học bình thường. Quá hạn →
+**chỉ khoá đó** tạm đóng: mọi mục chỉ còn màn học phí (QR, số tiền, số TK, nội dung có nút Chép, nút **Tôi đã chuyển**, *Kiểm tra lại*,
+*Nhắn Zalo giảng viên* lấy từ trang công khai). Máy chủ cũng không trả buổi/tài liệu/vé video của khoá đó. Các khoá khác của em đó
+vẫn học — thẻ lớp bị khoá có 🔒. Trang tự kiểm tra mỗi phút; m xác nhận là mở lại ngay.
+
+**Xác nhận:** tab Sinh viên → cột **Học phí**: `còn N ngày` / `quá hạn N ngày — đang khoá` / `đã đóng` / `miễn`, kèm nhãn **SV báo đã chuyển**
+khi em đó bấm nút. Nút **✓ Đã nhận** (hỏi số tiền, mặc định = học phí lớp) · **Gia hạn** (+N ngày từ hôm nay hoặc từ hạn hiện tại) ·
+**Miễn** / **Thu lại** · **Hoàn tác**. Thanh trên tab tóm tắt: `1.500.000 ₫ · 3 đã đóng · 2 còn hạn · 1 quá hạn · 1 báo đã chuyển`.
+
+**Vì sao "thông minh":** một em học 3 khoá = 3 dòng ghi danh, mỗi dòng hạn riêng, mốc đóng riêng, miễn riêng — đóng khoá nào mở khoá đó.
+Hạn = ngày ghi danh (hoặc ngày bắt đầu thu, nếu muộn hơn) + số ngày; gia hạn ghi vào dòng đó. Không có "khoá cả tài khoản".
+
+**Giới hạn nói rõ:** m vẫn phải tự đối chiếu sao kê (không có cổng thanh toán tự động — tránh phí và giấy tờ). Mã VietQR lấy từ
+`img.vietqr.io` (dịch vụ miễn phí ngoài); nếu có lúc không tải được, sinh viên vẫn có đủ số TK + số tiền + nội dung để chuyển tay.
+Đặt học phí mà chưa đặt ngân hàng thì sinh viên không có QR — trang quản trị nhắc ngay lúc lưu.
+
 ## Thùng rác — xoá nhầm buổi hay tài liệu thì lấy lại được
 
 Cần chạy một lần `schema_v24_thung_rac_bo_go.sql`. Chưa chạy thì nút Xoá vẫn xoá thẳng như trước, có báo trước trong hộp thoại.
