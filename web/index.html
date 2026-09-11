@@ -245,7 +245,8 @@
       <form id="dkForm" autocomplete="on" novalidate>
         <label>Họ và tên<input name="ho_ten" required maxlength="120" placeholder="Nguyễn Văn An" autocomplete="name"></label>
         <label>Số Zalo / điện thoại<input name="sdt" required inputmode="tel" maxlength="20" placeholder="09xx xxx xxx" autocomplete="tel"></label>
-        <label class="w">Email (dùng để đăng nhập)<input name="email" type="email" required maxlength="160" placeholder="email@example.com" autocomplete="email"></label>
+        <label>Email (dùng để đăng nhập)<input name="email" type="email" required maxlength="160" placeholder="email@example.com" autocomplete="email"></label>
+        <label>Mã sinh viên <small style="font-weight:600">(điền chính xác để cấp tài khoản đúng)</small><input name="mssv" required maxlength="40" placeholder="22001234" autocomplete="off" inputmode="text"></label>
         <label class="w">Khoá muốn học<select name="khoa" id="dkKhoa" required></select></label>
         <label class="w">Ngành, năm, lời nhắn (tuỳ chọn)<textarea name="ghi_chu" maxlength="500" placeholder="Hóa dược năm 2, học buổi tối…"></textarea></label>
         <label class="bay" aria-hidden="true">Website<input name="web" tabindex="-1" autocomplete="off"></label>
@@ -406,15 +407,16 @@
     var sel = $('dkKhoa'); if (sel) { sel.value = a.dataset.dk; if (sel.value !== a.dataset.dk) sel.value = 'Khác / chưa rõ'; }
     setTimeout(function () { var f = document.querySelector('#dkForm input[name=ho_ten]'); if (f) f.focus({ preventScroll: true }); }, 400);
   });
-  var DK_LOI = { thieu_ten: 'Ghi họ tên giúp nhé.', email_sai: 'Email chưa đúng.', sdt_sai: 'Số điện thoại chưa đúng.', thieu_khoa: 'Chọn khoá muốn học.', qua_nhieu: 'Bạn gửi hơi nhiều lần rồi, thử lại sau một giờ.', chua_mo_dang_ky: 'Đăng ký trực tuyến chưa mở — nhắn Zalo giảng viên nhé.' };
+  var DK_LOI = { thieu_ten: 'Ghi họ tên giúp nhé.', email_sai: 'Email chưa đúng.', sdt_sai: 'Số điện thoại chưa đúng.', mssv_sai: 'Mã sinh viên chưa đúng (ít nhất 4 ký tự chữ/số).', thieu_khoa: 'Chọn khoá muốn học.', qua_nhieu: 'Bạn gửi hơi nhiều lần rồi, thử lại sau một giờ.', chua_mo_dang_ky: 'Đăng ký trực tuyến chưa mở — nhắn Zalo giảng viên nhé.' };
   $('dkForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var f = this, loi = $('dkLoi'), nut = $('dkGui'), o = {};
-    ['ho_ten', 'email', 'sdt', 'khoa', 'ghi_chu', 'web'].forEach(function (k) { o[k] = (f.elements[k] && f.elements[k].value || '').trim(); });
+    ['ho_ten', 'email', 'sdt', 'mssv', 'khoa', 'ghi_chu', 'web'].forEach(function (k) { o[k] = (f.elements[k] && f.elements[k].value || '').trim(); });
     loi.textContent = '';
     if (o.ho_ten.length < 2) { loi.textContent = DK_LOI.thieu_ten; f.elements.ho_ten.focus(); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email)) { loi.textContent = DK_LOI.email_sai; f.elements.email.focus(); return; }
     if (o.sdt.replace(/[^0-9]/g, '').length < 8) { loi.textContent = DK_LOI.sdt_sai; f.elements.sdt.focus(); return; }
+    if (o.mssv.replace(/[^A-Za-z0-9]/g, '').length < 4) { loi.textContent = DK_LOI.mssv_sai; f.elements.mssv.focus(); return; }
     if (!o.khoa) { loi.textContent = DK_LOI.thieu_khoa; f.elements.khoa.focus(); return; }
     nut.disabled = true; var chuCu = nut.textContent; nut.textContent = 'Đang gửi…';
     try {

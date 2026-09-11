@@ -19,7 +19,7 @@ const stub = `<script>
   var DB = {
     /* v27: đăng ký từ trang công khai — ?dk=0 giả chưa chạy SQL */
     dang_ky: P.get('dk') === '0' ? undefined : [
-      { id:'dk1', ho_ten:'Phạm Thu Trang', email:'thutrang@gmail.com', sdt:'0912 000 111', khoa:'Hóa phân tích K68', ghi_chu:'Hóa dược năm 2, học buổi tối', trang_thai:'cho', tao_luc:d(-3*36e5) },
+      { id:'dk1', ho_ten:'Phạm Thu Trang', email:'thutrang@gmail.com', sdt:'0912 000 111', mssv:'23001999', khoa:'Hóa phân tích K68', ghi_chu:'Hóa dược năm 2, học buổi tối', trang_thai:'cho', tao_luc:d(-3*36e5) },
       { id:'dk2', ho_ten:'Lê Văn Nam', email:'vannam@gmail.com', sdt:'0988 222 333', khoa:'Khác / chưa rõ', ghi_chu:'', trang_thai:'cho', tao_luc:d(-30*6e4) }
     ],
     /* v25: trang công khai — ?tck=0 để xem lời nhắc chưa chạy SQL (bảng vắng) */

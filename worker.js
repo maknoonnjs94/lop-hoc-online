@@ -174,15 +174,23 @@ async function dangKy(body, request, env) {
   const email = String(body.email || '').trim().toLowerCase().slice(0, 160);
   const sdt = String(body.sdt || '').replace(/[^0-9+ ]/g, '').trim().slice(0, 20);
   const khoa = String(body.khoa || '').trim().slice(0, 120);
+  const mssv = String(body.mssv || '').trim().replace(/\s+/g, '').slice(0, 40);
   const ghiChu = String(body.ghi_chu || '').trim().slice(0, 500);
   if (hoTen.length < 2) return json({ ok: false, reason: 'thieu_ten' }, 400, request);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, reason: 'email_sai' }, 400, request);
   if (sdt.replace(/[^0-9]/g, '').length < 8) return json({ ok: false, reason: 'sdt_sai' }, 400, request);
   if (!khoa) return json({ ok: false, reason: 'thieu_khoa' }, 400, request);
-  const r = await fetch(SUPABASE_URL + '/rest/v1/dang_ky', {
+  if (mssv.replace(/[^A-Za-z0-9]/g, '').length < 4) return json({ ok: false, reason: 'mssv_sai' }, 400, request);
+  let r = await fetch(SUPABASE_URL + '/rest/v1/dang_ky', {
     method: 'POST', headers: adminHeaders(env, { Prefer: 'return=minimal' }),
-    body: JSON.stringify({ ho_ten: hoTen, email: email, sdt: sdt, khoa: khoa, ghi_chu: ghiChu })
+    body: JSON.stringify({ ho_ten: hoTen, email: email, sdt: sdt, khoa: khoa, ghi_chu: ghiChu, mssv: mssv })
   });
+  if (r.status === 400) {   /* chưa chạy v27b (thiếu cột mssv) → ghi mã SV vào ghi chú để không mất */
+    r = await fetch(SUPABASE_URL + '/rest/v1/dang_ky', {
+      method: 'POST', headers: adminHeaders(env, { Prefer: 'return=minimal' }),
+      body: JSON.stringify({ ho_ten: hoTen, email: email, sdt: sdt, khoa: khoa, ghi_chu: ('MSSV ' + mssv + (ghiChu ? ' — ' + ghiChu : '')).slice(0, 500) })
+    });
+  }
   if (r.status === 409) return json({ ok: true, da_gui: true }, 200, request);   /* đã có đơn chờ cho khoá này */
   if (!r.ok) {
     const t = await r.text();
