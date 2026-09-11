@@ -17,7 +17,7 @@
    ===================================================================== */
 const SUPABASE_URL = 'https://euyrrodppbpnkmificbs.supabase.co';
 const ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
-const ORIGINS = ['https://lop-hoc-online.giangduonghoahoc.workers.dev', 'http://localhost:8765', 'http://127.0.0.1:8765'];
+const ORIGINS = ['https://lop-hoc-online.giangduonghoahoc.workers.dev', 'https://giangduonghoahoc.com', 'https://www.giangduonghoahoc.com', 'http://localhost:8765', 'http://127.0.0.1:8765'];
 /* Tên miền riêng: đặt biến TEN_MIEN trên Cloudflare (Settings → Variables), ví dụ "hoc.giangduonghoahoc.vn".
    Nhận cả tên miền đó lẫn mọi tên con của nó. Không đặt thì chỉ nhận danh sách trên. */
 let TEN_MIEN_RIENG = null;
@@ -32,7 +32,7 @@ function nguonHopLe(o) {
 /* Danh sách host được nhúng video Stream: host đang gọi + workers.dev + tên miền riêng (và mọi tên con).
    Nhờ vậy video tải lên ở địa chỉ nào cũng phát được ở địa chỉ kia — đổi tên miền không phải khoá lại video. */
 function nguonStream(request) {
-  const ds = [new URL(request.url).host, new URL(ORIGINS[0]).host];
+  const ds = [new URL(request.url).host].concat(ORIGINS.filter(function (o) { return o.indexOf('https://') === 0; }).map(function (o) { return new URL(o).host; }));
   if (TEN_MIEN_RIENG) ds.push(TEN_MIEN_RIENG, '*.' + TEN_MIEN_RIENG);
   return ds.filter(function (x, i) { return ds.indexOf(x) === i; });
 }
@@ -91,6 +91,7 @@ export default {
       if (url.pathname === '/api/stream/chon') return await streamChon(body, env, request);
       if (url.pathname === '/api/stream/tai-len') return await streamTaiLen(body, env, request);
       if (url.pathname === '/api/stream/tai-len-lon') return await streamTaiLenLon(body, env, request);
+      if (url.pathname === '/api/stream/khoa-lai') return await streamKhoaLai(env, request);
       return json({ ok: false, reason: 'khong_co_duong_nay' }, 404, request);
     } catch (e) {
       return json({ ok: false, reason: 'loi_may_chu', chi_tiet: String(e && e.message || e).slice(0, 200) }, 500, request);
@@ -393,6 +394,19 @@ async function streamChon(body, env, request) {
   if (!/^[0-9a-f]{32}$/i.test(uid)) return json({ ok: false, reason: 'uid_sai' }, 400, request);
   const v = await cfStream(env, '/' + uid, 'POST', { requireSignedURLs: true, allowedOrigins: nguonStream(request) });
   return json({ ok: true, uid: v.uid, ten: (v.meta && v.meta.name) || v.filename || v.uid, san_sang: !!v.readyToStream }, 200, request);
+}
+/* POST /api/stream/khoa-lai → khoá lại MỌI video cho đủ các địa chỉ hiện có (workers.dev + tên miền riêng).
+   Dùng một lần sau khi gắn tên miền, hoặc trước khi phát hành app trỏ địa chỉ mới. */
+async function streamKhoaLai(env, request) {
+  if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
+  const nguon = nguonStream(request);
+  const list = await cfStream(env, '?per_page=200');
+  let xong = 0, loi = [];
+  for (const v of (list || [])) {
+    try { await cfStream(env, '/' + v.uid, 'POST', { requireSignedURLs: true, allowedOrigins: nguon }); xong++; }
+    catch (e) { loi.push(((v.meta && v.meta.name) || v.uid) + ': ' + String(e.message || e).slice(0, 80)); }
+  }
+  return json({ ok: true, so_video: xong, nguon: nguon, loi: loi }, 200, request);
 }
 /* POST /api/stream/tai-len { name } → { uploadURL, uid } — trình duyệt gửi tệp thẳng lên Cloudflare (≤ 200 MB) */
 async function streamTaiLen(body, env, request) {

@@ -40,6 +40,28 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-11 (tối) — Tên miền giangduonghoahoc.com đã gắn
+
+M mua `giangduonghoahoc.com` trên Cloudflare Registrar (đường 1A), gắn Custom Domain **tên gốc** (không `hoc.`)
+vào Worker. `https://giangduonghoahoc.com/` ra trang đăng nhập, `/api/trang-thai` ok. workers.dev vẫn chạy song song.
+
+**Nhầm chỗ khi đặt biến:** m thêm `TEN_MIEN` vào mục *Build → Variables and secrets* (chỉ có nút Save, không có
+Deploy) — đó là biến lúc build, Worker chạy thật không thấy. Chỗ đúng là *Settings → Variables and Secrets* ở
+phần trên (cạnh Bindings). Để khỏi mò menu, đưa luôn vào `wrangler.jsonc` → `"vars": { "TEN_MIEN": "giangduonghoahoc.com" }`;
+`keep_vars: true` vẫn giữ các secret đặt tay.
+
+Đổi mã một lượt:
+- `worker.js`: `ORIGINS` thêm `https://giangduonghoahoc.com` + `www.`; `nguonStream()` lấy host của mọi ORIGINS https
+  + `TEN_MIEN`; endpoint mới `POST /api/stream/khoa-lai` — khoá lại MỌI video (per_page=200) cho đủ địa chỉ.
+- `web/quan-tri.html`: nút **🔒 Khoá lại video** ở thanh Kho tệp (cạnh Sao lưu) gọi endpoint trên, toast kết quả.
+- `web/index.html`: `APP_URL` → `https://giangduonghoahoc.com/tai-app` (URL sạch, khỏi 307).
+- `app/main.js`: `SITE_URL` → tên miền riêng, **cho bản app sau**; ghi rõ phải bấm 🔒 Khoá lại video trước khi phát hành.
+- `HUONG_DAN.md`, `HUONG_DAN_VIDEO.md`, `pr/infographic-gioi-thieu.html` (pr/ vẫn chưa commit): địa chỉ mới.
+
+Còn phía m: Supabase → Authentication → URL Configuration (Site URL + Redirect URL `https://giangduonghoahoc.com/**`,
+giữ dòng workers.dev), rồi vòng thử Bước 6 và bấm 🔒 Khoá lại video một lần.
+
+---
 ## 2026-09-11 (chiều) — Hướng dẫn tên miền từng bước + khoá video cho cả hai địa chỉ
 
 `HUONG_DAN_TEN_MIEN.md` viết lại thành 7 bước bấm-từng-nút (mua ở Cloudflare hay nhà đăng ký VN, đưa vào

@@ -161,7 +161,7 @@ Quản trị → tab **Theo dõi**: mỗi buổi liệt kê từng tài liệu k
 | "Chưa tải được bộ tải tệp lớn" | Mạng chặn cdn.jsdelivr.net | Dùng cách B2 |
 | Đang tải tệp lớn thì mất điện / đóng nhầm | Tiến trình dừng | Mở lại hộp Thêm video, chọn **đúng tệp đó**, nó chạy tiếp chỗ dở |
 
-Muốn xem Worker đã nối chưa: mở `https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai` — có `"stream": true` là đủ hai secret.
+Muốn xem Worker đã nối chưa: mở `https://giangduonghoahoc.com/api/trang-thai` — có `"stream": true` là đủ hai secret.
 
 ## Xem đang dùng hết bao nhiêu, đang phải trả bao nhiêu
 

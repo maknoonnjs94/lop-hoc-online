@@ -335,7 +335,9 @@ Máy chấm (v24) hiểu mọi kiểu viết là **cùng một số**: `1,74×10
 
 ## Tên miền riêng
 
-Xem `HUONG_DAN_TEN_MIEN.md` — sáu bước, phần lớn bấm trên Cloudflare. Địa chỉ `workers.dev` vẫn chạy song song nên app máy tính không phải cập nhật.
+**Đã gắn 11/9/2026: `https://giangduonghoahoc.com`** (mua trên Cloudflare Registrar, ≈ 10 USD/năm, tự gia hạn bằng thẻ trong Billing).
+Địa chỉ `lop-hoc-online.giangduonghoahoc.workers.dev` vẫn chạy song song — app máy tính bản ≤ 1.0.16 đang dùng nó.
+Cách gắn, kiểm, xử lý lỗi: `HUONG_DAN_TEN_MIEN.md`. Khi phát hành app bản mới (trỏ tên miền riêng) nhớ bấm **🔒 Khoá lại video** ở Kho tệp trước.
 
 ## Hỏi bài và mục Hỏi đáp
 

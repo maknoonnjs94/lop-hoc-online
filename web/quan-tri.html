@@ -378,6 +378,7 @@
           <div class="bar">
             <b>Kho tệp và dung lượng</b>
             <span class="grow"></span>
+            <button class="btn sm" id="khoaLaiBtn" title="Khoá lại mọi video trên Cloudflare Stream cho đủ các địa chỉ (workers.dev + giangduonghoahoc.com). Bấm một lần sau khi gắn tên miền hoặc trước khi phát hành app trỏ địa chỉ mới.">🔒 Khoá lại video</button>
             <button class="btn sm" id="saoLuuBtn" title="Tải toàn bộ dữ liệu lớp về máy thành một tệp JSON">⤓ Sao lưu dữ liệu</button>
           </div>
           <div id="saoLuuTt" class="hint" style="margin:0 0 10px" hidden></div>
@@ -1553,6 +1554,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     nut.disabled = false;
   }
   $('saoLuuBtn').addEventListener('click', function () { saoLuu(this); });
+  /* Khoá lại video cho mọi địa chỉ — video tải lên trước khi có tên miền chỉ phát được ở workers.dev */
+  $('khoaLaiBtn').addEventListener('click', async function () {
+    var b = this; b.disabled = true; b.textContent = '🔒 Đang khoá lại…';
+    try {
+      var d = await apiGoi('/api/stream/khoa-lai', {});
+      toast('Đã khoá lại ' + d.so_video + ' video cho: ' + (d.nguon || []).join(', ') + (d.loi && d.loi.length ? ' — lỗi ' + d.loi.length + ': ' + d.loi.join('; ') : ''));
+    } catch (e) { toast('Không khoá lại được: ' + (e.message || e)); }
+    b.disabled = false; b.textContent = '🔒 Khoá lại video';
+  });
 
   async function veDungLuong() {
     var box = $('dungLuong'); if (!box) return;
