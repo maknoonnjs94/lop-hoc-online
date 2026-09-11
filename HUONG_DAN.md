@@ -388,7 +388,7 @@ Cần chạy `schema_v27_dang_ky_nhan_ban.sql` một lần (`/api/trang-thai` �
    + link tải app) với nút *Chép* và *Mở Zalo <số>* — dán vào Zalo là xong. Đồng hồ học phí (nếu lớp có thu) chạy từ hôm duyệt.
    Form đăng ký tick được **nhiều khoá**. Hộp Duyệt liệt kê **từng khoá em ấy xin** (không tick sẵn) → tick khoá muốn duyệt lần này, chọn lớp tương ứng
    (máy gợi ý lớp trùng tên). Khoá chưa tick **ở lại hàng chờ** (chip ✓ cho khoá đã duyệt), duyệt sau lúc nào cũng được — tránh một cú bấm ghi danh nhầm.
-   Lớp đầu tạo tài khoản, các lớp sau ghi danh thêm vào cùng tài khoản. Cần  để nhớ từng khoá.
+   Lớp đầu tạo tài khoản, các lớp sau ghi danh thêm vào cùng tài khoản. Cần `schema_v27d_duyet_tung_khoa.sql` để nhớ từng khoá.
    **Mật khẩu khởi tạo = mã sinh viên** em ấy khai trên form (mã dưới 6 ký tự thì máy tự sinh) — cả khi m tạo tay có điền mã SV; lần đầu vào vẫn phải đổi.
 4. **Từ chối** ghi lý do, đơn không hiện nữa (vẫn còn trong bảng `dang_ky` để tra).
 
