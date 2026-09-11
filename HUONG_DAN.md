@@ -195,6 +195,34 @@ Vì sao mặc định là `'video'`: app chỉ có bản Windows và macOS, nên
 
 Chặn thật nằm ở máy chủ chứ không chỉ ở giao diện: `APP_CHO_VIDEO` trong `worker.js` làm Worker **không ký vé xem** cho ai không chạy trong app, dù có gọi thẳng vào `/api/stream/token`. Đổi `BAT_BUOC_APP` thì nhớ đổi cả hai cho khớp.
 
+## Web hay app: cái gì chặn được, cái gì không
+
+Cùng một địa chỉ `giangduonghoahoc.com`, mở bằng trình duyệt và mở trong app tải về **khác nhau ở mức bảo vệ**.
+Đây là bảng thật để khỏi kỳ vọng nhầm:
+
+| Bảo vệ | Trình duyệt (web) | App tải về |
+|---|---|---|
+| Dấu chìm tên + email người xem đè lên PDF và video | ✅ | ✅ |
+| Không tải PDF về (trừ tệp m bật *cho tải*), không in, không Ctrl+S | ✅ ghi lại + báo GV | ✅ |
+| Phím **PrintScreen** | ✅ ghi, báo, xoá ảnh khỏi bộ nhớ tạm | ✅ |
+| **Win+Shift+S** (Snipping Tool) | ⚠️ chỉ *đoán* qua việc mất tiêu điểm trong ~2 s — bắt được phần lớn, có thể sót hoặc nhầm | ✅ ảnh chụp ra **màn đen** |
+| Quay màn hình (OBS, Game Bar, Zoom, Teams…) | ❌ trình duyệt không nhìn thấy | ✅ bản quay ra **màn đen**; app còn dò tiến trình quay và ghi cảnh báo |
+| Chụp bằng điện thoại chĩa vào màn hình | ❌ | ❌ — không công nghệ nào chặn được, chỉ còn dấu chìm để truy nguồn |
+| Một tài khoản = một máy | ⚠️ nhớ theo bộ nhớ trình duyệt, **riêng từng địa chỉ**; xoá dữ liệu duyệt web hay đổi địa chỉ là "máy mới" | ✅ mã của chính chiếc máy, bền qua mọi thứ |
+| Video bài giảng | ❌ sinh viên thấy khung "cần mở bằng app" | ✅ |
+| Rời cửa sổ / bỏ đi 5 phút | ✅ che mờ, hỏi rồi đăng xuất | ✅ |
+| Ba lần vi phạm chắc chắn | ✅ đóng phiên | ✅ |
+
+Nói ngắn: **trên web, ảnh chụp và bản quay vẫn ra nội dung thật**, hệ thống chỉ ghi lại được một phần và báo cho m.
+**Trong app, ảnh chụp và bản quay ra màn đen** — trình duyệt không bao giờ làm được điều này, nên video mới bắt buộc app.
+Đề và đáp án thì cố ý để xem được trên web, kể cả điện thoại; muốn siết cả đề thì đổi `BAT_BUOC_APP` sang `'tat_ca'` và chấp nhận mất đường học bằng điện thoại.
+
+Mọi vi phạm (dù bắt được ở web hay app) đều vào Quản trị → **Cảnh báo**, kèm tên, tài liệu đang mở và giờ.
+
+**Tài khoản giảng viên** mở `giangduonghoahoc.com/` cũng thấy giao diện sinh viên — đó là trang học, thêm hai nút
+**Quản trị** và **Soạn bài** trên thanh trên. Trang quản trị nằm ở `giangduonghoahoc.com/quan-tri`. Giảng viên được miễn
+khoá máy và miễn bắt buộc app, nên xem video ngay trên trình duyệt để kiểm được.
+
 ## Video: chọn nơi đặt
 
 > **Đã có cách chặn tải:** đưa video lên Cloudflare Stream với link ký — làm theo `HUONG_DAN_VIDEO.md` (từng bước). Bảng dưới là so sánh các lựa chọn.
@@ -363,7 +391,7 @@ M làm việc ở tab **Hỏi đáp** của trang quản trị, có hai phần:
 Sinh viên đăng nhập lần đầu, hệ thống ghi nhớ chiếc máy đó; máy khác đăng nhập cùng tài khoản sẽ bị chặn.
 
 - **Trong ứng dụng máy tính** (từ bản 1.0.16): nhớ theo *mã của chính chiếc máy*. Cập nhật app, cài lại app, đổi tên miền, xoá dữ liệu duyệt web — đều **không** làm mất, sinh viên không bị chặn oan.
-- **Trên trình duyệt**: nhớ theo bộ nhớ của trình duyệt. Xoá dữ liệu duyệt web hoặc dùng chế độ ẩn danh thì mất, sẽ bị chặn.
+- **Trên trình duyệt**: nhớ theo bộ nhớ của trình duyệt, **riêng cho từng địa chỉ**. Xoá dữ liệu duyệt web, dùng chế độ ẩn danh, hoặc đã gắn ở `workers.dev` rồi mở `giangduonghoahoc.com` — đều bị coi là máy khác và bị chặn. Sinh viên báo thì bấm **Gỡ**, mười giây.
 - **Đổi máy thật / cài lại Windows**: vào Quản trị → tab **Sinh viên** → dòng của người đó → **Gỡ**. Xong là họ đăng nhập được ở máy mới.
 - Cột *Thiết bị* ghi rõ "đã gắn máy (app)" hay "đã gắn máy" (trình duyệt), rê chuột lên xem giờ gắn.
 
@@ -375,7 +403,8 @@ Sinh viên đăng nhập lần đầu, hệ thống ghi nhớ chiếc máy đó;
 
 ## Việc sẽ làm tiếp
 
-1. Trang quản trị cho mình: tạo buổi, tải tệp, giao bài bằng giao diện thay vì gõ SQL.
-2. Nút "Giao cho lớp" ngay trong Sổ Bài Tập, tự xuất bản học sinh rồi đẩy lên.
-3. Sinh viên nộp bài, xem ai nộp ai chưa.
-4. Chấm điểm và theo dõi tiến độ.
+Bốn việc cũ (trang quản trị, Giao cho lớp, nộp bài, chấm điểm) đã xong. Đang để ngỏ, chọn khi cần:
+
+1. Nhân bản một buổi học sang lớp khác (dạy cùng phiếu cho hai lớp không phải tạo lại).
+2. Điểm danh: sinh viên bấm "có mặt" trong khung giờ buổi học, giảng viên xem bảng.
+3. Phát hành app bản mới trỏ thẳng `giangduonghoahoc.com` (nhớ bấm 🔒 Khoá lại video trước).
