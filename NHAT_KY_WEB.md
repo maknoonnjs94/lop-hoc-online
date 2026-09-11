@@ -41,6 +41,17 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Infographic số 2: Tải & dùng app
+
+M tạm gác chứng chỉ ký số, cần ảnh hướng dẫn tải + dùng app, **không nói bảo mật**, có cách bấm qua hộp Windows/macOS.
+`pr/infographic-huong-dan-app.html` → `.png` 2160×2700 (cùng công thức Chrome headless như infographic 1). Bố cục 4 bước: 1 địa chỉ
++ 2 nút tải · 2 cài — hai cột Windows/macOS, mỗi cột 3 bước + **hộp thoại mô phỏng** (SmartScreen với More info / Run anyway,
+menu chuột phải Mac với Open) tô vòng cam `.nhan-o` ngay trên phần tử (đặt vòng tròn tuyệt đối thì lệch — bẫy lần 1) ·
+3 đăng nhập lần đầu (+ quên mật khẩu) · 4 sáu thẻ việc học · dải Zalo. Chỉ nói cách bấm, không nói lý do; không có khoá máy,
+dấu chìm, chống chụp. Ô Zalo ghi "số Zalo ở trang giangduonghoahoc.com" — m đưa số là t in thẳng.
+
+---
+
 ## 2026-09-12 — Học phí: QR chuyển khoản, nợ 2 tuần, khoá theo từng khoá (v26)
 
 M yêu cầu: đặt học phí VND + QR nhận tiền ở quản trị; tài khoản cấp xong có 2 tuần để chuyển; quá hạn thì giao diện học tạm khoá,
