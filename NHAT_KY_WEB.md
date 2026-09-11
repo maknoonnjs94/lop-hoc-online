@@ -41,6 +41,18 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Mục "Khoá học": mọi khoá của một tài khoản ở một chỗ
+
+M: "một tài khoản nhiều khoá học được đó, giao diện sau khi vào app có thể hiện nhiều khoá cùng 1 chỗ". Trang học thêm mục **Khoá học**
+(đầu thanh trái, huy hiệu = số khoá) — `#viewKhoa`, thẻ mỗi lớp: tên/môn, pill (học phí còn N ngày / đã đóng / tạm đóng / N mới / đang chọn),
+số buổi · tài liệu · đã xong + thanh %, buổi sắp tới (starts_at gần nhất) hoặc buổi đang ghim, thông báo lớp, nút *Vào lớp* (khoá bị
+khoá học phí → nút *Đóng học phí* mở thẳng màn học phí lớp đó). `taiTomTatKhoa()` lấy sessions+materials+view_events của MỌI lớp một lượt
+(RLS lọc) rồi gom theo class_id. Vào app có ≥ 2 khoá và chưa chọn lớp trong phiên (`sessionStorage hoc-lop-chon`) → mở mục này trước;
+1 khoá → vào thẳng như cũ. Thanh chọn lớp ẩn khi ở mục Khoá học. Bẫy: đổi `view` bằng gán biến không bật section → tách `hienSection(v)`
+gọi ở cả goView lẫn renderView. Thử `?lop2=1&hp=…`: mở đúng mục, Vào lớp c2, quay lại, thẻ khoá bị khoá → màn học phí.
+
+---
+
 ## 2026-09-12 — Luồng vận hành (v27): đăng ký từ trang công khai, sao chép buổi, app 1.0.17
 
 M chọn: duyệt tay từng người; mật khẩu tạm hiện cho m gửi Zalo (không email — gói free giới hạn thư); phát hành app 1.0.17 luôn.

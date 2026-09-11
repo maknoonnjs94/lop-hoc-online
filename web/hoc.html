@@ -226,6 +226,28 @@
   .heading{ margin:0 4px 22px }
   .heading h1{ font-size:clamp(28px,3vw,38px); line-height:1.15; letter-spacing:-.025em; font-weight:800 }
   .heading p{ color:var(--muted); margin-top:6px; font-size:15px }
+  /* ---------- Khoá học của tôi ---------- */
+  .khoas{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px }
+  @media (max-width:900px){ .khoas{ grid-template-columns:1fr } }
+  .kthe{ display:flex; flex-direction:column; gap:12px; cursor:pointer; transition:transform .12s, box-shadow .12s }
+  .kthe:hover{ transform:translateY(-2px); box-shadow:var(--shadow-2, var(--shadow-1)) }
+  .kthe.on{ outline:2px solid var(--primary); outline-offset:0 }
+  .kthe .dau{ display:flex; align-items:flex-start; gap:12px }
+  .kthe .dau .lic{ width:52px; height:52px; flex:none }
+  .kthe h3{ font-size:19px; letter-spacing:-.015em; line-height:1.2 }
+  .kthe .mon{ color:var(--muted); font-size:13.5px; margin-top:2px }
+  .kthe .pills{ display:flex; gap:6px; flex-wrap:wrap }
+  .kthe .pills span{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800; background:var(--tint); color:var(--primary) }
+  .kthe .pills span.moi{ background:var(--accent-soft); color:var(--accent) }
+  .kthe .pills span.khoa{ background:var(--danger-soft); color:var(--danger) }
+  .kthe .pills span.ok{ background:var(--ok-soft); color:var(--ok) }
+  .kthe .so{ display:flex; gap:16px; font-size:13.5px; color:var(--muted) } .kthe .so b{ color:var(--ink); font-weight:800 }
+  .kthe .meter{ display:flex; align-items:center; gap:10px } .kthe .meter .bar{ flex:1; height:8px; border-radius:99px; background:var(--tint); overflow:hidden } .kthe .meter .bar i{ display:block; height:100%; background:var(--primary); border-radius:99px }
+  .kthe .meter span{ font-size:12.5px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums }
+  .kthe .sap{ font-size:13.5px; color:var(--ink-2) } .kthe .sap b{ font-weight:800 }
+  .kthe .duoi{ display:flex; align-items:center; gap:10px; margin-top:auto; flex-wrap:wrap }
+  .kthe .duoi .btn{ min-height:40px; padding:8px 16px; font-size:14px }
+  .kthe .tb{ font-size:13px; color:var(--muted); white-space:pre-wrap; border-left:3px solid var(--accent); padding-left:10px; max-height:3.2em; overflow:hidden }
   .classbar{ display:flex; gap:8px; overflow-x:auto; padding:0 0 14px; scrollbar-width:none }
   .classbar button{ padding:8px 15px; border-radius:999px; border:1px solid var(--line-2); background:var(--surface); color:var(--muted); font-size:13.5px; font-weight:700; white-space:nowrap }
   .classbar button.on{ background:var(--ink); border-color:var(--ink); color:var(--paper) }
@@ -750,6 +772,7 @@
     <aside class="side">
       <a class="brand" href="#" id="brandBtn"><img class="logo" src="img/logo.png" alt="" draggable="false" onerror="this.parentNode.classList.add('khong-logo')"><span class="ico-fallback"><span class="ico" data-ico="leaf"></span></span><span class="ten">Giảng đường<br>Hóa học</span></a>
       <nav class="nav" id="nav">
+        <button type="button" data-view="khoa"><span class="ico" data-ico="stack"></span>Khoá học<b id="navKhoaN" hidden>0</b></button>
         <button type="button" data-view="home" class="on"><span class="ico" data-ico="home"></span>Trang chủ</button>
         <button type="button" data-view="lessons"><span class="ico" data-ico="video"></span>Bài giảng</button>
         <button type="button" data-view="tasks"><span class="ico" data-ico="clipboard"></span>Bài tập<b id="navTaskN" hidden>0</b></button>
@@ -789,6 +812,11 @@
       <main class="main">
         <div class="appnote" id="appNote" hidden><span class="ico" data-ico="shield"></span><span>Nên học bằng <b>ứng dụng Giảng đường Hóa học</b> trên máy tính: cửa sổ được hệ điều hành bảo vệ. <a href="tai-app.html" target="_blank" rel="noopener">Tải ứng dụng</a></span><button type="button" id="appNoteX" title="Đóng">✕</button></div>
         <div class="classbar" id="classBar"></div>
+
+        <section id="viewKhoa" hidden>
+          <div class="heading"><h1>Khoá học của bạn</h1><p id="khoaSub">Mọi khoá bạn đang học, ở một chỗ. Bấm vào một khoá để vào lớp.</p></div>
+          <div class="khoas" id="khoaGrid"></div>
+        </section>
 
         <section id="viewHome">
           <div class="heading"><h1 id="hello">Chào bạn!</h1><p id="helloSub">Sẵn sàng cho buổi học hôm nay?</p></div>
@@ -1427,9 +1455,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     classes = r.data || [];
     var bar = $('classBar');
     if (!classes.length) { bar.innerHTML = ''; $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">' + lic('classroom', 72) + '<span>Chưa có lớp nào. Giảng viên cần thêm em vào lớp trước.</span></div></div>'; return; }
+    var nho = ''; try { nho = sessionStorage.getItem('hoc-lop-chon') || ''; } catch (e) {}
+    if (!curClass && nho && classes.some(function (c) { return c.id === nho; })) curClass = nho;
     curClass = curClass && classes.some(function (c) { return c.id === curClass; }) ? curClass : classes[0].id;
+    if (classes.length >= 2 && !nho && view === 'home') view = 'khoa';   /* lần đầu vào app: nhìn cả các khoá trước */
+    $('navKhoaN').textContent = classes.length; $('navKhoaN').hidden = classes.length < 2;
+    taiTomTatKhoa();
     bar.innerHTML = classes.map(function (c) { return '<button type="button" data-c="' + c.id + '" class="' + (c.id === curClass ? 'on' : '') + (bKhoaHP(c.id) ? ' khoa' : '') + '" title="' + (bKhoaHP(c.id) ? 'Khoá này đang tạm đóng vì chưa nhận được học phí' : '') + '">' + esc(c.name) + '</button>'; }).join('');
-    bar.style.display = classes.length === 1 ? 'none' : '';
+    bar.style.display = (view === 'khoa' || classes.length < 2) ? 'none' : '';
     capNhatTenLop();
     await loadSessions();
   }
@@ -1442,11 +1475,80 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('classBar').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-c]'); if (!b) return;
     curClass = b.dataset.c; curSes = null;
+    try { sessionStorage.setItem('hoc-lop-chon', curClass); } catch (x) {}
     [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
     /* đang ở màn học phí mà chuyển sang khoá không bị khoá → về trang chủ của khoá đó */
     if (view === 'hocphi' && !bKhoaHP(curClass)) goView('home');
     capNhatTenLop(); loadSessions();
   });
+
+  /* ---------------- Khoá học của tôi: tổng quan mọi khoá ----------------
+     Lấy buổi + tài liệu + lượt xem của MỌI lớp một lượt (RLS tự lọc), gom theo lớp; thẻ nào cũng bấm vào được. */
+  var tomTat = {};
+  async function taiTomTatKhoa() {
+    tomTat = {};
+    try {
+      var rs = await sb.from('sessions').select('id, class_id, title, no, pinned, starts_at, created_at, materials(id, title, kind, open_at, created_at, deleted_at)').eq('published', true);
+      var rv = await sb.from('view_events').select('material_id, class_id, progress').eq('user_id', me.id);
+      var xem = {}; (rv.data || []).forEach(function (v) { xem[v.material_id] = v; });
+      var now = Date.now();
+      (rs.data || []).forEach(function (s) {
+        if (s.deleted_at) return;
+        var t = tomTat[s.class_id] = tomTat[s.class_id] || { buoi: 0, tl: 0, xong: 0, moi: 0, sap: null, ghim: null };
+        t.buoi++;
+        (s.materials || []).forEach(function (m) {
+          if (m.deleted_at || (m.open_at && new Date(m.open_at).getTime() > now)) return;
+          t.tl++;
+          var v = xem[m.id];
+          if (v && v.progress && v.progress.done) t.xong++;
+          if (!v && lanTruoc && new Date(m.created_at || 0).getTime() > lanTruoc) t.moi++;
+        });
+        if (s.starts_at && new Date(s.starts_at).getTime() > now - 3600e3 && (!t.sap || new Date(s.starts_at) < new Date(t.sap.starts_at))) t.sap = s;
+        if (s.pinned) t.ghim = s;
+      });
+    } catch (e) {}
+    if (view === 'khoa') renderKhoa();
+  }
+  function renderKhoa() {
+    var box = $('khoaGrid');
+    if (!classes.length) { box.innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">' + lic('classroom', 72) + '<span>Bạn chưa ở trong khoá nào. Nhắn giảng viên để được ghi danh.</span></div></div>'; return; }
+    $('khoaSub').textContent = classes.length >= 2 ? 'Bạn đang học ' + classes.length + ' khoá. Bấm vào một khoá để vào lớp — mỗi khoá có buổi học, bài tập, điểm và hỏi đáp riêng.' : 'Bấm vào khoá để vào lớp.';
+    var ICON = ['classroom', 'live-class', 'notes', 'test', 'study-group', 'documents'];
+    box.innerHTML = classes.map(function (c, i) {
+      var t = tomTat[c.id] || { buoi: 0, tl: 0, xong: 0, moi: 0, sap: null, ghim: null }, hp = hpCua(c.id), khoa = bKhoaHP(c.id);
+      var pct = t.tl ? Math.round(100 * t.xong / t.tl) : 0, pills = [];
+      if (khoa) pills.push('<span class="khoa">Tạm đóng · học phí</span>');
+      else if (hp && hp.trang_thai === 'chua_han') pills.push('<span>Học phí: còn ' + Math.max(0, conNgay(hp.han)) + ' ngày</span>');
+      else if (hp && hp.trang_thai === 'da_dong') pills.push('<span class="ok">Đã đóng học phí</span>');
+      if (t.moi) pills.push('<span class="moi">' + t.moi + ' mới</span>');
+      if (c.id === curClass && classes.length >= 2) pills.push('<span>Đang chọn</span>');
+      var sap = '';
+      if (t.sap) { var d = new Date(t.sap.starts_at); sap = '<div class="sap">Buổi sắp tới: <b>' + esc(tenBuoi(t.sap)) + '</b> · ' + d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }) + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + '</div>'; }
+      else if (t.ghim) sap = '<div class="sap">Đang học: <b>' + esc(tenBuoi(t.ghim)) + '</b></div>';
+      return '<div class="pcard kthe' + (c.id === curClass && classes.length >= 2 ? ' on' : '') + '" data-khoa="' + c.id + '" role="button" tabindex="0">'
+        + '<div class="dau">' + lic(ICON[i % ICON.length], 52) + '<div><h3>' + esc(c.name) + '</h3>' + (c.subject ? '<div class="mon">' + esc(c.subject) + '</div>' : '') + '</div></div>'
+        + (pills.length ? '<div class="pills">' + pills.join('') + '</div>' : '')
+        + '<div class="so"><span><b>' + t.buoi + '</b> buổi</span><span><b>' + t.tl + '</b> tài liệu</span><span><b>' + t.xong + '</b> đã xong</span></div>'
+        + (t.tl ? '<div class="meter"><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + pct + '%</span></div>' : '')
+        + sap
+        + (c.notice && String(c.notice).trim() ? '<div class="tb">' + esc(String(c.notice).trim()) + '</div>' : '')
+        + '<div class="duoi">' + (khoa ? '<button type="button" class="btn" data-vao="' + c.id + '" data-hp="' + c.id + '">Đóng học phí</button>' : '<button type="button" class="btn" data-vao="' + c.id + '">Vào lớp</button>') + '</div>'
+        + '</div>';
+    }).join('');
+  }
+  function vaoKhoa(cid) {
+    if (!classes.some(function (c) { return c.id === cid; })) return;
+    curClass = cid; curSes = null;
+    try { sessionStorage.setItem('hoc-lop-chon', cid); } catch (x) {}
+    [].forEach.call($('classBar').children, function (x) { x.classList.toggle('on', x.dataset.c === cid); });
+    capNhatTenLop(); view = bKhoaHP(cid) ? 'hocphi' : 'home'; loadSessions();
+  }
+  $('khoaGrid').addEventListener('click', function (e) {
+    if (e.target.closest('[data-hp]')) return;   /* nút Đóng học phí: bộ xử lý data-hp lo */
+    var b = e.target.closest('[data-vao]') || e.target.closest('.kthe'); if (!b) return;
+    vaoKhoa(b.dataset.vao || b.dataset.khoa);
+  });
+  $('khoaGrid').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('kthe')) vaoKhoa(e.target.dataset.khoa); });
 
   /* ---------------- học phí (v26) ----------------
      Mỗi khoá tính riêng: mien | da_dong | chua_han | qua_han. Quá hạn → khoá này chỉ còn màn học phí,
@@ -1562,16 +1664,23 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   });
 
   /* ---------------- điều hướng ---------------- */
+  /* bật đúng mục + thanh lớp theo view hiện tại — gọi ở cả goView lẫn renderView để đổi view bằng gán biến cũng đúng */
+  function hienSection(v) {
+    [].forEach.call($('nav').querySelectorAll('button[data-view]'), function (b) { b.classList.toggle('on', b.dataset.view === v); });
+    ['khoa', 'home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
+    $('classBar').style.display = (v === 'khoa' || classes.length < 2) ? 'none' : '';
+  }
   function goView(v) {
     view = v;
-    [].forEach.call($('nav').querySelectorAll('button[data-view]'), function (b) { b.classList.toggle('on', b.dataset.view === v); });
-    ['home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
+    hienSection(v);
     renderView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   $('nav').addEventListener('click', function (e) { var b = e.target.closest('button[data-view]'); if (b) goView(b.dataset.view); });
   function renderView() {
+    hienSection(view);
     /* khoá quá hạn học phí: mọi mục của KHOÁ NÀY chỉ còn màn học phí; các khoá khác không ảnh hưởng */
+    if (view === 'khoa') { renderKhoa(); capNhatChuong(); return; }   /* tổng quan mọi khoá — không dính khoá học phí của khoá đang chọn */
     if (bKhoaHP(curClass) && view !== 'hocphi') { goView('hocphi'); return; }
     if (view === 'hocphi') { veHocPhi(); capNhatChuong(); return; }
     if (view === 'home') renderHome();
