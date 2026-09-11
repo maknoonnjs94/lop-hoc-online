@@ -1,13 +1,13 @@
 # Gắn tên miền riêng cho trang học — từng bước
 
 Hiện trang chạy ở `https://lop-hoc-online.giangduonghoahoc.workers.dev/`. Sau khi làm xong các bước dưới,
-sinh viên mở được ở địa chỉ ngắn (ví dụ `https://hoc.giangduonghoahoc.vn`), **địa chỉ cũ vẫn chạy song song** —
+sinh viên mở được ở địa chỉ ngắn (ví dụ `https://hoc.giangduonghoahoc.com`), **địa chỉ cũ vẫn chạy song song** —
 app máy tính không phải cập nhật, không phải phát hành bản mới.
 
 Mã đã sẵn sàng từ v24. `wrangler.jsonc` không khai `routes` nên tên miền gắn bằng tay trên Cloudflare
 **không bị xoá** khi GitHub tự phát lại; `keep_vars: true` giữ biến `TEN_MIEN`.
 
-Ví dụ xuyên suốt: tên miền gốc `giangduonghoahoc.vn`, trang học đặt ở tên con `hoc.giangduonghoahoc.vn`
+Ví dụ xuyên suốt (đường 1A đã chọn 11/9 — `giangduonghoahoc.com` còn trống theo RDAP): tên miền gốc `giangduonghoahoc.com`, trang học đặt ở tên con `hoc.giangduonghoahoc.com`
 (để dành gốc cho trang giới thiệu sau này). Đã có tên miền rồi thì bỏ Bước 1.
 
 Tổng thời gian tay: ~20 phút, cộng thời gian chờ DNS (10 phút – vài giờ).
@@ -61,11 +61,11 @@ Ra hai tên `…ns.cloudflare.com` là xong bước này.
 
 1. `dash.cloudflare.com` → **Workers & Pages** → **Overview** → bấm **lop-hoc-online**.
 2. Tab **Settings** → mục **Domains & Routes** → nút **Add** → chọn **Custom Domain**.
-3. Gõ `hoc.giangduonghoahoc.vn` → **Add Custom Domain**.
+3. Gõ `hoc.giangduonghoahoc.com` → **Add Custom Domain**.
 4. Dòng mới hiện với trạng thái *Initializing* → vài phút thành **Active** (Cloudflare tự tạo bản ghi DNS + chứng chỉ HTTPS).
-5. Mở `https://hoc.giangduonghoahoc.vn` trong trình duyệt thường → phải ra **trang đăng nhập** của lớp.
+5. Mở `https://hoc.giangduonghoahoc.com` trong trình duyệt thường → phải ra **trang đăng nhập** của lớp.
 
-Nếu báo "a DNS record already exists": vào **Domains → giangduonghoahoc.vn → DNS → Records**, xoá bản ghi
+Nếu báo "a DNS record already exists": vào **Domains → giangduonghoahoc.com → DNS → Records**, xoá bản ghi
 tên `hoc` đang có, rồi làm lại mục 2–3.
 
 ## Bước 4 — Báo cho Worker biết tên miền
@@ -74,15 +74,15 @@ Cùng trang Worker → **Settings** → **Variables and Secrets** → **Add**:
 
 - Type: **Text** (không phải Secret)
 - Variable name: `TEN_MIEN`
-- Value: `giangduonghoahoc.vn` — tên miền **gốc**, không `https://`, không `hoc.` (Worker tự nhận mọi tên con)
+- Value: `giangduonghoahoc.com` — tên miền **gốc**, không `https://`, không `hoc.` (Worker tự nhận mọi tên con)
 
 → **Deploy** (nút ở góc, hoặc đẩy một commit bất kỳ lên GitHub). Kiểm:
 
 ```
-curl -s https://hoc.giangduonghoahoc.vn/api/trang-thai
+curl -s https://hoc.giangduonghoahoc.com/api/trang-thai
 ```
 
-Phải có `"ten_mien_rieng":"giangduonghoahoc.vn"`. Biến này làm hai việc: (1) cho phép trang ở địa chỉ này
+Phải có `"ten_mien_rieng":"giangduonghoahoc.com"`. Biến này làm hai việc: (1) cho phép trang ở địa chỉ này
 gọi `/api/*` của địa chỉ kia; (2) **video tải lên từ đây trở đi được khoá cho cả hai địa chỉ** (workers.dev +
 tên miền riêng), nên sau này app chuyển sang địa chỉ mới vẫn phát được. Thiếu biến thì video tải lên từ trang
 quản trị ở địa chỉ mới chỉ phát được ở địa chỉ mới → app (đang ở workers.dev) không xem được.
@@ -95,8 +95,8 @@ Thư **cấp lại mật khẩu** của sinh viên dẫn về đúng trang họ 
 Supabase chỉ chấp nhận địa chỉ đã khai, không thì ném về Site URL cũ.
 
 1. `supabase.com/dashboard` → dự án **euyrrodppbpnkmificbs** → menu trái **Authentication** → **URL Configuration**.
-2. **Site URL**: sửa thành `https://hoc.giangduonghoahoc.vn` → **Save**.
-3. **Redirect URLs** → **Add URL** → `https://hoc.giangduonghoahoc.vn/**` → **Save**.
+2. **Site URL**: sửa thành `https://hoc.giangduonghoahoc.com` → **Save**.
+3. **Redirect URLs** → **Add URL** → `https://hoc.giangduonghoahoc.com/**` → **Save**.
    **Giữ nguyên** dòng `https://lop-hoc-online.giangduonghoahoc.workers.dev/**` — app máy tính vẫn dùng.
 
 ## Bước 6 — Thử một vòng bằng tài khoản sinh viên
@@ -105,7 +105,7 @@ Trên trình duyệt thường, ở địa chỉ mới:
 
 1. Đăng nhập → thấy Trang chủ, Bài tập, Hỏi đáp như cũ.
 2. Mở một video → phải hiện "cần mở bằng app máy tính" (đúng, video vẫn chỉ xem trong app).
-3. Đăng xuất → **Quên mật khẩu** → thư về có link bắt đầu bằng `https://hoc.giangduonghoahoc.vn/…`.
+3. Đăng xuất → **Quên mật khẩu** → thư về có link bắt đầu bằng `https://hoc.giangduonghoahoc.com/…`.
 4. Mở app máy tính → vẫn vào bình thường (app đang trỏ địa chỉ cũ, không đổi gì).
 5. Ở trang quản trị **địa chỉ mới**, tải lên một video ngắn, gắn vào buổi thử → mở app → video phát được
    (chứng tỏ khoá hai địa chỉ ở Bước 4 chạy đúng).
