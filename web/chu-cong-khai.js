@@ -6,7 +6,7 @@ window.CHU_CONG_KHAI = [
   { nhom: 'Đầu trang', ds: [
     ['hero_eyebrow', 'Dòng nhỏ phía trên tên trang', 'Lớp học online · GV. Phạm Anh Ngọc'],
     ['hero_tag', 'Nhãn nổi trên ảnh', '▶ Học trong ứng dụng riêng của lớp'],
-    ['hero_fine', 'Dòng nhỏ dưới các nút tải', 'Đã có ứng dụng? Mở lên là vào lớp. Chưa có tài khoản? Xem mục Liên hệ bên dưới.']
+    ['hero_fine', 'Dòng nhỏ dưới các nút tải', 'Đã có ứng dụng? Mở lên là vào lớp. Chưa có tài khoản? Đăng ký ở mục bên dưới, nhận tài khoản trong ngày.']
   ]},
   { nhom: 'Mục "được gì" (6 thẻ, biểu tượng cố định)', ds: [
     ['dg_eyebrow', 'Nhãn mục', 'Học ở đây, bạn có gì'],

@@ -161,6 +161,16 @@
   .dk .buoc3{ display:grid; gap:10px }
   .dk .buoc3 .card{ display:flex; gap:12px; align-items:flex-start }
   .dk .buoc3 .n{ flex:none; width:28px; height:28px; border-radius:50%; background:var(--sea); color:var(--on-sea); display:grid; place-items:center; font-weight:900; font-size:13px }
+  /* hộp hướng dẫn cài (infographic) */
+  .hdbox{ position:fixed; inset:0; z-index:50; background:rgba(10,41,66,.62); display:flex; align-items:flex-start; justify-content:center; padding:24px 12px; overflow:auto; backdrop-filter:blur(4px) }
+  .hdbox .khung{ width:min(920px, 100%); background:var(--surface); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden }
+  .hdbox .thanh{ display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--surface) }
+  .hdbox .thanh b{ flex:1; font-size:15px }
+  .hdbox .thanh .btn{ padding:8px 14px; font-size:13.5px }
+  .hdbox .dong{ width:36px; height:36px; border-radius:50%; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); font-size:20px; line-height:1; cursor:pointer }
+  .hdbox img{ display:block; width:100%; height:auto }
+  .hdbox .chan{ padding:12px 16px; font-size:13px; color:var(--muted); border-top:1px solid var(--line) }
+  @media (max-width:560px){ .hdbox{ padding:0 } .hdbox .khung{ border-radius:0 } .hdbox .thanh .btn.tai{ display:none } }
   /* liên hệ */
   .lienhe{ display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:stretch }
   @media (max-width:760px){ .lienhe{ grid-template-columns:1fr } }
@@ -210,7 +220,7 @@
       <div class="cta">
         <a class="btn primary" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-win.exe"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg>Tải cho Windows</a>
         <a class="btn" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-mac.dmg"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg>Tải cho macOS</a>
-        <a class="btn" href="tai-app.html">Cách cài từng bước</a>
+        <button type="button" class="btn" id="hdMo">Cách cài từng bước</button>
       </div>
       <p class="fine" data-chu="hero_fine"></p>
     </div>
@@ -294,6 +304,17 @@
   </div>
 </footer>
 
+<div class="hdbox" id="hdBox" hidden role="dialog" aria-modal="true" aria-label="Hướng dẫn tải và cài ứng dụng">
+  <div class="khung">
+    <div class="thanh"><b>Tải &amp; cài ứng dụng — Windows và macOS</b>
+      <a class="btn primary tai" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-win.exe">Tải cho Windows</a>
+      <a class="btn tai" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-mac.dmg">Tải cho macOS</a>
+      <button type="button" class="dong" id="hdDong" aria-label="Đóng">×</button></div>
+    <img id="hdAnh" alt="Hướng dẫn 4 bước: tải app, cài trên Windows hoặc macOS, đăng nhập lần đầu, vào lớp học" loading="lazy">
+    <div class="chan">Kẹt ở bước nào, nhắn Zalo giảng viên ở mục Liên hệ. <a href="img/huong-dan-app.jpg" target="_blank" rel="noopener">Mở ảnh cỡ lớn</a> · <a href="tai-app.html">Trang tải app</a></div>
+  </div>
+</div>
+
 <script src="chu-cong-khai.js"></script>
 <script>
 (function () {
@@ -303,6 +324,14 @@
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   $('nam').textContent = new Date().getFullYear();
+  /* hộp hướng dẫn cài: ảnh chỉ tải khi mở lần đầu */
+  function hdMo() { var b = $('hdBox'), a = $('hdAnh'); if (!a.getAttribute('src')) a.src = 'img/huong-dan-app.jpg'; b.hidden = false; document.body.style.overflow = 'hidden'; $('hdDong').focus(); }
+  function hdDong() { $('hdBox').hidden = true; document.body.style.overflow = ''; }
+  $('hdMo').addEventListener('click', hdMo);
+  $('hdDong').addEventListener('click', hdDong);
+  $('hdBox').addEventListener('click', function (e) { if (e.target === this) hdDong(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('hdBox').hidden) hdDong(); });
+  if (location.hash === '#huong-dan') hdMo();
 
   /* Bản mẫu — trùng với phần seed trong schema_v25_trang_cong_khai.sql. Dùng khi chưa chạy SQL hay mất mạng. */
   var MAU = {
