@@ -105,3 +105,8 @@ Bản thử ghi ra `web/_test_hoc.html` (trang học thật là `web/hoc.html`; 
 
 Trang học: `?hp=chua_han` (nhắc còn 5 ngày) · `?hp=qua_han` (khoá màn học phí, QR VietQR thật) · `?hp=da_dong` · `?hp=bao` (đã báo chuyển); thêm `&lop2=1` để có lớp thứ hai không thu → thấy khoá theo từng lớp.
 Quản trị: tab Sinh viên có cột Học phí (u1 quá hạn + báo chuyển, u2 đã đóng, u3 còn hạn), nút 💳 Nhận học phí; `?hp=0` giả lớp chưa có cột (chưa chạy v26), `?bank=0` giả chưa đặt ngân hàng.
+
+## Đăng ký + nhân bản buổi (v27)
+
+Quản trị: tab Sinh viên có bảng "Đăng ký mới từ trang công khai" (dk1 khớp lớp, dk2 "Khác / chưa rõ"); `?dk=0` giả chưa chạy v27. Tab Buổi học (lớp Hóa phân tích) có nút ⧉ Sang lớp… → sao sang Hóa hữu cơ K68 (stub có 2 lớp).
+Trang công khai `index.html`: form Đăng ký kiểm tra tại chỗ; gửi thật đi tới Worker thật (từ localhost gọi giangduonghoahoc.com) — đừng gửi bừa sau khi v27 đã chạy.

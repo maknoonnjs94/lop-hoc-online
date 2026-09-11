@@ -18,9 +18,9 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Trang quản trị** — Buổi học (xoá mềm, Hoàn tác, 🗑 Thùng rác giữ 30 ngày) / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
 - **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` — đang ở **đợt 85**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc.
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
-- **App máy tính 1.0.16** — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
+- **App máy tính 1.0.17** (tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v25** đều `true` trên `/api/trang-thai`. **v26 (học phí) chờ m chạy.**
+**SQL:** v9 → **v26** đều `true` trên `/api/trang-thai`. **v27 (đăng ký + sao chép buổi) chờ m chạy.**
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
@@ -39,6 +39,31 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-12 — Luồng vận hành (v27): đăng ký từ trang công khai, sao chép buổi, app 1.0.17
+
+M chọn: duyệt tay từng người; mật khẩu tạm hiện cho m gửi Zalo (không email — gói free giới hạn thư); phát hành app 1.0.17 luôn.
+
+- **SQL v27** `schema_v27_dang_ky_nhan_ban.sql`: bảng `dang_ky` (RLS chỉ staff, anon KHÔNG insert — đi qua Worker), unique index
+  (email, khoa) khi `cho`; `nhan_ban_buoi(p_session, p_class)` security definer: sessions nháp (published=false, bỏ held_on/starts_at/pinned),
+  materials (bỏ han_nop), material_contents copy nguyên (cùng storage_path — st_read khớp theo path nên tệp dùng chung được);
+  `st_read` thêm deleted_at + `hoc_phi_ok` cho trọn v26.
+- **Worker** `/api/dang-ky` công khai (trước `nguoiGoi`): bẫy ô `web`, 5 đơn/IP/giờ (Map trong isolate), kiểm tên/email/SĐT/khoá, insert
+  bằng khoá quản trị, 409 → `da_gui`, bảng vắng → `chua_mo_dang_ky`. Trạng thái `v27_dang_ky`.
+- **Trang công khai**: mục `#dang-ky` (form 2 cột + 3 bước), menu thêm Đăng ký, select khoá lấy từ `khoa_hoc` (bỏ đã kết thúc) +
+  "Khác / chưa rõ"; nút *Đăng ký* trên thẻ khoá chọn sẵn khoá; `API_BASE` cho localhost trỏ giangduonghoahoc.com. Chữ mới trong
+  `chu-cong-khai.js` nhóm "Mục Đăng ký"; bỏ khoá `nut_dangky_zalo`.
+- **Quản trị**: bảng *Đăng ký mới từ trang công khai* (`loadChoDangKy`, gọi cùng `loadRoster`), huy hiệu tab = học phí chờ + đăng ký chờ
+  (`capNhatDuyetN`); *Duyệt* → hộp chọn lớp (`lopKhop` theo tên khoá) + tên + mã SV → `/api/tao-tai-khoan` → cập nhật `dang_ky` → hộp
+  tin nhắn soạn sẵn + *Chép* + *Mở Zalo*; *Từ chối* có ghi chú. Nút **⧉ Sang lớp…** ở mỗi buổi → `cloneSession` → rpc → toast *Mở lớp đó*.
+- **Stub**: `dang_ky` 2 đơn (`?dk=0` vắng bảng), lớp c2, `nhan_ban_buoi` giả, `/api/tao-tai-khoan` trả đúng dạng `ket_qua`.
+  Thử: duyệt dk1 → hộp Zalo có tin + link zalo.me; từ chối dk2; sao chép buổi 5 sang c2 → 1 buổi nháp 4 tài liệu; form công khai
+  kiểm lỗi tại chỗ (gửi thật đụng Worker chưa deploy → `chua_dang_nhap`, đúng như dự đoán).
+- **App 1.0.17**: bump version, tag `v1.0.17` → CI dựng, đưa lên R2; app trỏ `giangduonghoahoc.com/hoc`.
+
+**M phải làm:** chạy `schema_v27_dang_ky_nhan_ban.sql`; khi CI xong kiểm `latest.yml` trên R2 = 1.0.17.
+
 ---
 
 ## 2026-09-12 — Infographic số 2: Tải & dùng app

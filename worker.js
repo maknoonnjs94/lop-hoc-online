@@ -90,6 +90,7 @@ export default {
       let body = {};
       try { body = await request.json(); } catch (e) { body = {}; }
       if (url.pathname === '/api/stream/token') return await streamToken(body, request, env);
+      if (url.pathname === '/api/dang-ky') return await dangKy(body, request, env);   /* công khai: form trên trang giới thiệu */
       const ai = await nguoiGoi(request, env);
       if (ai.loi) return json({ ok: false, reason: ai.loi, chi_tiet: ai.email ? (ai.email + (ai.vai_tro ? ' — vai trò máy chủ thấy: ' + ai.vai_tro : '')) : undefined }, 401, request);
       if (url.pathname === '/api/tao-tai-khoan') return await taoTaiKhoan(body, ai, env, request);
@@ -158,6 +159,38 @@ async function nguoiGoi(request, env) {
   if (ho.active === false) return { loi: 'tai_khoan_da_tat', email: u.email };
   if (ho.role !== 'teacher' && ho.role !== 'admin') return { loi: 'khong_phai_giang_vien', email: u.email, vai_tro: ho.role || '(chưa có hồ sơ ở bảng profiles)' };
   return { id: u.id, email: u.email, role: ho.role, token: token };
+}
+
+/* POST /api/dang-ky  { ho_ten, email, sdt, khoa, ghi_chu, web }  — từ trang công khai, không cần đăng nhập.
+   Ghi vào bảng dang_ky bằng khoá quản trị (anon không có quyền insert). Giảng viên duyệt ở Quản trị.
+   Chống spam nhẹ: ô "web" là bẫy (người thật không thấy, máy điền là bỏ), mỗi IP tối đa 5 đơn/giờ trong một isolate. */
+const DANG_KY_IP = new Map();
+async function dangKy(body, request, env) {
+  if (String(body.web || '').trim()) return json({ ok: true }, 200, request);   /* máy điền bẫy → giả vờ ok, không ghi */
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  const now = Date.now(), ds = (DANG_KY_IP.get(ip) || []).filter(function (t) { return now - t < 3600e3; });
+  if (ds.length >= 5) return json({ ok: false, reason: 'qua_nhieu' }, 429, request);
+  const hoTen = String(body.ho_ten || '').trim().replace(/\s+/g, ' ').slice(0, 120);
+  const email = String(body.email || '').trim().toLowerCase().slice(0, 160);
+  const sdt = String(body.sdt || '').replace(/[^0-9+ ]/g, '').trim().slice(0, 20);
+  const khoa = String(body.khoa || '').trim().slice(0, 120);
+  const ghiChu = String(body.ghi_chu || '').trim().slice(0, 500);
+  if (hoTen.length < 2) return json({ ok: false, reason: 'thieu_ten' }, 400, request);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, reason: 'email_sai' }, 400, request);
+  if (sdt.replace(/[^0-9]/g, '').length < 8) return json({ ok: false, reason: 'sdt_sai' }, 400, request);
+  if (!khoa) return json({ ok: false, reason: 'thieu_khoa' }, 400, request);
+  const r = await fetch(SUPABASE_URL + '/rest/v1/dang_ky', {
+    method: 'POST', headers: adminHeaders(env, { Prefer: 'return=minimal' }),
+    body: JSON.stringify({ ho_ten: hoTen, email: email, sdt: sdt, khoa: khoa, ghi_chu: ghiChu })
+  });
+  if (r.status === 409) return json({ ok: true, da_gui: true }, 200, request);   /* đã có đơn chờ cho khoá này */
+  if (!r.ok) {
+    const t = await r.text();
+    if (/dang_ky/.test(t) && /not find|does not exist|schema cache/i.test(t)) return json({ ok: false, reason: 'chua_mo_dang_ky' }, 503, request);
+    return json({ ok: false, reason: 'khong_ghi_duoc', chi_tiet: locLoi(t) }, 502, request);
+  }
+  ds.push(now); DANG_KY_IP.set(ip, ds);
+  return json({ ok: true }, 200, request);
 }
 
 /* POST /api/tao-tai-khoan  { class_id, students: [{ email, full_name, student_no }] }  (tối đa 60 người một lần) */
@@ -459,7 +492,7 @@ async function coHam(env, ten, than) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -484,7 +517,8 @@ async function kiemSchema(env) {
     coCot(env, 'sessions', 'deleted_at'),
     coHam(env, 'so_khoa_hoc', JSON.stringify({ s: '1' })),
     coCot(env, 'trang_cong_khai', 'khoa'),
-    coCot(env, 'enrollments', 'da_dong_at,mien,han_dong')
+    coCot(env, 'enrollments', 'da_dong_at,mien,han_dong'),
+    coCot(env, 'dang_ky', 'trang_thai')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -504,6 +538,7 @@ async function kiemSchema(env) {
     v24_thung_rac_bo_go: v24a && v24b,
     v25_trang_cong_khai: v25,
     v26_hoc_phi: v26,
+    v27_dang_ky: v27,
     ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }

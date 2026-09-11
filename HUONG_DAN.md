@@ -376,6 +376,26 @@ Hiện ra một bảng gom hết: đã mở bao nhiêu tài liệu trên tổng 
 
 Dùng trước buổi phụ đạo để biết em nào đang hổng chỗ nào, khỏi phải mở bốn tab.
 
+## Đăng ký từ trang công khai → duyệt → tài khoản
+
+Cần chạy `schema_v27_dang_ky_nhan_ban.sql` một lần (`/api/trang-thai` → `v27_dang_ky: true`).
+
+1. Sinh viên điền form **Đăng ký** trên `giangduonghoahoc.com` (họ tên, Zalo, email, khoá, lời nhắn). Nút *Đăng ký* trên mỗi thẻ khoá
+   tự chọn sẵn khoá đó. Form gửi qua Worker (`/api/dang-ky`) — có bẫy chống máy điền, mỗi IP tối đa 5 đơn/giờ, một email một đơn chờ mỗi khoá.
+2. Quản trị → tab **Sinh viên** → bảng **Đăng ký mới từ trang công khai** (nút tab có số đếm, cộng với học phí chờ duyệt).
+3. Bấm **✓ Duyệt** → chọn lớp (tự gợi ý theo tên khoá), sửa tên, thêm mã SV nếu có → *Tạo tài khoản & ghi danh*: tài khoản tạo qua
+   `/api/tao-tai-khoan` như tạo tay; email đã có tài khoản thì chỉ ghi danh thêm. Hộp tiếp theo có **tin nhắn soạn sẵn** (email + mật khẩu tạm
+   + link tải app) với nút *Chép* và *Mở Zalo <số>* — dán vào Zalo là xong. Đồng hồ học phí (nếu lớp có thu) chạy từ hôm duyệt.
+4. **Từ chối** ghi lý do, đơn không hiện nữa (vẫn còn trong bảng `dang_ky` để tra).
+
+Chưa chạy v27 thì form trên trang công khai báo "Đăng ký trực tuyến chưa mở — nhắn Zalo", tab quản trị không hiện bảng.
+
+## Sao chép buổi sang lớp khác
+
+Tab Buổi học → trong một buổi bấm **⧉ Sang lớp…** → chọn lớp nhận. Bản sao mang theo mọi tài liệu (PDF, video, phiếu có ô đáp án, đáp án, link)
+và **dùng lại đúng tệp trong kho** — không tải lên lần nữa. Bản sao là **nháp**, không ghim, bỏ ngày/giờ/hạn nộp để m đặt lại theo lịch lớp kia
+rồi mới *Mở cho sinh viên*. Toast có nút *Mở lớp đó* để sang xem ngay.
+
 ## Học phí — chuyển khoản QR, được nợ 2 tuần, khoá theo từng khoá
 
 Cần chạy `schema_v26_hoc_phi.sql` một lần (`/api/trang-thai` → `v26_hoc_phi: true`).

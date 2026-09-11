@@ -17,6 +17,11 @@ const stub = `<script>
   /* ---------------- kho dữ liệu giả, có thật trong bộ nhớ ---------------- */
   var NGAN_HANG_THU = P.get('bank') === '0' ? {} : { bin:'970422', ma:'MB', ten_nh:'MB Bank', stk:'0123456789', ten_tk:'PHAM ANH NGOC' };
   var DB = {
+    /* v27: đăng ký từ trang công khai — ?dk=0 giả chưa chạy SQL */
+    dang_ky: P.get('dk') === '0' ? undefined : [
+      { id:'dk1', ho_ten:'Phạm Thu Trang', email:'thutrang@gmail.com', sdt:'0912 000 111', khoa:'Hóa phân tích K68', ghi_chu:'Hóa dược năm 2, học buổi tối', trang_thai:'cho', tao_luc:d(-3*36e5) },
+      { id:'dk2', ho_ten:'Lê Văn Nam', email:'vannam@gmail.com', sdt:'0988 222 333', khoa:'Khác / chưa rõ', ghi_chu:'', trang_thai:'cho', tao_luc:d(-30*6e4) }
+    ],
     /* v25: trang công khai — ?tck=0 để xem lời nhắc chưa chạy SQL (bảng vắng) */
     trang_cong_khai: P.get('tck') === '0' ? undefined : [
       { khoa:'gioi_thieu', noi_dung:{ khau_hieu:'Hóa học khó, có Phạm Ngọc lo', mo_ta:'Bản thử.' } },
@@ -30,7 +35,8 @@ const stub = `<script>
       { id:'u2', full_name:'Trần Quốc Bảo', email:'quocbao@vnu.edu.vn', role:'student', active:true, student_no:'23001235', gender:'nam', major:'Hóa học', birth_year:2005, onboarded_at:d(-20*864e5), must_change_pw:false, avatar_path:'' },
       { id:'u3', full_name:'Lê Thu Hà', email:'thuha@vnu.edu.vn', role:'student', active:true, student_no:'23001236', gender:'nu', major:'Hóa dược', birth_year:2004, onboarded_at:null, must_change_pw:true, avatar_path:'' }
     ],
-    classes: [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9).', owner:'gv1', created_at:d(-60*864e5), hoc_phi: P.get('hp') === '0' ? undefined : 1500000, han_ngay: 14, hoc_phi_tu: d(-20*864e5) }],
+    classes: [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9).', owner:'gv1', created_at:d(-60*864e5), hoc_phi: P.get('hp') === '0' ? undefined : 1500000, han_ngay: 14, hoc_phi_tu: d(-20*864e5) },
+      { id:'c2', name:'Hóa hữu cơ K68', subject:'Hóa hữu cơ', archived:false, notice:'', owner:'gv1', created_at:d(-10*864e5), hoc_phi:0, han_ngay:14 }],
     sessions: [
       { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2.', created_at:d(-2*864e5) },
       { id:'s2', class_id:'c1', no:4, title:'Cân bằng tạo phức', published:true, pinned:false, starts_at:null, held_on:'2026-09-01', note:'', created_at:d(-7*864e5) },
@@ -160,7 +166,7 @@ const stub = `<script>
     o.single = function () { mot = true; return o; };
     o.maybeSingle = function () { mot = true; return o; };
     o.then = function (a, b) {
-      if (ten === 'trang_cong_khai' && !DB[ten]) return Promise.resolve({ data: null, error: { message: 'relation "public.trang_cong_khai" does not exist' } }).then(a, b);
+      if ((ten === 'trang_cong_khai' || ten === 'dang_ky') && !DB[ten]) return Promise.resolve({ data: null, error: { message: 'relation "public.' + ten + '" does not exist' } }).then(a, b);
       var rows = hd ? ghi(ten, dk, hd, tai) : doc(ten, dk);
       if (sapXep && !hd) rows.sort(function (x, y) {
         var p = x[sapXep[0]], q2 = y[sapXep[0]];
@@ -177,6 +183,7 @@ const stub = `<script>
   var DAPAN = { m1: { oa:{ dap_an:'0,08', sai_so:0.001 }, ob:{ dap_an:'phenolphtalein|phenolphthalein' }, oc:{ dap_an:'H2SO4' }, od:{ dap_an:'2' } } };
   function rpcChay(ten, a) {
     a = a || {};
+    if (ten === 'nhan_ban_buoi') { var goc = DB.sessions.filter(function (s) { return s.id === a.p_session; })[0]; var sid = moiId('se'); DB.sessions.push(Object.assign({}, goc, { id:sid, class_id:a.p_class, published:false, pinned:false, held_on:null, starts_at:null, created_at:new Date().toISOString() })); DB.materials.filter(function (m) { return m.session_id === a.p_session; }).forEach(function (m) { DB.materials.push(Object.assign({}, m, { id:moiId('ma'), session_id:sid })); }); return sid; }
     if (ten === 'bang_bai_nop') {
       var ra = [];
       DB.materials.filter(function (m) { return m.nhan_bai; }).forEach(function (m) {
@@ -362,7 +369,7 @@ const stub = `<script>
       { uid:'0123456789abcdef0123456789abcdef', ten:'Video: đường cong chuẩn độ', giay:1500, san_sang:true, pct:100, ky:'2026-09-01', ngay:'2026-09-01', kich_thuoc: 310000000, anh:'' },
       { uid:'abcdef0123456789abcdef0123456789', ten:'Buổi 1 - Nồng độ', giay:2700, san_sang:true, pct:100, ky:'2026-08-20', ngay:'2026-08-20', kich_thuoc: 520000000, anh:'' }
     ] };
-    if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, email: body.email, mat_khau:'Thu1234@', da_co:false };
+    if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, lop:'Hóa phân tích K68', email: body.email, mat_khau:'Thu1234@', da_co:false, ket_qua: (body.students || []).map(function (x) { return { email:x.email, ok:true, password:'Thu1234@', full_name:x.full_name }; }) };
     if (s.indexOf('/api/cap-lai-mat-khau') >= 0) tra = { ok:true, mat_khau:'Moi5678@' };
     return Promise.resolve({ ok:true, status:200, json: function () { return Promise.resolve(tra); } });
   };

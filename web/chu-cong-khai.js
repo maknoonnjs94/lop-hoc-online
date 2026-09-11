@@ -35,9 +35,16 @@ window.CHU_CONG_KHAI = [
     ['tt_ket_thuc', 'Trạng thái: đã kết thúc', 'Đã kết thúc'],
     ['nut_zalo_khoa', 'Nút vào Zalo của khoá (khi thẻ không đặt chữ riêng)', 'Zalo khoá học'],
     ['nut_nhan_gv', 'Nút phụ nhắn giảng viên', 'Nhắn giảng viên'],
-    ['nut_dangky_zalo', 'Nút đăng ký qua Zalo giảng viên', 'Đăng ký qua Zalo'],
-    ['nut_dangky', 'Nút đăng ký khi chưa có Zalo nào', 'Đăng ký'],
+    ['nut_dangky', 'Nút Đăng ký (mở form)', 'Đăng ký'],
     ['khoa_trong', 'Khi chưa đăng khoá nào', 'Chưa có khoá nào được đăng.']
+  ]},
+  { nhom: 'Mục Đăng ký (form)', ds: [
+    ['dk_eyebrow', 'Nhãn mục (menu)', 'Đăng ký'],
+    ['dk_h2', 'Tiêu đề mục', 'Đăng ký khoá học'],
+    ['dk_p', 'Câu dẫn', 'Điền vài dòng. Giảng viên nhắn Zalo gửi tài khoản trong ngày, sau đó bạn tải app và vào lớp.'],
+    ['dk_gui', 'Chữ trên nút gửi', 'Gửi đăng ký'],
+    ['dk_xong', 'Lời cảm ơn sau khi gửi', 'Đã nhận đăng ký của bạn! Giảng viên sẽ nhắn Zalo trong ngày để gửi tài khoản. Trong lúc chờ, bạn tải app trước cho sẵn.'],
+    ['dk_da_gui', 'Khi đã gửi trước đó', 'Bạn đã gửi đăng ký cho khoá này rồi — giảng viên sẽ liên hệ sớm.']
   ]},
   { nhom: 'Mục Cách học', ds: [
     ['cach_eyebrow', 'Nhãn mục (menu)', 'Cách học'],

@@ -512,6 +512,7 @@
             <button class="btn" id="addStuBtn">＋ Thêm bằng email</button>
             <button class="btn primary" id="newStuBtn">＋ Tạo tài khoản mới</button>
           </div>
+          <div class="card" id="choDangKy" hidden style="margin-bottom:14px"></div>
           <div class="card" id="choDuyet" hidden style="margin-bottom:14px"></div>
           <div class="card" id="roster"></div>
           <p class="hint" style="margin-top:10px">
@@ -885,6 +886,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '  <button class="btn sm" data-a="pub" data-s="' + s.id + '">' + (s.published ? '🙈 Chuyển về nháp' : '👁 Mở cho sinh viên') + '</button>'
         + '  <button class="btn sm" data-a="pin" data-s="' + s.id + '" title="Buổi được ghim hiện lên đầu trang học. Không ghim thì app lấy buổi vừa có bài mới nhất.">' + (s.pinned ? '📌 Bỏ ghim' : '📌 Ghim làm buổi đang học') + '</button>'
         + '  <button class="btn sm" data-a="edit-ses" data-s="' + s.id + '">✎ Sửa buổi</button>'
+        + '  <button class="btn sm" data-a="clone-ses" data-s="' + s.id + '" title="Sao chép buổi này (kèm tài liệu, dùng lại tệp trong kho) sang lớp khác dưới dạng nháp">⧉ Sang lớp…</button>'
         + '  <button class="btn sm danger" data-a="del-ses" data-s="' + s.id + '">Xoá buổi</button>'
         + '</div>'
         + (mats.length ? mats.map(function (m, i) {
@@ -953,6 +955,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       else { toast(!sp.pinned ? 'Đã ghim. Sinh viên mở app là thấy buổi này trước.' : 'Đã bỏ ghim.'); await loadSessions(); }
     } else if (a === 'edit-ses') editSession(b.dataset.s);
     else if (a === 'del-ses') delSession(b.dataset.s);
+    else if (a === 'clone-ses') cloneSession(b.dataset.s);
     else if (a === 'add-mat') addMaterial(b.dataset.s, b.dataset.k);
     else if (a === 'edit-mat') editMaterial(b.dataset.m);
     else if (a === 'dat-o') moDatO(b.dataset.m);
@@ -2391,13 +2394,95 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         await loadRoster();
       }, 'Xác nhận đã nhận');
   }
+  var soChoHP = 0, soChoDK = 0;
+  function capNhatDuyetN() { var n = soChoHP + soChoDK; $('duyetN').textContent = n; $('duyetN').hidden = !n; }
+  /* Nhân bản buổi sang lớp khác (v27): rpc nhan_ban_buoi — bản nháp, cùng tệp trong kho, không tải lại */
+  function cloneSession(sid) {
+    var s = sessions.filter(function (x) { return x.id === sid; })[0]; if (!s) return;
+    var khac = classes.filter(function (c) { return c.id !== curClass && !c.archived; });
+    if (!khac.length) { toast('Chưa có lớp nào khác để sao chép sang.'); return; }
+    dialog('Sao chép buổi “' + (s.title || ('Buổi ' + (s.no || ''))) + '” sang lớp',
+      '<label class="f">Lớp nhận<select id="fCloneLop">' + khac.map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('') + '</select></label>'
+      + '<p class="hint">Sao chép tên buổi, ghi chú, mọi tài liệu (PDF, video, phiếu có ô đáp án, đáp án, link) — <b>dùng lại đúng tệp trong kho</b>, không tải lên lần nữa. Bản sao là <b>nháp</b>, chưa ghim, bỏ ngày/giờ và hạn nộp để m đặt lại theo lịch lớp kia rồi mới mở.</p>',
+      async function () {
+        var lop = val('fCloneLop');
+        var r = await sb.rpc('nhan_ban_buoi', { p_session: sid, p_class: lop });
+        if (r.error) { msg($('dlgMsg'), /nhan_ban_buoi/.test(r.error.message) ? 'Chạy schema_v27_dang_ky_nhan_ban.sql trước.' : r.error.message); return false; }
+        var ten = (classes.filter(function (c) { return c.id === lop; })[0] || {}).name || '';
+        toast('Đã sao chép sang lớp ' + ten + ' (nháp).', 'Mở lớp đó', function () { curClass = lop; loadClasses(); });
+      }, 'Sao chép');
+  }
+  /* ================= ĐĂNG KÝ TỪ TRANG CÔNG KHAI (v27) ================= */
+  var choDK = [];
+  async function loadChoDangKy() {
+    var box = $('choDangKy'); if (!box) return;
+    var r = await sb.from('dang_ky').select('*').eq('trang_thai', 'cho').order('tao_luc', { ascending: true });
+    if (r.error) { box.hidden = true; soChoDK = 0; capNhatDuyetN(); return; }   /* chưa chạy v27 → lặng */
+    choDK = r.data || []; soChoDK = choDK.length; capNhatDuyetN();
+    box.hidden = !choDK.length; if (!choDK.length) return;
+    box.innerHTML = '<div class="mats"><div class="bar" style="margin-bottom:6px"><b style="font-size:16px">Đăng ký mới từ trang công khai</b><span class="pill on">' + choDK.length + '</span><span class="grow"></span><span class="hint" style="margin:0">Duyệt = tạo tài khoản + ghi danh + mật khẩu tạm để m gửi Zalo.</span></div>'
+      + '<table class="roster"><thead><tr><th>Họ tên</th><th>Email</th><th>Zalo / ĐT</th><th>Khoá muốn học</th><th>Ghi chú</th><th>Lúc</th><th></th></tr></thead><tbody>'
+      + choDK.map(function (d) {
+        return '<tr><td><b>' + esc(d.ho_ten) + '</b></td><td>' + esc(d.email) + '</td><td>' + esc(d.sdt || '') + '</td><td>' + esc(d.khoa || '') + '</td><td class="hint" style="margin:0;max-width:220px">' + esc(d.ghi_chu || '') + '</td><td>' + esc(new Date(d.tao_luc).toLocaleString('vi-VN')) + '</td>'
+          + '<td style="text-align:right;white-space:nowrap"><button class="btn sm primary" data-dk="duyet" data-id="' + d.id + '">✓ Duyệt</button> <button class="btn sm" data-dk="tu_choi" data-id="' + d.id + '">Từ chối</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function lopKhop(khoa) {
+    var k = String(khoa || '').toLowerCase();
+    var dung = classes.filter(function (c) { return !c.archived && c.name.toLowerCase() === k; })[0];
+    if (dung) return dung.id;
+    var gan = classes.filter(function (c) { return !c.archived && (c.name.toLowerCase().indexOf(k) >= 0 || (k && (c.subject || '').toLowerCase().indexOf(k) >= 0)); })[0];
+    return gan ? gan.id : (curClass || '');
+  }
+  $('choDangKy').addEventListener('click', async function (e) {
+    var b = e.target.closest('button[data-dk]'); if (!b) return;
+    var d = choDK.filter(function (x) { return x.id === b.dataset.id; })[0]; if (!d) return;
+    if (b.dataset.dk === 'tu_choi') {
+      var ly = prompt('Từ chối đăng ký của ' + d.ho_ten + '? Ghi chú (tuỳ chọn):', '');
+      if (ly == null) return;
+      var r0 = await sb.from('dang_ky').update({ trang_thai: 'tu_choi', duyet_luc: new Date().toISOString(), ghi_chu_gv: ly }).eq('id', d.id);
+      if (r0.error) toast('Lỗi: ' + r0.error.message); else { toast('Đã từ chối.'); await loadChoDangKy(); }
+      return;
+    }
+    var lopMac = lopKhop(d.khoa);
+    dialog('Duyệt đăng ký · ' + d.ho_ten,
+      '<p class="hint">Email <b>' + esc(d.email) + '</b> · Zalo <b>' + esc(d.sdt || '—') + '</b> · muốn học <b>' + esc(d.khoa || '—') + '</b>' + (d.ghi_chu ? '<br>Ghi chú: ' + esc(d.ghi_chu) : '') + '</p>'
+      + '<label class="f">Ghi danh vào lớp<select id="fDkLop">' + classes.filter(function (c) { return !c.archived; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === lopMac ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Họ tên<input id="fDkTen" value="' + esc(d.ho_ten) + '"></label><label class="f">Mã sinh viên (tuỳ chọn)<input id="fDkMssv" placeholder="22001234"></label></div>'
+      + '<p class="hint">Duyệt xong hiện mật khẩu tạm để m gửi Zalo. Lần đầu đăng nhập sinh viên phải tự đổi mật khẩu. Đồng hồ học phí (nếu lớp có thu) bắt đầu từ hôm nay.</p>',
+      async function () {
+        var lop = val('fDkLop'); if (!lop) { msg($('dlgMsg'), 'Chọn lớp.'); return false; }
+        var kq;
+        try { kq = await apiGoi('/api/tao-tai-khoan', { class_id: lop, students: [{ email: d.email, full_name: val('fDkTen') || d.ho_ten, student_no: val('fDkMssv') }] }); }
+        catch (err) { msg($('dlgMsg'), err.message); return false; }
+        var r = (kq.ket_qua || [])[0] || {};
+        if (!r.ok) { msg($('dlgMsg'), (LOI_API[r.reason] || r.reason || 'Không tạo được') + (r.chi_tiet ? ' — ' + r.chi_tiet : '')); return false; }
+        await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lop }).eq('id', d.id);
+        var tenLop = (classes.filter(function (c) { return c.id === lop; })[0] || {}).name || '';
+        var tin = r.da_co
+          ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào lớp ' + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập như cũ nhé.'
+          : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. Lớp: ' + tenLop + '.';
+        setTimeout(function () {
+          dialog('Đã duyệt · gửi Zalo cho ' + d.ho_ten,
+            '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'
+            + '<div class="bar"><button type="button" class="btn sm primary" id="fDkChep">📋 Chép tin nhắn</button>' + (d.sdt ? '<a class="btn sm" target="_blank" rel="noopener" href="https://zalo.me/' + esc(String(d.sdt).replace(/[^0-9]/g, '')) + '">Mở Zalo ' + esc(d.sdt) + '</a>' : '') + '</div>'
+            + (r.canh_bao ? '<p class="hint" style="color:var(--danger)">' + esc(r.canh_bao) + '</p>' : ''),
+            async function () { return true; }, 'Xong');
+        }, 50);
+        await loadChoDangKy(); await loadRoster();
+      }, 'Tạo tài khoản & ghi danh');
+  });
+  $('dlgBody').addEventListener('click', async function (e) {
+    if (!e.target.closest('#fDkChep')) return;
+    try { await navigator.clipboard.writeText($('fDkTin').value); toast('Đã chép — dán vào Zalo.'); } catch (x) { $('fDkTin').select(); }
+  });
   /* Chờ duyệt: sinh viên MỌI lớp đã bấm "Tôi đã chuyển" mà chưa được xác nhận — duyệt một phát, không phải đi từng lớp */
   async function loadChoDuyet() {
     var box = $('choDuyet'); if (!box) return;
     var r = await sb.from('enrollments').select('class_id, student, bao_chuyen_at, da_dong_at, so_tien, profiles(full_name, email, student_no), classes(name, hoc_phi)').not('bao_chuyen_at', 'is', null).is('da_dong_at', null);
     if (r.error) { box.hidden = true; $('duyetN').hidden = true; return; }
     var ds = (r.data || []).filter(function (e) { return e.bao_chuyen_at && !e.da_dong_at; }).sort(function (a, b) { return String(a.bao_chuyen_at).localeCompare(String(b.bao_chuyen_at)); });
-    $('duyetN').textContent = ds.length; $('duyetN').hidden = !ds.length;
+    soChoHP = ds.length; capNhatDuyetN();
     box.hidden = !ds.length;
     if (!ds.length) return;
     box.innerHTML = '<div class="mats"><div class="bar" style="margin-bottom:6px"><b style="font-size:16px">Chờ duyệt học phí</b><span class="pill on">' + ds.length + '</span><span class="grow"></span><span class="hint" style="margin:0">Sinh viên bấm "Tôi đã chuyển" — đối chiếu sao kê rồi duyệt.</span></div>'
@@ -2587,7 +2672,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
     var ngay = function (s) { try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; } };
-    if (coHocPhi) loadChoDuyet(); else { $('choDuyet').hidden = true; $('duyetN').hidden = true; }
+    if (coHocPhi) loadChoDuyet(); else { $('choDuyet').hidden = true; }
+    loadChoDangKy();
     var lopHP = classes.filter(function (x) { return x.id === curClass; })[0] || {}, thuHP = coHocPhi && (Number(lopHP.hoc_phi) || 0) > 0;
     $('hpTom').textContent = thuHP ? hpTomTat(roster, lopHP) : (coHocPhi ? 'Lớp không thu học phí' : '');
     box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th>' + (thuHP ? '<th>Học phí</th>' : '') + '<th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'

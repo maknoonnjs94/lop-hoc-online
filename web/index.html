@@ -141,6 +141,22 @@
   details[open] summary::before{ transform:rotate(45deg) }
   details .dap{ padding:0 18px 16px 37px; color:var(--ink-2); font-size:14.5px }
 
+  /* đăng ký */
+  .dk{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; align-items:start }
+  @media (max-width:760px){ .dk{ grid-template-columns:1fr } }
+  .dk form{ display:grid; gap:12px; grid-template-columns:1fr 1fr }
+  .dk label{ display:block; font-size:12.5px; font-weight:700; color:var(--muted); letter-spacing:.01em }
+  .dk label.w{ grid-column:1 / -1 }
+  .dk input, .dk select, .dk textarea{ display:block; width:100%; margin-top:6px; padding:11px 13px; border-radius:var(--r-s); border:1px solid var(--line-2); background:var(--surface); color:var(--ink); font:inherit; font-size:14.5px }
+  .dk input:focus, .dk select:focus, .dk textarea:focus{ outline:none; border-color:var(--sea); box-shadow:0 0 0 3px var(--ice-2) }
+  .dk textarea{ min-height:76px; resize:vertical }
+  .dk .hang{ grid-column:1 / -1; display:flex; align-items:center; gap:12px; flex-wrap:wrap }
+  .dk .loi{ color:#b8532f; font-size:13.5px; font-weight:600 }
+  .dk .xong{ padding:18px 20px; border-radius:var(--r); background:var(--leaf-soft); color:var(--ink); font-weight:600; line-height:1.5 }
+  .dk .bay{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0 }
+  .dk .buoc3{ display:grid; gap:10px }
+  .dk .buoc3 .card{ display:flex; gap:12px; align-items:flex-start }
+  .dk .buoc3 .n{ flex:none; width:28px; height:28px; border-radius:50%; background:var(--sea); color:var(--on-sea); display:grid; place-items:center; font-weight:900; font-size:13px }
   /* liên hệ */
   .lienhe{ display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:stretch }
   @media (max-width:760px){ .lienhe{ grid-template-columns:1fr } }
@@ -170,6 +186,7 @@
     <a class="brand" href="./"><img src="img/logo.png" alt="" draggable="false">Giảng đường Hóa học</a>
     <nav class="menu">
       <a href="#khoa-hoc" data-chu="khoa_eyebrow"></a>
+      <a href="#dang-ky" data-chu="dk_eyebrow"></a>
       <a href="#cach-dung" data-chu="cach_eyebrow"></a>
       <a href="#hoi-dap" data-chu="hoi_eyebrow"></a>
       <a href="#lien-he" data-chu="lien_eyebrow"></a>
@@ -218,6 +235,28 @@
   <div class="wrap">
     <div class="head"><div><span class="eyebrow" data-chu="khoa_eyebrow"></span><h2 data-chu="khoa_h2"></h2><p data-chu="khoa_p"></p></div></div>
     <div class="khoa" id="khoaHoc"><p class="trong">Đang tải…</p></div>
+  </div>
+</section>
+
+<section class="khoi" id="dang-ky">
+  <div class="wrap">
+    <div class="head"><div><span class="eyebrow" data-chu="dk_eyebrow"></span><h2 data-chu="dk_h2"></h2><p data-chu="dk_p"></p></div></div>
+    <div class="dk">
+      <form id="dkForm" autocomplete="on" novalidate>
+        <label>Họ và tên<input name="ho_ten" required maxlength="120" placeholder="Nguyễn Văn An" autocomplete="name"></label>
+        <label>Số Zalo / điện thoại<input name="sdt" required inputmode="tel" maxlength="20" placeholder="09xx xxx xxx" autocomplete="tel"></label>
+        <label class="w">Email (dùng để đăng nhập)<input name="email" type="email" required maxlength="160" placeholder="email@example.com" autocomplete="email"></label>
+        <label class="w">Khoá muốn học<select name="khoa" id="dkKhoa" required></select></label>
+        <label class="w">Ngành, năm, lời nhắn (tuỳ chọn)<textarea name="ghi_chu" maxlength="500" placeholder="Hóa dược năm 2, học buổi tối…"></textarea></label>
+        <label class="bay" aria-hidden="true">Website<input name="web" tabindex="-1" autocomplete="off"></label>
+        <div class="hang"><button class="btn primary" type="submit" id="dkGui" data-chu="dk_gui"></button><span class="loi" id="dkLoi"></span></div>
+      </form>
+      <div class="buoc3">
+        <div class="card"><span class="n">1</span><div><h3>Gửi đăng ký</h3><p>Chọn đúng khoá. Một email dùng cho mọi khoá bạn học.</p></div></div>
+        <div class="card"><span class="n">2</span><div><h3>Nhận tài khoản qua Zalo</h3><p>Giảng viên duyệt và gửi email đăng nhập + mật khẩu tạm trong ngày.</p></div></div>
+        <div class="card"><span class="n">3</span><div><h3>Tải app, vào lớp</h3><p>Đăng nhập lần đầu, đặt mật khẩu của bạn, chọn màu và nhân vật. <a href="#tai-app">Tải app</a></p></div></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -299,9 +338,9 @@
   function nutKhoa(k, zaloGV) {
     if (k.trang_thai === 'ket_thuc') return '';
     var lk = /^https?:\/\//.test(String(k.zalo || '')) ? k.zalo : '', nut = [];
-    if (lk) nut.push('<a class="btn primary" href="' + esc(lk) + '" target="_blank" rel="noopener">' + esc(k.zalo_nhan || T('nut_zalo_khoa')) + '</a>');
-    if (zaloGV) nut.push('<a class="btn' + (lk ? '' : ' primary') + '" href="' + esc(zaloGV) + '" target="_blank" rel="noopener">' + esc(lk ? T('nut_nhan_gv') : T('nut_dangky_zalo')) + '</a>');
-    if (!nut.length) nut.push('<a class="btn" href="#lien-he">' + esc(T('nut_dangky')) + '</a>');
+    nut.push('<a class="btn primary" href="#dang-ky" data-dk="' + esc(k.ten) + '">' + esc(T('nut_dangky')) + '</a>');
+    if (lk) nut.push('<a class="btn" href="' + esc(lk) + '" target="_blank" rel="noopener">' + esc(k.zalo_nhan || T('nut_zalo_khoa')) + '</a>');
+    if (zaloGV) nut.push('<a class="btn" href="' + esc(zaloGV) + '" target="_blank" rel="noopener">' + esc(T('nut_nhan_gv')) + '</a>');
     return '<div class="cta">' + nut.join('') + '</div>';
   }
   function veKhoaHoc(ds, lh) {
@@ -354,8 +393,41 @@
     var phai = '<div class="card"><h3>' + esc(T('lien_ghi_t')) + '</h3><p style="margin:6px 0 12px">' + esc(T('lien_ghi_p')) + '</p><ul>' + ds.join('') + '</ul></div>';
     $('lienHe').innerHTML = trai + phai;
   }
+  /* ---- form đăng ký: khoá lấy từ danh sách khoá học (bỏ khoá đã kết thúc); gửi qua /api/dang-ky của Worker ---- */
+  var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://giangduonghoahoc.com' : '';
+  function veKhoaChon(ds) {
+    var sel = $('dkKhoa'), cu = sel.value;
+    var ten = (ds || []).filter(function (k) { return k && k.ten && k.trang_thai !== 'ket_thuc'; }).map(function (k) { return k.ten; });
+    sel.innerHTML = '<option value="">— chọn khoá —</option>' + ten.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('') + '<option value="Khác / chưa rõ">Khác / chưa rõ</option>';
+    if (cu) sel.value = cu;
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-dk]'); if (!a) return;
+    var sel = $('dkKhoa'); if (sel) { sel.value = a.dataset.dk; if (sel.value !== a.dataset.dk) sel.value = 'Khác / chưa rõ'; }
+    setTimeout(function () { var f = document.querySelector('#dkForm input[name=ho_ten]'); if (f) f.focus({ preventScroll: true }); }, 400);
+  });
+  var DK_LOI = { thieu_ten: 'Ghi họ tên giúp nhé.', email_sai: 'Email chưa đúng.', sdt_sai: 'Số điện thoại chưa đúng.', thieu_khoa: 'Chọn khoá muốn học.', qua_nhieu: 'Bạn gửi hơi nhiều lần rồi, thử lại sau một giờ.', chua_mo_dang_ky: 'Đăng ký trực tuyến chưa mở — nhắn Zalo giảng viên nhé.' };
+  $('dkForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var f = this, loi = $('dkLoi'), nut = $('dkGui'), o = {};
+    ['ho_ten', 'email', 'sdt', 'khoa', 'ghi_chu', 'web'].forEach(function (k) { o[k] = (f.elements[k] && f.elements[k].value || '').trim(); });
+    loi.textContent = '';
+    if (o.ho_ten.length < 2) { loi.textContent = DK_LOI.thieu_ten; f.elements.ho_ten.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email)) { loi.textContent = DK_LOI.email_sai; f.elements.email.focus(); return; }
+    if (o.sdt.replace(/[^0-9]/g, '').length < 8) { loi.textContent = DK_LOI.sdt_sai; f.elements.sdt.focus(); return; }
+    if (!o.khoa) { loi.textContent = DK_LOI.thieu_khoa; f.elements.khoa.focus(); return; }
+    nut.disabled = true; var chuCu = nut.textContent; nut.textContent = 'Đang gửi…';
+    try {
+      var r = await fetch(API_BASE + '/api/dang-ky', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) });
+      var d = null; try { d = await r.json(); } catch (x) { d = null; }
+      if (!d || !d.ok) { loi.textContent = (d && DK_LOI[d.reason]) || 'Chưa gửi được (' + (d && d.reason || r.status) + '). Thử lại hoặc nhắn Zalo.'; nut.disabled = false; nut.textContent = chuCu; return; }
+      f.parentNode.insertBefore(Object.assign(document.createElement('div'), { className: 'xong', textContent: d.da_gui ? T('dk_da_gui') : T('dk_xong') }), f);
+      f.remove();
+    } catch (x) { loi.textContent = 'Không nối được máy chủ. Thử lại hoặc nhắn Zalo.'; nut.disabled = false; nut.textContent = chuCu; }
+  });
   function veTatCa(d) {
     apChu(d.chu);
+    veKhoaChon(d.khoa_hoc);
     var gt = d.gioi_thieu || {};
     if (gt.khau_hieu) $('khauHieu').textContent = '“' + gt.khau_hieu + '”';
     if (gt.mo_ta) $('moTa').textContent = gt.mo_ta;
