@@ -29,6 +29,13 @@ function nguonHopLe(o) {
     return u.protocol === 'https:' && (u.hostname === TEN_MIEN_RIENG || u.hostname.endsWith('.' + TEN_MIEN_RIENG));
   } catch (e) { return false; }
 }
+/* Danh sách host được nhúng video Stream: host đang gọi + workers.dev + tên miền riêng (và mọi tên con).
+   Nhờ vậy video tải lên ở địa chỉ nào cũng phát được ở địa chỉ kia — đổi tên miền không phải khoá lại video. */
+function nguonStream(request) {
+  const ds = [new URL(request.url).host, new URL(ORIGINS[0]).host];
+  if (TEN_MIEN_RIENG) ds.push(TEN_MIEN_RIENG, '*.' + TEN_MIEN_RIENG);
+  return ds.filter(function (x, i) { return ds.indexOf(x) === i; });
+}
 
 export default {
   async fetch(request, env) {
@@ -384,16 +391,14 @@ async function streamChon(body, env, request) {
   if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
   const uid = String(body.uid || '');
   if (!/^[0-9a-f]{32}$/i.test(uid)) return json({ ok: false, reason: 'uid_sai' }, 400, request);
-  const host = new URL(request.url).host;
-  const v = await cfStream(env, '/' + uid, 'POST', { requireSignedURLs: true, allowedOrigins: [host] });
+  const v = await cfStream(env, '/' + uid, 'POST', { requireSignedURLs: true, allowedOrigins: nguonStream(request) });
   return json({ ok: true, uid: v.uid, ten: (v.meta && v.meta.name) || v.filename || v.uid, san_sang: !!v.readyToStream }, 200, request);
 }
 /* POST /api/stream/tai-len { name } → { uploadURL, uid } — trình duyệt gửi tệp thẳng lên Cloudflare (≤ 200 MB) */
 async function streamTaiLen(body, env, request) {
   if (!streamSan(env)) return json({ ok: false, reason: 'stream_chua_cau_hinh' }, 503, request);
-  const host = new URL(request.url).host;
   const ten = String(body.name || 'video').slice(0, 120);
-  const r = await cfStream(env, '/direct_upload', 'POST', { maxDurationSeconds: 21600, requireSignedURLs: true, allowedOrigins: [host], meta: { name: ten } });
+  const r = await cfStream(env, '/direct_upload', 'POST', { maxDurationSeconds: 21600, requireSignedURLs: true, allowedOrigins: nguonStream(request), meta: { name: ten } });
   return json({ ok: true, uploadURL: r.uploadURL, uid: r.uid }, 200, request);
 }
 
@@ -474,12 +479,11 @@ async function streamTaiLenLon(body, env, request) {
   const ten = String(body.name || 'video').slice(0, 120);
   const size = Math.floor(Number(body.size) || 0);
   if (!size || size > 30 * 1024 * 1024 * 1024) return json({ ok: false, reason: 'kich_thuoc_sai' }, 400, request);
-  const host = new URL(request.url).host;
   const b64 = function (s) { return btoa(String.fromCharCode.apply(null, new TextEncoder().encode(s))); };
   const meta = [
     'name ' + b64(ten),
     'requiresignedurls',
-    'allowedorigins ' + b64(host),
+    'allowedorigins ' + b64(nguonStream(request).join(',')),
     'maxdurationseconds ' + b64('21600')
   ].join(',');
   const r = await fetch(CF_API + env.CF_ACCOUNT_ID + '/stream?direct_user=true', {

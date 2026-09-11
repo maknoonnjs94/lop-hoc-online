@@ -40,6 +40,21 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-11 (chiều) — Hướng dẫn tên miền từng bước + khoá video cho cả hai địa chỉ
+
+`HUONG_DAN_TEN_MIEN.md` viết lại thành 7 bước bấm-từng-nút (mua ở Cloudflare hay nhà đăng ký VN, đưa vào
+Cloudflare, Custom Domain cho Worker, biến `TEN_MIEN`, Supabase URL Configuration, vòng thử bằng tài khoản SV,
+danh sách chỗ trong mã Claude sẽ đổi khi có tên). Đã tra tài liệu Cloudflare: `wrangler.jsonc` không khai
+`routes` nên tên miền gắn tay **không bị xoá** khi GitHub phát lại; `keep_vars: true` giữ biến.
+
+**Bẫy tìm ra khi rà:** ba chỗ khoá video Stream (`streamChon`, `streamTaiLen`, `streamTaiLenLon`) đặt
+`allowedOrigins: [host của request]`. Nếu tải video ở trang quản trị **địa chỉ mới**, video chỉ phát được ở
+địa chỉ mới → app (đang trỏ workers.dev) không xem được. Sửa: `nguonStream(request)` trả host đang gọi +
+workers.dev + `TEN_MIEN` + `*.TEN_MIEN`; chưa đặt biến thì danh sách y hệt cũ (một host) nên không đổi gì
+hành vi hiện tại. Video tải lên trước khi có biến vẫn khoá riêng workers.dev — khi nào app đổi địa chỉ mới
+cần nút khoá lại hàng loạt (ghi ở Bước 7 của hướng dẫn).
+
+---
 ## 2026-09-11 — Thùng rác, bộ gõ công thức cho sinh viên, chuẩn bị tên miền riêng (v24)
 
 **M chọn ba việc:** 1 (hoàn tác khi lỡ xoá) · 4 (bộ gõ công thức) · 5 (tên miền riêng).
