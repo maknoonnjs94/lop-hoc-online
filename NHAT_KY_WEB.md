@@ -81,7 +81,12 @@ Miễn / Thu lại / Hoàn tác — cập nhật thẳng `enrollments` (policy e
 **Thử (stub):** SV `?hp=chua_han|qua_han|da_dong|bao` + `&lop2=1`; QT: u1 quá hạn + báo, u2 đã đóng, u3 còn hạn; ✓ Đã nhận / Gia hạn
 / hộp ngân hàng / hộp lớp đều chạy. ra-soat 0 lỗi.
 
-**M phải làm:** chạy `schema_v26_hoc_phi.sql`; 💳 đặt ngân hàng; đặt học phí cho lớp thật; thử bằng tài khoản SV trong app.
+**Đợt 2 (theo m — "giao diện nhỏ để ai ck trước cũng được", "duyệt", "cho t thêm số tiền"):**
+- SV: thẻ **Học phí của bạn** ngay đầu trang chủ (dưới thông báo GV), một dòng mỗi khoá có thu: tên · số tiền · trạng thái (hạn/còn N ngày · đã báo chuyển · quá hạn · đã đóng) · nút **Chuyển khoản** — bấm cho khoá khác thì tự chuyển lớp rồi mở màn học phí (bẫy: đổi `view` mà không `goView` → section không hiện; sửa `loadSessions().then(goView)`). Bỏ dải nhắc cũ vì trùng.
+- QT: nút **💰 Học phí lớp này** (số tiền + ngày nợ, cùng luật `hoc_phi_tu`); hộp **xác nhận đã nhận** thay prompt: số tiền (mặc định = học phí lớp), hình thức (QR / chuyển ngoài hệ thống / tiền mặt / khác), ghi chú → `ghi_chu_hp`, hiện dưới pill; bảng **Chờ duyệt** đầu tab Sinh viên gom MỌI lớp (`bao_chuyen_at not null, da_dong_at null`) với ✓ Duyệt / Chưa thấy, huy hiệu số trên nút tab.
+- Stub QT: enrollments join thêm `classes`.
+
+**M phải làm:** chạy `schema_v26_hoc_phi.sql`; 💳 đặt ngân hàng; 💰 đặt học phí cho lớp thật; thử bằng tài khoản SV trong app.
 
 ---
 

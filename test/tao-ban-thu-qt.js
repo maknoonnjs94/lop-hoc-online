@@ -110,7 +110,7 @@ const stub = `<script>
     if (ten === 'sessions') rows.forEach(function (s) {
       s.materials = DB.materials.filter(function (m) { return m.session_id === s.id; }).map(hop);
     });
-    if (ten === 'enrollments') rows.forEach(function (e) { e.profiles = hop(TEN[e.student] || {}); });
+    if (ten === 'enrollments') rows.forEach(function (e) { e.profiles = hop(TEN[e.student] || {}); e.classes = hop(DB.classes.filter(function (c) { return c.id === e.class_id; })[0] || {}); });
     if (ten === 'screenshot_events') rows.forEach(function (e) { e.profiles = hop(TEN[e.user_id] || {}); });
     return rows;
   }

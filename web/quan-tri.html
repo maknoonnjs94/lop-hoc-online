@@ -379,7 +379,7 @@
       <div>
         <div class="tabs">
           <button data-tab="ses" class="on">Buổi học</button>
-          <button data-tab="stu">Sinh viên</button>
+          <button data-tab="stu">Sinh viên <span class="pill on" id="duyetN" hidden style="margin-left:4px">0</span></button>
           <button data-tab="kho">Kho tệp</button>
           <button data-tab="theo">Theo dõi</button>
           <button data-tab="nop">Bài nộp</button>
@@ -507,10 +507,12 @@
             <b>Sinh viên trong lớp</b>
             <span class="grow"></span>
             <span class="hptom" id="hpTom"></span>
+            <button class="btn" id="hocPhiLopBtn" title="Đặt số tiền và số ngày được nợ cho lớp đang chọn">💰 Học phí lớp này</button>
             <button class="btn" id="bankBtn" title="Ngân hàng nhận học phí: sinh viên thấy mã VietQR có sẵn số tiền và nội dung">💳 Nhận học phí</button>
             <button class="btn" id="addStuBtn">＋ Thêm bằng email</button>
             <button class="btn primary" id="newStuBtn">＋ Tạo tài khoản mới</button>
           </div>
+          <div class="card" id="choDuyet" hidden style="margin-bottom:14px"></div>
           <div class="card" id="roster"></div>
           <p class="hint" style="margin-top:10px">
             <b>Tạo tài khoản mới</b>: gõ email và họ tên, trang tự tạo tài khoản, ghi danh vào lớp này và đưa mật khẩu tạm để gửi cho sinh viên;
@@ -2341,7 +2343,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function oHocPhi(e, lop) {
     var tt = ttHocPhi(e, lop), sv = e.student, o = '<div class="hpcol">';
     if (tt === 'mien') o += '<span class="pill">miễn</span><div class="nut"><button class="btn sm" data-hp="bo_mien" data-sv="' + sv + '">Thu lại</button></div>';
-    else if (tt === 'da_dong') o += '<span class="pill on" title="' + esc(e.ghi_chu_hp || '') + '">đã đóng ' + esc(ngayD(e.da_dong_at)) + (e.so_tien != null ? ' · ' + vnd(e.so_tien) : '') + '</span><div class="nut"><button class="btn sm" data-hp="hoan_tac" data-sv="' + sv + '">Hoàn tác</button></div>';
+    else if (tt === 'da_dong') o += '<span class="pill on" title="' + esc(e.ghi_chu_hp || '') + '">đã đóng ' + esc(ngayD(e.da_dong_at)) + (e.so_tien != null ? ' · ' + vnd(e.so_tien) : '') + '</span>' + (e.ghi_chu_hp ? '<span class="hint" style="margin:0;font-size:11.5px">' + esc(e.ghi_chu_hp) + '</span>' : '') + '<div class="nut"><button class="btn sm" data-hp="hoan_tac" data-sv="' + sv + '">Hoàn tác</button></div>';
     else {
       var n = conNgayHP(e, lop);
       o += (tt === 'qua_han' ? '<span class="pill no">quá hạn ' + (-n) + ' ngày — đang khoá</span>' : '<span class="pill off">còn ' + n + ' ngày (hạn ' + esc(ngayD(hanCua(e, lop))) + ')</span>')
@@ -2353,11 +2355,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function xuLyHocPhi(hd, sv) {
     var e = roster.filter(function (x) { return x.student === sv; })[0] || {}, p = e.profiles || {}, lop = classes.filter(function (x) { return x.id === curClass; })[0] || {};
     var ten = p.full_name || p.email || 'sinh viên', luu = {};
-    if (hd === 'da_nhan') {
-      var s = prompt('Đã nhận học phí của ' + ten + '. Số tiền (VND):', String(Math.round(Number(lop.hoc_phi) || 0)));
-      if (s == null) return;
-      luu = { da_dong_at: new Date().toISOString(), so_tien: Math.max(0, Math.round(Number(String(s).replace(/[^0-9]/g, '')) || 0)) };
-    } else if (hd === 'hoan_tac') {
+    if (hd === 'da_nhan') { xacNhanHocPhi(curClass, sv, ten, lop); return; }
+    else if (hd === 'hoan_tac') {
       if (!confirm('Bỏ đánh dấu đã đóng của ' + ten + '? Hạn cũ vẫn giữ nguyên.')) return;
       luu = { da_dong_at: null, so_tien: null };
     } else if (hd === 'gia_han') {
@@ -2375,6 +2374,75 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     toast(hd === 'da_nhan' ? 'Đã ghi nhận. Khoá mở lại cho ' + ten + ' ngay.' : hd === 'gia_han' ? 'Đã gia hạn tới ' + ngayD(luu.han_dong) + '.' : 'Đã lưu.');
     await loadRoster();
   }
+  /* Hộp xác nhận đã nhận học phí — dùng cho cả tiền chuyển qua QR, chuyển ngoài hệ thống, tiền mặt (để không khoá nhầm) */
+  function xacNhanHocPhi(classId, sv, ten, lop) {
+    var mac = Math.round(Number(lop.hoc_phi) || 0);
+    dialog('Đã nhận học phí của ' + ten,
+      '<label class="f">Số tiền đã nhận (VND)<input id="fHpTien" type="number" min="0" step="1000" value="' + mac + '"><small>Mặc định là học phí lớp ' + vnd(mac) + '. Thu khác (giảm, chia đợt) thì sửa số.</small></label>'
+      + '<label class="f">Hình thức<select id="fHpKieu"><option value="Chuyển khoản theo QR">Chuyển khoản theo mã QR của app</option><option value="Chuyển khoản ngoài hệ thống">Chuyển khoản ngoài hệ thống (không có nội dung HP…)</option><option value="Tiền mặt">Tiền mặt</option><option value="Khác">Khác</option></select></label>'
+      + '<label class="f">Ghi chú (tuỳ chọn)<input id="fHpGhi" placeholder="vd: mẹ chuyển hộ, tên trên sao kê khác"></label>'
+      + '<p class="hint">Xác nhận xong, khoá này mở lại cho sinh viên ngay (nếu đang bị tạm đóng).</p>',
+      async function () {
+        var tien = Math.max(0, Math.round(Number(val('fHpTien')) || 0));
+        var ghi = [val('fHpKieu'), val('fHpGhi')].filter(Boolean).join(' — ');
+        var r = await sb.from('enrollments').update({ da_dong_at: new Date().toISOString(), so_tien: tien, ghi_chu_hp: ghi }).eq('class_id', classId).eq('student', sv);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã ghi nhận ' + vnd(tien) + ' của ' + ten + '.');
+        await loadRoster();
+      }, 'Xác nhận đã nhận');
+  }
+  /* Chờ duyệt: sinh viên MỌI lớp đã bấm "Tôi đã chuyển" mà chưa được xác nhận — duyệt một phát, không phải đi từng lớp */
+  async function loadChoDuyet() {
+    var box = $('choDuyet'); if (!box) return;
+    var r = await sb.from('enrollments').select('class_id, student, bao_chuyen_at, da_dong_at, so_tien, profiles(full_name, email, student_no), classes(name, hoc_phi)').not('bao_chuyen_at', 'is', null).is('da_dong_at', null);
+    if (r.error) { box.hidden = true; $('duyetN').hidden = true; return; }
+    var ds = (r.data || []).filter(function (e) { return e.bao_chuyen_at && !e.da_dong_at; }).sort(function (a, b) { return String(a.bao_chuyen_at).localeCompare(String(b.bao_chuyen_at)); });
+    $('duyetN').textContent = ds.length; $('duyetN').hidden = !ds.length;
+    box.hidden = !ds.length;
+    if (!ds.length) return;
+    box.innerHTML = '<div class="mats"><div class="bar" style="margin-bottom:6px"><b style="font-size:16px">Chờ duyệt học phí</b><span class="pill on">' + ds.length + '</span><span class="grow"></span><span class="hint" style="margin:0">Sinh viên bấm "Tôi đã chuyển" — đối chiếu sao kê rồi duyệt.</span></div>'
+      + '<table class="roster"><thead><tr><th>Sinh viên</th><th>Lớp</th><th>Số tiền</th><th>Báo lúc</th><th></th></tr></thead><tbody>'
+      + ds.map(function (e) {
+        var p = e.profiles || {}, c = e.classes || {};
+        return '<tr><td><b>' + esc(p.full_name || p.email || '') + '</b>' + (p.student_no ? ' <span class="hint" style="margin:0">' + esc(p.student_no) + '</span>' : '') + '</td><td>' + esc(c.name || '') + '</td><td>' + vnd(c.hoc_phi) + '</td><td>' + esc(new Date(e.bao_chuyen_at).toLocaleString('vi-VN')) + '</td>'
+          + '<td style="text-align:right"><button class="btn sm primary" data-duyet="' + e.class_id + '|' + e.student + '">✓ Duyệt</button> <button class="btn sm" data-boqua="' + e.class_id + '|' + e.student + '" title="Chưa thấy tiền: gỡ nhãn đã báo, sinh viên bấm lại được">Chưa thấy</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  $('choDuyet').addEventListener('click', async function (e) {
+    var d = e.target.closest('button[data-duyet]'), q = e.target.closest('button[data-boqua]');
+    if (d) {
+      var k = d.dataset.duyet.split('|'), tr = d.closest('tr');
+      var lop = classes.filter(function (x) { return x.id === k[0]; })[0] || {};
+      xacNhanHocPhi(k[0], k[1], tr.querySelector('b').textContent, lop);
+    } else if (q) {
+      var k2 = q.dataset.boqua.split('|');
+      var r = await sb.from('enrollments').update({ bao_chuyen_at: null }).eq('class_id', k2[0]).eq('student', k2[1]);
+      if (r.error) toast('Lỗi: ' + r.error.message); else { toast('Đã gỡ nhãn báo chuyển.'); await loadRoster(); }
+    }
+  });
+  /* 💰 học phí của lớp đang chọn — cùng luật với hộp Đổi tên lớp */
+  async function luuHocPhiLop(c, hp, hn) {
+    var moi = { hoc_phi: hp, han_ngay: hn };
+    if (hp !== (Number(c.hoc_phi) || 0)) moi.hoc_phi_tu = new Date().toISOString();
+    var r = await sb.from('classes').update(moi).eq('id', c.id);
+    if (r.error) return /hoc_phi|han_ngay/.test(r.error.message || '') ? 'Chạy schema_v26_hoc_phi.sql trước.' : r.error.message;
+    if (hp > 0) { try { var nhk = await sb.rpc('doc_ngan_hang'); if (!nhk.error && !(nhk.data && (nhk.data.stk || nhk.data.qr_anh))) toast('Chưa đặt ngân hàng nhận tiền — sinh viên sẽ không có QR để chuyển.', '💳 Đặt ngay', moNganHang); } catch (x) {} }
+    return '';
+  }
+  $('hocPhiLopBtn').addEventListener('click', function () {
+    var c = classes.filter(function (x) { return x.id === curClass; })[0]; if (!c) { toast('Chọn lớp trước.'); return; }
+    dialog('Học phí lớp “' + c.name + '”',
+      '<label class="f">Học phí (VND, 0 = không thu)<input id="fHocPhi" type="number" min="0" step="1000" value="' + (Number(c.hoc_phi) || 0) + '"></label>'
+      + '<label class="f">Được nợ (ngày)<input id="fHanNgay" type="number" min="0" max="365" value="' + (c.han_ngay == null ? 14 : c.han_ngay) + '"><small>Tính từ ngày ghi danh, hoặc từ hôm nay với sinh viên đã ghi danh trước khi m đặt/đổi học phí — không ai bị quá hạn ngay.</small></label>'
+      + '<p class="hint">Quá hạn chưa đóng: sinh viên chỉ thấy màn học phí của <b>lớp này</b>, các lớp khác vẫn học. Xác nhận đã nhận (kể cả chuyển ngoài hệ thống, tiền mặt) ở cột Học phí bên dưới hoặc bảng Chờ duyệt.</p>',
+      async function () {
+        var hp = Math.max(0, Math.round(Number(val('fHocPhi')) || 0)), hn = Math.max(0, Math.round(Number(val('fHanNgay')) || 0));
+        var loi = await luuHocPhiLop(c, hp, hn);
+        if (loi) { msg($('dlgMsg'), loi); return false; }
+        toast(hp > 0 ? 'Học phí ' + vnd(hp) + ', được nợ ' + hn + ' ngày.' : 'Lớp này không thu học phí.');
+        await loadClasses(); await loadRoster();
+      });
+  });
   /* ngân hàng nhận tiền — VietQR: sinh viên thấy mã có sẵn số tiền + nội dung; hoặc ảnh QR tự tải */
   var NGAN_HANG = [['970436', 'VCB', 'Vietcombank'], ['970415', 'ICB', 'VietinBank'], ['970418', 'BIDV', 'BIDV'], ['970405', 'VBA', 'Agribank'], ['970407', 'TCB', 'Techcombank'], ['970422', 'MB', 'MB Bank'], ['970416', 'ACB', 'ACB'], ['970432', 'VPB', 'VPBank'], ['970423', 'TPB', 'TPBank'], ['970403', 'STB', 'Sacombank'], ['970437', 'HDB', 'HDBank'], ['970441', 'VIB', 'VIB'], ['970443', 'SHB', 'SHB'], ['970426', 'MSB', 'MSB'], ['970448', 'OCB', 'OCB'], ['970440', 'SEAB', 'SeABank'], ['970431', 'EIB', 'Eximbank'], ['970449', 'LPB', 'LPBank'], ['970428', 'NAB', 'Nam A Bank'], ['970454', 'VCCB', 'BVBank'], ['970409', 'BAB', 'Bac A Bank'], ['970412', 'PVCB', 'PVcomBank'], ['970427', 'VAB', 'VietABank'], ['970425', 'ABB', 'ABBank'], ['970452', 'KLB', 'KienlongBank'], ['970429', 'SCB', 'SCB'], ['970419', 'NCB', 'NCB']];
   function khongDauHoa(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase().replace(/[^A-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); }
@@ -2495,7 +2563,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var box = $('roster');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     var r = await sb.from('enrollments')
-      .select('student, joined_at, han_dong, da_dong_at, so_tien, mien, bao_chuyen_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
+      .select('student, joined_at, han_dong, da_dong_at, so_tien, mien, bao_chuyen_at, ghi_chu_hp, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
       .eq('class_id', curClass);
     coHocPhi = !(r.error && /han_dong|da_dong_at|so_tien|mien|bao_chuyen_at/.test(r.error.message || ''));
     if (!coHocPhi) r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)').eq('class_id', curClass);
@@ -2519,6 +2587,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
     var ROLE = { student: 'Sinh viên', teacher: 'Giáo viên', admin: 'Quản trị' };
     var ngay = function (s) { try { return new Date(s).toLocaleString('vi-VN'); } catch (e) { return ''; } };
+    if (coHocPhi) loadChoDuyet(); else { $('choDuyet').hidden = true; $('duyetN').hidden = true; }
     var lopHP = classes.filter(function (x) { return x.id === curClass; })[0] || {}, thuHP = coHocPhi && (Number(lopHP.hoc_phi) || 0) > 0;
     $('hpTom').textContent = thuHP ? hpTomTat(roster, lopHP) : (coHocPhi ? 'Lớp không thu học phí' : '');
     box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Họ tên</th><th>Hồ sơ</th><th>Email</th>' + (thuHP ? '<th>Học phí</th>' : '') + '<th>Quyền</th><th>Thiết bị</th><th></th></tr></thead><tbody>'

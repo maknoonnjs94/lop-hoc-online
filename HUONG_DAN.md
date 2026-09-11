@@ -392,6 +392,12 @@ thì hạn của sinh viên đã ghi danh tính **từ hôm đó**, không ai b�
 *Nhắn Zalo giảng viên* lấy từ trang công khai). Máy chủ cũng không trả buổi/tài liệu/vé video của khoá đó. Các khoá khác của em đó
 vẫn học — thẻ lớp bị khoá có 🔒. Trang tự kiểm tra mỗi phút; m xác nhận là mở lại ngay.
 
+**Sinh viên đóng sớm:** thẻ **Học phí của bạn** ngay đầu trang chủ liệt kê mọi khoá có thu với nút *Chuyển khoản* — không phải đợi nhắc hay đợi khoá.
+
+**Duyệt nhanh:** đầu tab Sinh viên có bảng **Chờ duyệt học phí** gom mọi lớp (ai đã bấm *Tôi đã chuyển*), nút tab có số đếm; bấm **✓ Duyệt** →
+hộp xác nhận (số tiền, hình thức: QR / chuyển ngoài hệ thống / tiền mặt / khác, ghi chú). Học viên chuyển khoản ngoài hệ thống hay đưa tiền mặt
+thì vào cột Học phí của em đó bấm **✓ Đã nhận** và chọn hình thức tương ứng — không bị khoá nhầm. Số tiền của lớp đặt ở nút **💰 Học phí lớp này**.
+
 **Xác nhận:** tab Sinh viên → cột **Học phí**: `còn N ngày` / `quá hạn N ngày — đang khoá` / `đã đóng` / `miễn`, kèm nhãn **SV báo đã chuyển**
 khi em đó bấm nút. Nút **✓ Đã nhận** (hỏi số tiền, mặc định = học phí lớp) · **Gia hạn** (+N ngày từ hôm nay hoặc từ hạn hiện tại) ·
 **Miễn** / **Thu lại** · **Hoàn tác**. Thanh trên tab tóm tắt: `1.500.000 ₫ · 3 đã đóng · 2 còn hạn · 1 quá hạn · 1 báo đã chuyển`.
