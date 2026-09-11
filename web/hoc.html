@@ -248,6 +248,14 @@
   .kthe .duoi{ display:flex; align-items:center; gap:10px; margin-top:auto; flex-wrap:wrap }
   .kthe .duoi .btn{ min-height:40px; padding:8px 16px; font-size:14px }
   .kthe .tb{ font-size:13px; color:var(--muted); white-space:pre-wrap; border-left:3px solid var(--accent); padding-left:10px; max-height:3.2em; overflow:hidden }
+  .khoatom .khrow{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--ink); margin-bottom:8px; font:inherit }
+  .khoatom .khrow:hover{ border-color:var(--primary) } .khoatom .khrow.on{ border-color:var(--primary); background:var(--tint) }
+  .khoatom .khrow strong{ display:block; font-weight:800; font-size:14.5px } .khoatom .khrow small{ color:var(--muted); font-size:12.5px }
+  .khoatom .khrow .grow{ flex:1; min-width:0 }
+  .lopnhan{ color:var(--primary); font-weight:700 }
+  .today .lichrow{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--line) }
+  .today .lichrow:first-of-type{ border-top:0 } .today .lichrow p{ flex:1; min-width:160px; margin:0; color:var(--ink-2) }
+  .today .lichrow .tm{ font-size:18px; min-width:64px } .today .lichrow .tm small{ display:block; margin:0; font-size:11px }
   .classbar{ display:flex; gap:8px; overflow-x:auto; padding:0 0 14px; scrollbar-width:none }
   .classbar button{ padding:8px 15px; border-radius:999px; border:1px solid var(--line-2); background:var(--surface); color:var(--muted); font-size:13.5px; font-weight:700; white-space:nowrap }
   .classbar button.on{ background:var(--ink); border-color:var(--ink); color:var(--paper) }
@@ -772,8 +780,8 @@
     <aside class="side">
       <a class="brand" href="#" id="brandBtn"><img class="logo" src="img/logo.png" alt="" draggable="false" onerror="this.parentNode.classList.add('khong-logo')"><span class="ico-fallback"><span class="ico" data-ico="leaf"></span></span><span class="ten">Giảng đường<br>Hóa học</span></a>
       <nav class="nav" id="nav">
-        <button type="button" data-view="khoa"><span class="ico" data-ico="stack"></span>Khoá học<b id="navKhoaN" hidden>0</b></button>
         <button type="button" data-view="home" class="on"><span class="ico" data-ico="home"></span>Trang chủ</button>
+        <button type="button" data-view="khoa"><span class="ico" data-ico="stack"></span>Khoá học<b id="navKhoaN" hidden>0</b></button>
         <button type="button" data-view="lessons"><span class="ico" data-ico="video"></span>Bài giảng</button>
         <button type="button" data-view="tasks"><span class="ico" data-ico="clipboard"></span>Bài tập<b id="navTaskN" hidden>0</b></button>
         <button type="button" data-view="schedule"><span class="ico" data-ico="calendar"></span>Lịch học</button>
@@ -1458,7 +1466,6 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var nho = ''; try { nho = sessionStorage.getItem('hoc-lop-chon') || ''; } catch (e) {}
     if (!curClass && nho && classes.some(function (c) { return c.id === nho; })) curClass = nho;
     curClass = curClass && classes.some(function (c) { return c.id === curClass; }) ? curClass : classes[0].id;
-    if (classes.length >= 2 && !nho && view === 'home') view = 'khoa';   /* lần đầu vào app: nhìn cả các khoá trước */
     $('navKhoaN').textContent = classes.length; $('navKhoaN').hidden = classes.length < 2;
     taiTomTatKhoa();
     bar.innerHTML = classes.map(function (c) { return '<button type="button" data-c="' + c.id + '" class="' + (c.id === curClass ? 'on' : '') + (bKhoaHP(c.id) ? ' khoa' : '') + '" title="' + (bKhoaHP(c.id) ? 'Khoá này đang tạm đóng vì chưa nhận được học phí' : '') + '">' + esc(c.name) + '</button>'; }).join('');
@@ -1468,7 +1475,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   function capNhatTenLop() {
     var c = classes.filter(function (x) { return x.id === curClass; })[0];
-    $('helloSub').textContent = c ? (c.subject || c.name) + ' · sẵn sàng cho buổi học hôm nay?' : 'Sẵn sàng cho buổi học hôm nay?';
+    if (view !== 'home') $('helloSub').textContent = c ? (c.subject || c.name) + ' · sẵn sàng cho buổi học hôm nay?' : 'Sẵn sàng cho buổi học hôm nay?';
     classNotice = c ? String(c.notice || '') : '';
     batRealtimeLop();
   }
@@ -1484,13 +1491,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- Khoá học của tôi: tổng quan mọi khoá ----------------
      Lấy buổi + tài liệu + lượt xem của MỌI lớp một lượt (RLS tự lọc), gom theo lớp; thẻ nào cũng bấm vào được. */
-  var tomTat = {};
+  var tomTat = {}, tatCaBuoi = [];
   async function taiTomTatKhoa() {
     tomTat = {};
     try {
-      var rs = await sb.from('sessions').select('id, class_id, title, no, pinned, starts_at, created_at, materials(id, title, kind, open_at, created_at, deleted_at)').eq('published', true);
+      var rs = await sb.from('sessions').select('id, class_id, title, no, pinned, starts_at, held_on, note, created_at, materials(id, title, kind, open_at, order_no, created_at, deleted_at, nhan_bai, han_nop, o_tra_loi, cho_tai)').eq('published', true);
       var rv = await sb.from('view_events').select('material_id, class_id, progress').eq('user_id', me.id);
       var xem = {}; (rv.data || []).forEach(function (v) { xem[v.material_id] = v; });
+      tatCaBuoi = (rs.data || []).filter(function (s) { return !s.deleted_at; });
       var now = Date.now();
       (rs.data || []).forEach(function (s) {
         if (s.deleted_at) return;
@@ -1508,6 +1516,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       });
     } catch (e) {}
     if (view === 'khoa') renderKhoa();
+    if (view === 'home') renderHome();
   }
   function renderKhoa() {
     var box = $('khoaGrid');
@@ -1734,11 +1743,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       curSes = (ghim || sessions[0]).id;
     }
     renderView();
+    if (moSau) { var ms = moSau; moSau = null; if (ms.ses) { curSes = ms.ses; goView('lessons'); } else if (ms.id) openMaterial(ms.id, ms.kind, ms.title); }
   }
   async function taiLuotXem() {
     views = {};
     try {
-      var r = await sb.from('view_events').select('material_id, session_id, last_at, opens, progress, tong_giay, quy_them').eq('user_id', me.id).eq('class_id', curClass);
+      var r = await sb.from('view_events').select('material_id, session_id, last_at, opens, progress, tong_giay, quy_them').eq('user_id', me.id);
       (r.data || []).forEach(function (v) { views[v.material_id] = v; });
     } catch (e) {}
   }
@@ -1757,25 +1767,47 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (h >= 1) return 'mở sau ' + h + ' giờ ' + m + ' phút';
     return 'mở sau ' + Math.max(1, m) + ' phút';
   }
-  function nutMo(x, nhan) { var k = KIND[x.m.kind] || KIND.link; return '<button type="button" class="btn sm' + (nhan === 'Xem lại' ? ' sec' : '') + '" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '">' + nhan + '</button>'; }
+  function nutMo(x, nhan) { var k = KIND[x.m.kind] || KIND.link; return '<button type="button" class="btn sm' + (nhan === 'Xem lại' ? ' sec' : '') + '" data-open="' + x.m.id + '" data-kind="' + esc(x.m.kind) + '" data-title="' + esc(x.m.title || k.name) + '"' + (x.c ? ' data-lop="' + x.c.id + '"' : '') + '>' + nhan + '</button>'; }
+  /* mở một bài ở khoá bất kỳ: khác khoá đang chọn thì chuyển khoá, chờ nạp xong rồi mở */
+  var moSau = null;
+  function moTrongKhoa(lop, id, kind, title, ses) {
+    if (!lop || lop === curClass) { if (ses) { curSes = ses; goView('lessons'); } else openMaterial(id, kind, title); return; }
+    moSau = { id: id, kind: kind, title: title, ses: ses };
+    vaoKhoa(lop);
+  }
 
   /* ---------------- TRANG CHỦ ---------------- */
   var QUIP = ['Kiến thức hôm nay mở ra nhiều điều thú vị!', 'Mỗi bài nhỏ đều góp vào bức tranh lớn.', 'Học đều còn hơn học dồn.', 'Chỗ nào chưa hiểu, hỏi ngay, đừng để dồn.'];
+  /* ---------------- TRANG CHỦ: tổng quan cả tài khoản ----------------
+     Gom mọi khoá: bài đang dở (ở khoá nào), khoá nào vừa đăng bài, hạn nộp, lịch, bài tập cần làm, mục tiêu tuần.
+     Mỗi dòng ghi tên khoá; bấm là nhảy sang khoá đó rồi mở đúng bài. Dữ liệu từ tatCaBuoi (mọi lớp) + views (mọi lớp). */
+  function tenLopCua(cid) { var c = classes.filter(function (x) { return x.id === cid; })[0]; return c ? c.name : ''; }
+  function tatCaKhoa(loc) {
+    var out = [];
+    tatCaBuoi.forEach(function (s) {
+      var c = classes.filter(function (x) { return x.id === s.class_id; })[0]; if (!c) return;
+      (s.materials || []).forEach(function (m) { if (m.deleted_at) return; if (!loc || loc(m, s, c)) out.push({ m: m, s: s, c: c }); });
+    });
+    return out;
+  }
+  function dongLop(x) { return classes.length >= 2 ? '<span class="lopnhan">' + esc(x.c.name) + '</span> · ' : ''; }
   function renderHome() {
     var now = Date.now(), html = '';
-    var skin = document.documentElement.dataset.skin || 'mint';
-    /* Tiếp tục học: bài đang dở gần nhất; không có thì bài mới nhất chưa xem */
+    var nhieu = classes.length >= 2;
+    /* --- đang học dở gần nhất ở BẤT KỲ khoá nào; không có thì bài mới nhất chưa xem --- */
     var doDang = null;
-    tatCa(function (m) { return moKhoa(m, now); }).forEach(function (x) {
+    tatCaKhoa(function (m) { return moKhoa(m, now); }).forEach(function (x) {
       var v = views[x.m.id]; if (!v || !v.progress || v.progress.done) return;
       var pr = v.progress; if (!(pr.page > 1 || pr.seconds > 30)) return;
-      if (!doDang || new Date(v.last_at) > new Date(doDang.v.last_at)) doDang = { m: x.m, s: x.s, v: v };
+      if (!doDang || new Date(v.last_at) > new Date(doDang.v.last_at)) doDang = { m: x.m, s: x.s, c: x.c, v: v };
     });
-    var moiNhat = tatCa(function (m) { return moKhoa(m, now) && !daXem(m); }).sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); })[0];
+    var moiNhat = tatCaKhoa(function (m) { return moKhoa(m, now) && !daXem(m); }).sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); })[0];
     var hero = doDang || moiNhat || null;
     var hk = hero ? (KIND[hero.m.kind] || KIND.link) : null;
-    /* Sắp tới hạn nộp — để lên trên cùng, vì đây là thứ có thời hạn duy nhất trên trang. */
-    var han = sapToiHan();
+    /* --- hạn nộp mọi khoá --- */
+    var han = [];
+    tatCaKhoa(function (m) { return moKhoa(m, now); }).forEach(function (x) { var d = conHan(x.m); if (d != null && d <= 7 * 864e5) han.push({ m: x.m, s: x.s, c: x.c, con: d }); });
+    han.sort(function (a, b) { return a.con - b.con; });
     if (han.length) {
       var gap = han[0].con <= 864e5;
       html += '<div class="pcard hancard' + (gap ? ' gap' : '') + '" style="grid-column:1/-1">'
@@ -1783,73 +1815,103 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + han.slice(0, 3).map(function (x) {
             var k = KIND[x.m.kind] || KIND.link, g2 = x.con <= 864e5;
             return '<div class="hanrow"><span class="g"><b>' + esc(x.m.title || k.name) + '</b>'
-              + '<small>' + esc(tenBuoi(x.s)) + ' · hạn ' + fmtWhen(x.m.han_nop) + '</small></span>'
+              + '<small>' + dongLop(x) + esc(tenBuoi(x.s)) + ' · hạn ' + fmtWhen(x.m.han_nop) + '</small></span>'
               + '<span class="hanpill' + (g2 ? ' gap' : '') + '">' + chuConLai(x.con) + '</span>'
               + nutMo(x, 'Nộp bài') + '</div>';
           }).join('')
         + (han.length > 3 ? '<div class="hanrow"><span class="g"><small>và ' + (han.length - 3) + ' bài nữa trong tuần này</small></span></div>' : '')
         + '</div>';
     }
+    /* --- hero: tiếp tục học --- */
     html += '<div class="pcard hero' + (avatarNay.indexOf('boy') === 0 ? ' trai' : '') + '">'
       + '<div class="copy"><span class="eyebrow"><span class="ico">' + I.play + '</span>' + (doDang ? 'Tiếp tục học' : (hero ? 'Bài mới' : 'Giảng đường Hóa học')) + '</span>'
       + '<h2>' + (hero ? esc(hero.m.title || hk.name) : 'Chưa có bài nào để học') + '</h2>'
-      + '<p>' + (hero ? esc(tenBuoi(hero.s)) + ' · ' + (doDang ? esc(tienDoChu(hero.m)) : hk.name) : 'Giảng viên giao bài là hiện ở đây.') + '</p>'
+      + '<p>' + (hero ? (nhieu ? '<b>' + esc(hero.c.name) + '</b> · ' : '') + esc(tenBuoi(hero.s)) + ' · ' + (doDang ? esc(tienDoChu(hero.m)) : hk.name) : 'Giảng viên giao bài là hiện ở đây.') + '</p>'
       + (hero ? nutMo(hero, doDang ? 'Tiếp tục học' : 'Bắt đầu').replace('class="btn sm"', 'class="btn"') : '')
       + '<div class="quip">' + esc(QUIP[new Date().getDate() % QUIP.length]) + '</div></div>'
       + '<div class="art">' + anhCanh('hoc', 'Bạn đang học bài') + '</div></div>';
-    /* Lịch hôm nay: buổi có giờ bắt đầu hôm nay, hoặc ngày dạy là hôm nay */
-    var homNay = sessions.filter(function (s) { return (s.starts_at && cungNgay(s.starts_at, now)) || (s.held_on && cungNgay(s.held_on + 'T12:00:00', now)); })
-      .sort(function (a, b) { return new Date(a.starts_at || 0) - new Date(b.starts_at || 0); })[0];
-    html += '<div class="pcard today"><h2><span class="ico">' + I.calendar + '</span>Lịch hôm nay</h2>' + lic(homNay ? 'live-class' : 'calendar', 66);
-    if (homNay) {
-      html += '<div class="tm">' + (homNay.starts_at ? gioPhut(homNay.starts_at) : 'Hôm nay') + '<small>' + esc(tenLop()) + '</small></div>'
-        + '<p>' + esc(tenBuoi(homNay)) + (homNay.note ? ' — ' + esc(homNay.note.slice(0, 90)) : '') + '</p>'
-        + '<button type="button" class="btn" data-ses="' + homNay.id + '"><span class="ico">' + I.camera + '</span>Vào buổi học</button>';
-    } else {
-      var sap = sessions.filter(function (s) { return s.starts_at && new Date(s.starts_at) > now; }).sort(function (a, b) { return new Date(a.starts_at) - new Date(b.starts_at); })[0];
-      html += '<p>' + (sap ? 'Hôm nay chưa có lịch. Buổi tới: <b>' + esc(tenBuoi(sap)) + '</b> lúc ' + esc(fmtWhen(sap.starts_at)) + '.' : 'Hôm nay chưa có lịch. Cứ học theo nhịp của bạn.') + '</p>'
-        + '<button type="button" class="btn sec" data-goview="schedule"><span class="ico">' + I.calendar + '</span>Xem lịch học</button>';
-    }
-    html += '</div>';
-    /* ba ô nhanh */
-    var chuaXong = tatCa(function (m) { return moKhoa(m, now) && (m.kind === 'pdf' || m.kind === 'answer') && !xemXong(m); });
+    /* --- khoá học của bạn (cột phải) --- */
+    html += '<div class="pcard khoatom"><h2><span class="ico">' + I.stack + '</span>' + (nhieu ? 'Bạn đang học ' + classes.length + ' khoá' : 'Khoá học của bạn') + '<button type="button" class="more" data-goview="khoa">Xem tất cả <span class="ico">' + I.arrow + '</span></button></h2>'
+      + (classes.length ? classes.map(function (c) {
+          var t = tomTat[c.id] || { buoi: 0, tl: 0, xong: 0, moi: 0 }, hp = hpCua(c.id), pct = t.tl ? Math.round(100 * t.xong / t.tl) : 0;
+          var nhan = bKhoaHP(c.id) ? '<span class="ppill" style="background:var(--danger-soft);color:var(--danger)">Tạm đóng</span>' : (t.moi ? '<span class="ppill new">' + t.moi + ' mới</span>' : (hp && hp.trang_thai === 'chua_han' ? '<span class="ppill doing">Học phí ' + Math.max(0, conNgay(hp.han)) + ' ngày</span>' : ''));
+          return '<button type="button" class="khrow' + (c.id === curClass && nhieu ? ' on' : '') + '" data-vaokhoa="' + c.id + '"><span class="grow"><strong>' + esc(c.name) + '</strong><small>' + t.buoi + ' buổi · ' + t.tl + ' tài liệu · ' + pct + '% đã xong</small></span>' + nhan + '</button>';
+        }).join('') : '<p>Chưa ở trong khoá nào.</p>')
+      + '</div>';
+    /* --- ba ô nhanh (mọi khoá) --- */
+    var chuaXong = tatCaKhoa(function (m) { return moKhoa(m, now) && (m.kind === 'pdf' || m.kind === 'answer') && !xemXong(m); });
     var nTask = chuaXong.length;
-    var nMoi = tatCa(function (m) { return moKhoa(m, now) && laMoi(m); }).length;
+    var nMoi = tatCaKhoa(function (m) { return moKhoa(m, now) && laMoi(m); }).length;
     html += '<div class="quick">'
       + '<button type="button" class="qcard" data-goview="tasks">' + lic('homework', 84) + '<strong>Bài tập</strong><small>' + (nTask ? nTask + ' phiếu chưa xong' : 'Đã xong hết') + '</small></button>'
-      + '<button type="button" class="qcard" data-goview="lessons">' + lic('video-lesson', 84) + '<strong>Xem bài giảng</strong><small>' + (nMoi ? nMoi + ' bài mới' : 'Học mọi lúc, mọi nơi') + '</small></button>'
-      + '<button type="button" class="qcard" data-goview="lessons">' + lic('documents', 84) + '<strong>Tài liệu</strong><small>' + tatCa(function (m) { return moKhoa(m, now); }).length + ' tài liệu đã mở</small></button>'
+      + '<button type="button" class="qcard" data-goview="lessons">' + lic('video-lesson', 84) + '<strong>Bài giảng</strong><small>' + (nMoi ? nMoi + ' bài mới' : 'Học mọi lúc, mọi nơi') + '</small></button>'
+      + '<button type="button" class="qcard" data-goview="khoa">' + lic('classroom', 84) + '<strong>Khoá học</strong><small>' + (nhieu ? classes.length + ' khoá đang học' : (classes[0] ? esc(classes[0].name) : 'Chưa có')) + '</small></button>'
       + '</div>';
-    /* bài tập cần làm */
+    /* --- vừa đăng (mọi khoá) --- */
+    var vua = tatCaKhoa(function (m) { return moKhoa(m, now); }).sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); }).slice(0, 5);
+    html += '<div class="pcard tasks"><h2><span class="ico">' + I.sprout + '</span>Vừa đăng</h2>';
+    if (!vua.length) html += '<p>Chưa có bài nào.</p>';
+    else html += vua.map(function (x) {
+      var k = KIND[x.m.kind] || KIND.link;
+      return '<div class="prow ' + k.cls + '"><span class="fi"><span class="ico">' + I[k.ic] + '</span></span><span class="grow"><strong>' + esc(x.m.title || k.name) + '</strong><small>' + dongLop(x) + esc(tenBuoi(x.s)) + ' · ' + k.name + ' · ' + esc(baoLau(x.m.created_at)) + '</small></span>'
+        + (laMoi(x.m) ? '<span class="ppill new">Mới</span>' : (daXem(x.m) ? '<span class="ppill doing">' + esc(tienDoChu(x.m)) + '</span>' : ''))
+        + nutMo(x, daXem(x.m) ? 'Xem lại' : 'Mở') + '</div>';
+    }).join('');
+    html += '</div>';
+    /* --- lịch: hôm nay hoặc buổi tới, mọi khoá --- */
+    var lich = tatCaBuoi.filter(function (s) { return (s.starts_at && new Date(s.starts_at).getTime() > now - 3600e3) || (s.held_on && cungNgay(s.held_on + 'T12:00:00', now)); })
+      .sort(function (a, b) { return new Date(a.starts_at || a.held_on) - new Date(b.starts_at || b.held_on); }).slice(0, 3);
+    html += '<div class="pcard today"><h2><span class="ico">' + I.calendar + '</span>Lịch sắp tới</h2>' + lic(lich.length ? 'live-class' : 'calendar', 66);
+    if (lich.length) {
+      html += lich.map(function (s) {
+        var homNay = s.starts_at ? cungNgay(s.starts_at, now) : true;
+        return '<div class="lichrow"><span class="tm">' + (s.starts_at ? (homNay ? gioPhut(s.starts_at) : fmtWhen(s.starts_at)) : 'Hôm nay') + (homNay ? '<small>hôm nay</small>' : '') + '</span>'
+          + '<p><b>' + esc(tenBuoi(s)) + '</b>' + (nhieu ? ' · ' + esc(tenLopCua(s.class_id)) : '') + (s.note ? ' — ' + esc(String(s.note).slice(0, 80)) : '') + '</p>'
+          + '<button type="button" class="btn sm" data-ses="' + s.id + '" data-lop="' + s.class_id + '"><span class="ico">' + I.camera + '</span>Vào buổi học</button></div>';
+      }).join('');
+    } else html += '<p>Chưa có lịch sắp tới. Cứ học theo nhịp của bạn.</p><button type="button" class="btn sec" data-goview="schedule"><span class="ico">' + I.calendar + '</span>Xem lịch học</button>';
+    html += '</div>';
+    /* --- bài tập cần làm (mọi khoá) --- */
     var tasks = chuaXong.slice().sort(function (a, b) { return new Date(b.m.created_at) - new Date(a.m.created_at); }).slice(0, 5);
     html += '<div class="pcard tasks"><h2><span class="ico">' + I.clipboard + '</span>Bài tập cần làm<button type="button" class="more" data-goview="tasks">Xem tất cả <span class="ico">' + I.arrow + '</span></button></h2>';
     if (!tasks.length) html += khoanhKhac('trong', 'Thảnh thơi rồi!', 'Chưa có bài tập mới. Giảng viên giao bài là hiện ở đây, kèm thông báo tới máy bạn.', 'Xem bài giảng', 'lessons');
     else html += tasks.map(function (x) {
       var k = KIND[x.m.kind] || KIND.link, v = views[x.m.id];
-      return '<div class="prow ' + k.cls + '"><span class="fi"><span class="ico">' + I[k.ic] + '</span></span><span class="grow"><strong>' + esc(x.m.title || k.name) + '</strong><small>' + esc(tenBuoi(x.s)) + ' · ' + k.name + '</small></span>'
+      return '<div class="prow ' + k.cls + '"><span class="fi"><span class="ico">' + I[k.ic] + '</span></span><span class="grow"><strong>' + esc(x.m.title || k.name) + '</strong><small>' + dongLop(x) + esc(tenBuoi(x.s)) + ' · ' + k.name + '</small></span>'
         + (laMoi(x.m) ? '<span class="ppill new">Mới</span>' : (v ? '<span class="ppill doing">' + esc(tienDoChu(x.m)) + '</span>' : ''))
         + nutMo(x, v ? 'Làm tiếp' : 'Làm bài') + '</div>';
     }).join('');
     html += '</div>';
-    /* mục tiêu tuần: bài đẩy lên trong 7 ngày qua; không có thì lấy buổi đang học */
-    var tuan = tatCa(function (m) { return moKhoa(m, now) && new Date(m.created_at || 0).getTime() > now - 7 * 86400000; });
+    /* --- mục tiêu tuần (mọi khoá) --- */
+    var tuan = tatCaKhoa(function (m) { return moKhoa(m, now) && new Date(m.created_at || 0).getTime() > now - 7 * 86400000; });
     var nhan = 'bài tuần này';
-    if (!tuan.length) { var s0 = sessions.filter(function (s) { return s.id === curSes; })[0]; tuan = s0 ? (s0.materials || []).filter(function (m) { return moKhoa(m, now); }).map(function (m) { return { m: m, s: s0 }; }) : []; nhan = 'bài của buổi đang học'; }
+    if (!tuan.length) { tuan = tatCaKhoa(function (m) { return moKhoa(m, now); }).slice(0, 12); nhan = 'bài gần đây'; }
     var done = tuan.filter(function (x) { return daXem(x.m); }).length, tot = tuan.length, pct = tot ? Math.round(100 * done / tot) : 0;
     html += '<div class="pcard weekly"><h2><span class="ico">' + I.star + '</span>Mục tiêu tuần</h2>' + (pct >= 100 && tot ? anhCanh('xong', 'Hoàn thành mục tiêu') : lic('progress', 76))
       + '<span class="num">' + done + ' / ' + tot + '</span><span class="sub">' + nhan + ' đã mở</span>'
       + '<div class="meter"><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + pct + '%</span></div>'
       + '<div class="gentle"><span class="ico">' + I.sprout + '</span>' + (pct >= 100 && tot ? 'Xong hết rồi. Nghỉ một chút cũng xứng đáng.' : 'Kiên trì mỗi ngày để chinh phục mục tiêu nhé!') + '</div></div>';
     $('homeGrid').innerHTML = html;
-    /* thẻ Học phí gọn ngay đầu trang, dưới thông báo GV: mọi khoá có thu, chuyển sớm khoá nào cũng được */
+    /* đầu trang: thông báo của TỪNG khoá có thông báo, rồi thẻ học phí */
     var the = hpThe(); if (the) $('homeGrid').insertAdjacentHTML('afterbegin', the);
-    if (classNotice.trim()) $('homeGrid').insertAdjacentHTML('afterbegin', '<div class="notice" style="grid-column:1/-1"><b>Thông báo từ giảng viên</b>' + esc(classNotice.trim()) + '</div>');
+    classes.slice().reverse().forEach(function (c) {
+      var tb = String(c.notice || '').trim(); if (!tb) return;
+      $('homeGrid').insertAdjacentHTML('afterbegin', '<div class="notice" style="grid-column:1/-1"><b>Thông báo từ giảng viên' + (nhieu ? ' · ' + esc(c.name) : '') + '</b>' + esc(tb) + '</div>');
+    });
+    $('hello').textContent = 'Chào ' + (tenDau(profile.full_name) || 'bạn') + '!';
+    $('helloSub').textContent = nhieu ? 'Bạn đang học ' + classes.length + ' khoá' + (nMoi ? ' · ' + nMoi + ' bài mới' : '') + (nTask ? ' · ' + nTask + ' phiếu chưa xong' : '') + '.' : ((classes[0] ? (classes[0].subject || classes[0].name) + ' · ' : '') + 'sẵn sàng cho buổi học hôm nay?');
     $('navTaskN').textContent = nTask; $('navTaskN').hidden = !nTask;
   }
+  function baoLau(ts) {
+    var d = Date.now() - new Date(ts || 0).getTime(); if (!(d >= 0)) return '';
+    var m = Math.floor(d / 60000), g = Math.floor(m / 60), ng = Math.floor(g / 24);
+    return ng >= 2 ? ng + ' ngày trước' : ng === 1 ? 'hôm qua' : g >= 1 ? g + ' giờ trước' : m >= 1 ? m + ' phút trước' : 'vừa xong';
+  }
   $('viewHome').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-open]'); if (b) { openMaterial(b.dataset.open, b.dataset.kind, b.dataset.title); return; }
+    var b = e.target.closest('[data-open]'); if (b) { moTrongKhoa(b.dataset.lop, b.dataset.open, b.dataset.kind, b.dataset.title); return; }
     var g = e.target.closest('[data-goview]'); if (g) { goView(g.dataset.goview); return; }
-    var s = e.target.closest('[data-ses]'); if (s) { curSes = s.dataset.ses; goView('lessons'); }
+    var kh = e.target.closest('[data-vaokhoa]'); if (kh) { vaoKhoa(kh.dataset.vaokhoa); return; }
+    var s = e.target.closest('[data-ses]'); if (s) { moTrongKhoa(s.dataset.lop, null, null, null, s.dataset.ses); }
   });
 
   /* ---------------- BÀI GIẢNG: hai cột ---------------- */
