@@ -13,13 +13,14 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 ## Trạng thái hiện tại (2026-09-11)
 
 Đang chạy trên web:
-- **Trang học sinh viên** — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** máy chấm đúng/sai, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
-- **Trang quản trị** — Buổi học / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
+- **Trang học sinh viên** — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** có bộ gõ công thức (₂ ⁻ × → …), máy chấm hiểu mọi cách viết số khoa học, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
+- **Trang quản trị** — Buổi học (xoá mềm, Hoàn tác, 🗑 Thùng rác giữ 30 ngày) / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
 - **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` — đang ở **đợt 85**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc.
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.16** — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v23** đều `true` trên `/api/trang-thai` (kiểm 11/9). Không còn schema nào treo.
+**SQL:** v9 → **v24** đều `true` trên `/api/trang-thai` (kiểm 11/9, máy chấm thật 10/10 phép qua RPC). Không còn schema nào treo.
+**Tên miền riêng:** mã đã sẵn (`TEN_MIEN`), chưa có tên miền — theo `HUONG_DAN_TEN_MIEN.md`.
 
 Tự kiểm sau này, khỏi mở Supabase:
 
@@ -84,7 +85,7 @@ Các tab Theo dõi / Hồ sơ lọc thứ đã xoá qua `boThungRac()`.
 - `confirm()` trong pane ẩn trả về false → nộp bài bị chặn khi còn ô trống; phải điền đủ.
 - Stub trong `tao-ban-thu.js` nằm trong template literal → regex phải viết `\\` (đã dính lần nữa).
 
-**M phải làm:** chạy `schema_v24_thung_rac_bo_go.sql` rồi `curl …/api/trang-thai` phải thấy `v24_thung_rac_bo_go: true`.
+**Đã chạy** `schema_v24_thung_rac_bo_go.sql` (11/9): `/api/trang-thai` báo `v24_thung_rac_bo_go: true`; gọi thẳng `rpc/cham_mot_o` bằng khoá publishable đủ 10/10 phép (dung/gan/sai đúng như bộ thử Node).
 Tên miền thì theo `HUONG_DAN_TEN_MIEN.md` khi nào m có tên miền.
 
 ---
