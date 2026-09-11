@@ -41,6 +41,17 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Rà bảo mật cơ bản
+
+M sợ "bị đánh sập tên miền và app". Kiểm từ ngoài: 16 bảng đọc bằng khoá anon → 14 rỗng, 2 bị từ chối (`cau_hinh_he_thong`, `dang_ky`);
+insert anon bị RLS chặn; kho GitHub **đang public**; **signup đang mở** (`/auth/v1/signup` tạo được user thật → m phải tắt + xoá user thử);
+DNSSEC chưa bật; trang chưa có security headers. Đã sửa trong mã: `_headers` thêm HSTS 1 năm, X-Frame-Options DENY, nosniff,
+Referrer-Policy, Permissions-Policy (kiểm live đủ 5); `run_worker_first` đổi từ `true` sang mảng `["/", "/index.html", "/api/*"]` để tệp
+tĩnh không ăn hạn mức Worker (đã kiểm: UA app mở `/` vẫn ra trang học, landing, /hoc, /api, img đều 200). Việc phải bật tay ở dashboard
+ghi thành bảng 7 dòng trong sổ tay mục *Bảo mật cơ bản*. Không có gì cần SQL.
+
+---
+
 ## 2026-09-12 — Sao lưu tự động (C8) + nhật ký lỗi phía SV (C9) — v28; duyệt từng khoá (v27d)
 
 - **SQL v28** `schema_v28_sao_luu_loi_khach.sql`: bucket Storage `sao-luu` (riêng tư, policy `sl_doc` staff select; ghi bằng khoá

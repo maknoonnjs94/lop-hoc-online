@@ -507,6 +507,32 @@ Sinh viên đăng nhập lần đầu, hệ thống ghi nhớ chiếc máy đó;
 - **Đổi máy thật / cài lại Windows**: vào Quản trị → tab **Sinh viên** → dòng của người đó → **Gỡ**. Xong là họ đăng nhập được ở máy mới.
 - Cột *Thiết bị* ghi rõ "đã gắn máy (app)" hay "đã gắn máy" (trình duyệt), rê chuột lên xem giờ gắn.
 
+## Bảo mật cơ bản — rà 12/9/2026
+
+**Đã có sẵn trong mã (kiểm từ ngoài):** mọi bảng dữ liệu đọc bằng khoá công khai đều trả rỗng hoặc bị từ chối (RLS); không chèn được
+dòng nào khi chưa đăng nhập; khoá quản trị chỉ nằm trong secret của Cloudflare; HTTPS bắt buộc một năm (HSTS), không trang nào
+nhúng được trang mình (X-Frame-Options), `nosniff`, không lộ địa chỉ khi bấm link ngoài; `/quan-tri` và `/so-bai-tap` không cho máy tìm
+kiếm lập chỉ mục và không có link dẫn tới; form đăng ký có bẫy máy điền + 5 đơn/IP/giờ; Worker chỉ chạy cho `/`, `/index.html`, `/api/*`
+(tệp tĩnh Cloudflare trả thẳng, không vét được hạn mức 100.000 yêu cầu/ngày); DDoS tầng mạng Cloudflare tự chặn không giới hạn.
+
+**Việc m phải bật tay (t không vào được các bảng điều khiển):**
+
+| # | Ở đâu | Làm gì | Vì sao |
+|---|---|---|---|
+| 1 | Supabase → Authentication → Sign In / Providers → Email | **Tắt "Allow new users to sign up"** | Hiện ai cũng tự tạo được tài khoản bằng khoá công khai (t đã thử được — xoá tài khoản `kiemthu.baomat@giangduonghoahoc.com` ở Authentication → Users). Tạo tài khoản qua Quản trị vẫn chạy vì đi bằng khoá quản trị. |
+| 2 | Cloudflare, Supabase, GitHub | **Bật xác thực 2 bước (2FA)** cả ba | Mất tài khoản Cloudflare = mất tên miền + Worker + R2; mất Supabase = mất toàn bộ dữ liệu. Đây là cách duy nhất "đánh sập" thực tế. |
+| 3 | Cloudflare → Domain Registration → giangduonghoahoc.com | Auto-renew **On**, thẻ còn hạn; DNS → Settings → **DNSSEC → Enable** (một nút) | Tên miền hết hạn là mất; DNSSEC chống giả mạo DNS (hiện chưa bật). |
+| 4 | GitHub → repo lop-hoc-online → Settings → Danger zone | **Change visibility → Private** | Kho đang công khai: không lộ khoá, nhưng lộ toàn bộ mã cho người muốn tìm sơ hở. Cloudflare Builds vẫn chạy với repo private. |
+| 5 | Cloudflare → Security → Bots | **Bot Fight Mode → On** | Chặn bot dò quét tự động, miễn phí. |
+| 6 | Cloudflare → Security → WAF → Rate limiting rules | Một luật: đường `/api/*` quá **60 yêu cầu/phút/IP** → chặn 10 phút | Gói free được 1 luật; chặn spam đăng ký/đăng nhập ở tầng Cloudflare trước khi tới Worker. |
+| 7 | Cloudflare → Overview | Biết chỗ **Under Attack Mode** | Khi bị dội lượt truy cập bất thường: bật, mọi khách phải qua màn kiểm 5 giây; tắt khi yên. |
+
+**Giới hạn gói miễn phí cần để mắt:** Supabase free tạm dừng dự án nếu **7 ngày không có yêu cầu** (sao lưu tuần + sinh viên học là đủ
+giữ sống); băng thông 5 GB/tháng (PDF, ảnh); Cloudflare Workers 100.000 yêu cầu/ngày cho `/api/*`. Vượt thì nâng gói, không mất dữ liệu.
+
+**Không làm được ở mức miễn phí:** ký số app (Windows vẫn hỏi More info → Run anyway), chống chụp bằng điện thoại, chặn hoàn toàn
+người có tài khoản hợp lệ chia sẻ nội dung — dấu chìm tên là để truy nguồn.
+
 ## Những điều không được làm
 
 - Không dán khoá `service_role` vào bất kỳ file nào đưa lên mạng.
