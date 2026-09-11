@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="img/favicon.png">
 <!-- Thêm vào màn hình chính điện thoại (bản quản trị, mở thẳng vào /quan-tri). -->
 <link rel="manifest" href="manifest-quan-tri.json">
+<meta name="robots" content="noindex, nofollow">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="apple-touch-icon" href="img/app-180.png">
 <meta name="theme-color" content="#0f766e">
@@ -2476,7 +2477,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function tckRow(loai, o) {
     o = o || {};
     var fs = "";
-    if (loai === "khoa_hoc") fs = tckF("ten", "Tên khoá", o.ten) + tckF("trang_thai", "Trạng thái", o.trang_thai || "dang_mo", "tt") + tckF("lich", "Lịch (vd: Kì 1 · 2026–2027)", o.lich) + tckF("doi_tuong", "Dành cho", o.doi_tuong) + tckF("mo_ta", "Mô tả ngắn", o.mo_ta, "textarea", true);
+    if (loai === "khoa_hoc") fs = tckF("ten", "Tên khoá", o.ten) + tckF("trang_thai", "Trạng thái", o.trang_thai || "dang_mo", "tt") + tckF("lich", "Lịch (vd: Kì 1 · 2026–2027)", o.lich) + tckF("doi_tuong", "Dành cho", o.doi_tuong) + tckF("zalo", "Link Zalo của khoá (nhóm lớp, tuỳ chọn)", o.zalo) + tckF("zalo_nhan", "Chữ trên nút (mặc định: Zalo khoá học)", o.zalo_nhan) + tckF("mo_ta", "Mô tả ngắn", o.mo_ta, "textarea", true);
     else if (loai === "cach_dung") fs = tckF("tieu_de", "Tiêu đề bước", o.tieu_de, null, true) + tckF("mo_ta", "Nội dung", o.mo_ta, "textarea", true);
     else fs = tckF("hoi", "Câu hỏi", o.hoi, null, true) + tckF("dap", "Trả lời", o.dap, "textarea", true);
     return '<div class="row" data-loai="' + loai + '"><div class="fs">' + fs + '</div><button type="button" class="btn sm danger xoa" title="Bỏ dòng này">✕</button></div>';
@@ -2491,7 +2492,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $("tckBox").innerHTML =
       '<div class="card" data-khoi="gioi_thieu"><h3>Lời mở đầu</h3><div class="phu">Hiện ngay đầu trang, dưới tên Giảng đường.</div><div class="lh">'
         + tckF("khau_hieu", "Khẩu hiệu (không cần ngoặc kép)", gt.khau_hieu, null, true) + tckF("mo_ta", "Đoạn giới thiệu (2–3 câu)", gt.mo_ta, "textarea", true) + "</div></div>"
-      + tckKhoi("khoa_hoc", "Khoá học", "Mỗi khoá một thẻ; nút Đăng ký dẫn tới Zalo bên dưới.", d.khoa_hoc, "Thêm khoá")
+      + tckKhoi("khoa_hoc", "Khoá học", "Mỗi khoá một thẻ. Có link Zalo của khoá thì nút chính dẫn vào đó (nhóm lớp), nút phụ nhắn giảng viên; không có thì nút Đăng ký dẫn tới Zalo ở mục Liên hệ.", d.khoa_hoc, "Thêm khoá")
       + tckKhoi("cach_dung", "Cách học — các bước", "Đánh số tự động theo thứ tự.", d.cach_dung, "Thêm bước")
       + tckKhoi("hoi_dap", "Hỏi đáp nhanh", "Câu đầu tiên mở sẵn, các câu sau gấp lại.", d.hoi_dap, "Thêm câu")
       + '<div class="card" data-khoi="lien_he"><h3>Liên hệ</h3><div class="phu">Số Zalo hiện to ở mục Liên hệ; có link zalo.me thì nút Nhắn Zalo dùng link đó.</div><div class="lh">'

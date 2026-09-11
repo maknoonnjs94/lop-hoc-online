@@ -121,7 +121,7 @@
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pill.sap{ color:var(--peach) } }
   .khoa dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13.5px }
   .khoa dt{ color:var(--muted); font-weight:600 } .khoa dd{ margin:0; color:var(--ink-2) }
-  .khoa .card .btn{ align-self:flex-start; margin-top:auto }
+  .khoa .card .cta{ margin-top:auto; padding-top:4px }
 
   /* cách dùng */
   .buoc{ display:grid; gap:14px; grid-template-columns:repeat(4, 1fr); counter-reset:b }
@@ -247,7 +247,6 @@
   <div class="wrap">
     <span>© <span id="nam"></span> Giảng đường Hóa học · GV. Phạm Anh Ngọc</span>
     <a href="tai-app.html">Tải ứng dụng</a>
-    <a class="grow" href="quan-tri.html" rel="nofollow">Giảng viên</a>
   </div>
 </footer>
 
@@ -283,6 +282,15 @@
   };
 
   var TT = { dang_mo: ['Đang mở', ''], sap_mo: ['Sắp mở', 'sap'], ket_thuc: ['Đã kết thúc', 'ket'] };
+  /* Nút dưới mỗi khoá: link Zalo riêng của khoá (nhóm lớp) nếu giảng viên điền, rồi tới Zalo giảng viên. Khoá đã kết thúc: không nút. */
+  function nutKhoa(k, zaloGV) {
+    if (k.trang_thai === 'ket_thuc') return '';
+    var lk = /^https?:\/\//.test(String(k.zalo || '')) ? k.zalo : '', nut = [];
+    if (lk) nut.push('<a class="btn primary" href="' + esc(lk) + '" target="_blank" rel="noopener">' + esc(k.zalo_nhan || 'Zalo khoá học') + '</a>');
+    if (zaloGV) nut.push('<a class="btn' + (lk ? '' : ' primary') + '" href="' + esc(zaloGV) + '" target="_blank" rel="noopener">' + (lk ? 'Nhắn giảng viên' : 'Đăng ký qua Zalo') + '</a>');
+    if (!nut.length) nut.push('<a class="btn" href="#lien-he">Đăng ký</a>');
+    return '<div class="cta">' + nut.join('') + '</div>';
+  }
   function veKhoaHoc(ds, lh) {
     var box = $('khoaHoc');
     ds = (ds || []).filter(function (k) { return k && k.ten; });
@@ -294,7 +302,7 @@
         + '<div class="tt"><h3>' + esc(k.ten) + '</h3><span class="pill ' + t[1] + '">' + t[0] + '</span></div>'
         + (k.mo_ta ? '<p>' + esc(k.mo_ta) + '</p>' : '')
         + '<dl>' + (k.doi_tuong ? '<dt>Dành cho</dt><dd>' + esc(k.doi_tuong) + '</dd>' : '') + (k.lich ? '<dt>Lịch</dt><dd>' + esc(k.lich) + '</dd>' : '') + '</dl>'
-        + (k.trang_thai !== 'ket_thuc' && zalo ? '<a class="btn primary" href="' + esc(zalo) + '" target="_blank" rel="noopener">Đăng ký qua Zalo</a>' : (k.trang_thai !== 'ket_thuc' ? '<a class="btn" href="#lien-he">Đăng ký</a>' : ''))
+        + nutKhoa(k, zalo)
         + '</article>';
     }).join('');
   }

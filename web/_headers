@@ -9,5 +9,7 @@
   Cache-Control: no-cache, must-revalidate
 /quan-tri
   Cache-Control: no-cache, must-revalidate
+  X-Robots-Tag: noindex, nofollow
 /so-bai-tap
   Cache-Control: no-cache, must-revalidate
+  X-Robots-Tag: noindex, nofollow

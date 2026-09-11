@@ -225,7 +225,7 @@ Mọi vi phạm (dù bắt được ở web hay app) đều vào Quản trị �
 |---|---|---|
 | `giangduonghoahoc.com/` | Trang công khai: giới thiệu, khoá học, cách học, hỏi đáp nhanh, Zalo, tải app | Ai cũng được, không đăng nhập |
 | `giangduonghoahoc.com/hoc` | Trang học — app mở trang này | Sinh viên trong app; giảng viên mở bằng trình duyệt để xem như sinh viên (miễn khoá máy, miễn app) |
-| `giangduonghoahoc.com/quan-tri` | Trang quản trị | Giảng viên, trình duyệt |
+| `giangduonghoahoc.com/quan-tri` | Trang quản trị — **không có link nào dẫn tới** từ trang công khai, tự gõ địa chỉ; có `noindex` để máy tìm kiếm không lập chỉ mục | Giảng viên, trình duyệt |
 | `giangduonghoahoc.com/so-bai-tap` | Bản web của Sổ Bài Tập | Giảng viên, trình duyệt |
 
 Địa chỉ cũ `lop-hoc-online.giangduonghoahoc.workers.dev` vẫn trả y hệt bốn trang trên.
@@ -240,6 +240,9 @@ Cần chạy `schema_v25_trang_cong_khai.sql` một lần (bảng `trang_cong_kh
 nhắc đúng tên tệp, còn trang công khai vẫn hiện bản mẫu có sẵn trong mã. Đừng ghi gì riêng tư vào tab này — ai cũng đọc được.
 
 Số Zalo đang **để trống** trong bản mẫu — m điền ở tab này, trang mới hiện nút *Nhắn Zalo* và *Đăng ký qua Zalo*.
+
+**Link Zalo riêng từng khoá:** trong thẻ khoá học có ô *Link Zalo của khoá* (nhóm lớp) + *Chữ trên nút*. Có link thì nút chính
+của thẻ dẫn vào nhóm, nút phụ "Nhắn giảng viên"; không có thì nút "Đăng ký qua Zalo" dùng số ở mục Liên hệ. Khoá đã kết thúc không có nút.
 
 **Ảnh QR Zalo:** Zalo → *Cá nhân* → *Mã QR của tôi* → *Lưu ảnh* → ở tab này bấm **📷 Chọn ảnh** → Lưu và đăng. Ảnh tự thu nhỏ về 480 px
 và nằm ngay trong bảng (không cần kho tệp), hiện cạnh số Zalo ở mục Liên hệ; điện thoại thì QR lên trước số. *Bỏ ảnh* để gỡ.

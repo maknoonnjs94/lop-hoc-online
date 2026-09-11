@@ -79,6 +79,8 @@ Screenshot pane ẩn hay timeout/zoom lạ → đo DOM bằng javascript_tool (g
 
 **QR Zalo (theo m):** tab Trang công khai có ô *Ảnh QR Zalo* — chọn tệp → canvas thu về ≤ 480 px → PNG (quá 150 KB thì JPEG) → data URL cất trong `lien_he.qr_anh` (không cần bucket, không cần SQL). Trang công khai chỉ nhận data URL ảnh (regex), hiện 168 px cạnh số Zalo (`.card.zalo.coqr` 2 cột; ≤ 520 px QR lên trước). Đã thử trong pane: 900 px → 480 px / 8 KB, giữ qua lưu + tải lại, Bỏ ảnh; bản thử landing 1280 và 400 px không tràn. v25b m đã chạy (máy chủ hết chữ cũ).
 
+**Zalo từng khoá + giấu trang quản trị (theo m):** thẻ khoá học có `zalo` (link nhóm lớp, chỉ nhận http(s)) + `zalo_nhan`; `nutKhoa()`: có link → nút chính vào nhóm + nút phụ Nhắn giảng viên; không → Đăng ký qua Zalo (số ở Liên hệ); kết thúc → không nút. Bỏ link "Giảng viên" ở chân trang công khai ("trang quản trị phải tuyệt mật, không được lộ link"); `quan-tri.html` thêm meta robots noindex, `_headers` thêm `X-Robots-Tag: noindex` cho /quan-tri và /so-bai-tap; `robots.txt` chỉ Allow / (không liệt kê đường quản trị vì liệt kê = lộ). Thử 4 trường hợp thẻ + tab quản trị lưu/tải lại.
+
 **M phải làm:** vào Quản trị → Trang công khai điền số Zalo + chọn ảnh QR (+ sửa khoá học cho đúng);
 thử `/hoc` bằng trình duyệt với tài khoản SV → phải thấy màn "mở trong ứng dụng"; mở app 1.0.16 → vẫn vào lớp như cũ.
 
