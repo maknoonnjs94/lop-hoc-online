@@ -20,7 +20,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.17** (tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v27c** đều `true` trên `/api/trang-thai`. **v27d và v28 chờ m chạy.**
+**SQL:** v9 → **v28** đều `true` trên `/api/trang-thai` (kiểm 12/9). Không còn schema nào treo.
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
