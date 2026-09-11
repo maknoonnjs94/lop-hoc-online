@@ -9,6 +9,8 @@
   // giữ địa chỉ lop-hoc-online.giangduonghoahoc.workers.dev: lần phát nào cũng bật lại đường này
   "workers_dev": true,
   "keep_vars": true,
+  // sao lưu tự động (v28): 20:00 UTC thứ Bảy = 3:00 sáng Chủ nhật giờ Việt Nam → worker.js scheduled()
+  "triggers": { "crons": ["0 20 * * 6"] },
   // tên miền riêng (gắn 11/9/2026): Worker nhận cả tên này lẫn mọi tên con; workers.dev vẫn chạy song song
   "vars": { "TEN_MIEN": "giangduonghoahoc.com" },
   "assets": {

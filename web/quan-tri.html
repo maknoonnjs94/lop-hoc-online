@@ -412,6 +412,7 @@
             <button class="btn sm" id="saoLuuBtn" title="Tải toàn bộ dữ liệu lớp về máy thành một tệp JSON">⤓ Sao lưu dữ liệu</button>
           </div>
           <div id="saoLuuTt" class="hint" style="margin:0 0 10px" hidden></div>
+          <div class="card" id="saoLuuTuDong" style="margin-bottom:14px;padding:14px 16px"></div>
           <div class="dlgrid" id="dungLuong"></div>
           <div class="card" id="khoList"></div>
           <p class="hint" style="margin-top:10px">
@@ -481,6 +482,8 @@
             <button class="btn sm danger" id="baoClear">Xoá tất cả</button>
           </div>
           <div class="card" id="baoList"></div>
+          <div class="bar" style="margin:18px 0 8px"><b style="font-size:16px">Lỗi phía sinh viên</b><span class="hint" style="margin:0">app hoặc trang quản trị gặp lỗi JavaScript thì tự ghi về đây (30 ngày)</span><span class="grow"></span><button class="btn sm danger" id="loiClear">Xoá tất cả</button></div>
+          <div class="card" id="loiList"></div>
           <p class="hint" style="margin-top:10px">
             Trang học ghi lại khi sinh viên bấm PrintScreen, Ctrl+P hoặc Ctrl+S, kèm tài liệu đang mở lúc đó.
             Win+Shift+S, máy Mac và điện thoại thì trình duyệt không thấy được — dấu chìm tên trên tài liệu là lớp bảo vệ cho những trường hợp ấy.
@@ -563,6 +566,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 (function () {
   'use strict';
   var sb = null, me = null, profile = null;
+  /* ---- v28: lỗi JavaScript phía người dùng → bảng loi_khach (tối đa 5 dòng/phiên, không lặp cùng thông điệp; im lặng nếu chưa có bảng) ---- */
+  var loiDaGhi = {}, loiSoDong = 0;
+  function ghiLoiKhach(td, nguon, them) {
+    try {
+      td = String(td || '').slice(0, 400); if (!td || loiDaGhi[td] || loiSoDong >= 5 || !sb || !me) return;
+      loiDaGhi[td] = true; loiSoDong++;
+      sb.from('loi_khach').insert({ user_id: me.id, trang: 'quan-tri', thong_diep: td, nguon: String(nguon || '').slice(0, 200), ua: String(navigator.userAgent || '').slice(0, 200), them: them || {} }).then(function () {}, function () {});
+    } catch (e) {}
+  }
+  window.addEventListener('error', function (e) { ghiLoiKhach(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, { loai: 'error' }); });
+  window.addEventListener('unhandledrejection', function (e) { var r = e.reason; ghiLoiKhach((r && (r.message || r.reason)) || String(r), '', { loai: 'promise', ma: r && r.code }); });
   var classes = [], curClass = null, sessions = [], roster = [];
 
   var $ = function (id) { return document.getElementById(id); };
@@ -774,7 +788,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   });
   async function refreshPane() {
     if (!baoRT) { baoRT = true; batRealtimeBao(); }         /* bật kênh báo tức thì sau lần đầu vào trang */
-    if (tab === 'bao') { await loadBao(); return; }          /* cảnh báo gom mọi lớp, không cần chọn lớp */
+    if (tab === 'bao') { loadLoi(); await loadBao(); return; }          /* cảnh báo gom mọi lớp, không cần chọn lớp */
     var c = classes.filter(function (x) { return x.id === curClass; })[0];
     $('clsName').textContent = c ? c.name : '';
     ['addSesBtn', 'renameClsBtn', 'delClsBtn', 'addStuBtn'].forEach(function (id) { $(id).disabled = !c; });
@@ -1632,7 +1646,39 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     b.disabled = false; b.textContent = '🔒 Khoá lại video';
   });
 
+  /* ---- v28: sao lưu tự động — danh sách bản trong kho sao-luu, tải về, sao lưu ngay ---- */
+  async function veSaoLuuTuDong() {
+    var box = $('saoLuuTuDong'); if (!box) return;
+    box.innerHTML = '<div class="hint" style="margin:0">Đang đọc kho sao lưu…</div>';
+    var d;
+    try { d = await apiGoi('/api/sao-luu/danh-sach', {}); }
+    catch (e) {
+      box.innerHTML = '<div class="bar" style="margin:0"><b style="font-size:15px">Sao lưu tự động</b></div><div class="hint" style="margin:6px 0 0">' + (/chua_co_kho|khong_co_duong_nay/.test(e.message) ? 'Chưa bật. Chạy <b>schema_v28_sao_luu_loi_khach.sql</b> rồi bấm Tải lại — từ đó máy chủ tự sao lưu 3h sáng Chủ nhật hằng tuần, giữ 8 bản.' : esc(e.message)) + '</div>';
+      return;
+    }
+    var ds = d.ban || [];
+    box.innerHTML = '<div class="bar" style="margin:0 0 8px"><b style="font-size:15px">Sao lưu tự động</b><span class="hint" style="margin:0">3h sáng Chủ nhật hằng tuần · giữ 8 bản · kho riêng tư' + (d.co_r2 ? ' + R2' : '') + '</span><span class="grow"></span><button class="btn sm" id="slReload">↻</button><button class="btn sm primary" id="slNgay">Sao lưu ngay</button></div>'
+      + (ds.length ? '<table class="roster"><thead><tr><th>Bản</th><th>Lúc</th><th>Kích thước</th><th></th></tr></thead><tbody>' + ds.map(function (b) {
+          return '<tr><td><code>' + esc(b.ten) + '</code></td><td>' + esc(b.luc ? new Date(b.luc).toLocaleString('vi-VN') : '') + '</td><td>' + (b.kich_thuoc ? Math.round(b.kich_thuoc / 1024) + ' KB' : '') + '</td><td style="text-align:right"><button class="btn sm" data-sltai="' + esc(b.ten) + '">⤓ Tải về</button></td></tr>';
+        }).join('') + '</tbody></table>' : '<div class="hint" style="margin:0">Chưa có bản nào — bấm <b>Sao lưu ngay</b> để tạo bản đầu tiên, hoặc đợi Chủ nhật.</div>');
+  }
+  $('saoLuuTuDong').addEventListener('click', async function (e) {
+    if (e.target.closest('#slReload')) { veSaoLuuTuDong(); return; }
+    if (e.target.closest('#slNgay')) {
+      var b = e.target.closest('#slNgay'); b.disabled = true; b.textContent = 'Đang sao lưu…';
+      try { var d = await apiGoi('/api/sao-luu', {}); toast('Đã sao lưu ' + d.ten + ' (' + Math.round(d.kich_thuoc / 1024) + ' KB' + (d.loi && d.loi.length ? ', ' + d.loi.length + ' bảng lỗi' : '') + ').'); }
+      catch (err) { toast('Không sao lưu được: ' + err.message); }
+      veSaoLuuTuDong(); return;
+    }
+    var t = e.target.closest('[data-sltai]');
+    if (t) {
+      var r = await sb.storage.from('sao-luu').createSignedUrl(t.dataset.sltai, 300, { download: t.dataset.sltai });
+      if (r.error || !r.data) { toast('Không tải được: ' + (r.error ? r.error.message : '')); return; }
+      var a = document.createElement('a'); a.href = r.data.signedUrl; a.download = t.dataset.sltai; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 2000);
+    }
+  });
   async function veDungLuong() {
+    veSaoLuuTuDong();
     var box = $('dungLuong'); if (!box) return;
     box.innerHTML = '<div class="dlbox"><h4>Dung lượng</h4><div class="phu">Đang đo…</div></div>';
     var o = '';
@@ -2312,7 +2358,23 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         }).subscribe();
     } catch (err) {}
   }
-  $('baoReload').addEventListener('click', loadBao);
+  async function loadLoi() {
+    var box = $('loiList'); if (!box) return;
+    var r = await sb.from('loi_khach').select('id, user_id, luc, trang, thong_diep, nguon, ua, profiles(full_name, email)').order('luc', { ascending: false }).limit(100);
+    if (r.error) { box.innerHTML = '<div class="empty">' + (/loi_khach/.test(r.error.message) ? 'Chưa bật — chạy schema_v28_sao_luu_loi_khach.sql.' : esc(r.error.message)) + '</div>'; return; }
+    var ds = r.data || [];
+    if (!ds.length) { box.innerHTML = '<div class="empty">Không có lỗi nào trong 30 ngày qua.</div>'; return; }
+    box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th>Lúc</th><th>Ai</th><th>Trang</th><th>Lỗi</th><th>Chỗ</th></tr></thead><tbody>' + ds.map(function (x) {
+      var p = x.profiles || {};
+      return '<tr><td>' + esc(new Date(x.luc).toLocaleString('vi-VN')) + '</td><td>' + esc(p.full_name || p.email || '') + '</td><td>' + esc(x.trang) + '</td><td style="max-width:420px;word-break:break-word"><code style="font-size:12.5px">' + esc(x.thong_diep) + '</code></td><td class="hint" style="margin:0" title="' + esc(x.ua) + '">' + esc(x.nguon) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  $('loiClear').addEventListener('click', async function () {
+    if (!confirm('Xoá toàn bộ nhật ký lỗi?')) return;
+    var r = await sb.from('loi_khach').delete().gte('id', 0);
+    if (r.error) toast('Lỗi: ' + r.error.message); else { toast('Đã xoá.'); loadLoi(); }
+  });
+  $('baoReload').addEventListener('click', function () { loadBao(); loadLoi(); });
   $('baoClear').addEventListener('click', async function () {
     if (!confirm('Xoá toàn bộ danh sách cảnh báo? Không lấy lại được.')) return;
     var r = await sb.from('screenshot_events').delete().gt('id', 0);

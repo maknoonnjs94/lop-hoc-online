@@ -949,6 +949,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 (function () {
   'use strict';
   var sb = null, me = null, profile = null, classes = [], curClass = null, curMat = null;
+  /* ---- v28: lỗi JavaScript phía người dùng → bảng loi_khach (tối đa 5 dòng/phiên, không lặp cùng thông điệp; im lặng nếu chưa có bảng) ---- */
+  var loiDaGhi = {}, loiSoDong = 0;
+  function ghiLoiKhach(td, nguon, them) {
+    try {
+      td = String(td || '').slice(0, 400); if (!td || loiDaGhi[td] || loiSoDong >= 5 || !sb || !me) return;
+      loiDaGhi[td] = true; loiSoDong++;
+      sb.from('loi_khach').insert({ user_id: me.id, trang: 'hoc', thong_diep: td, nguon: String(nguon || '').slice(0, 200), ua: String(navigator.userAgent || '').slice(0, 200), them: them || {} }).then(function () {}, function () {});
+    } catch (e) {}
+  }
+  window.addEventListener('error', function (e) { ghiLoiKhach(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, { loai: 'error' }); });
+  window.addEventListener('unhandledrejection', function (e) { var r = e.reason; ghiLoiKhach((r && (r.message || r.reason)) || String(r), '', { loai: 'promise', ma: r && r.code }); });
   var sessions = [], curSes = null, view = 'home';
   var views = {}, lanTruoc = 0, classNotice = '', rtChan = null, daNhacBuoi = {};
   var matList = [], matIdx = -1, tienDo = { timer: null, save: null };

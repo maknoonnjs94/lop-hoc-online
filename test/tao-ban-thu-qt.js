@@ -15,8 +15,14 @@ const stub = `<script>
   var ID = 0, moiId = function(p){ return p + (++ID); };
 
   /* ---------------- kho dữ liệu giả, có thật trong bộ nhớ ---------------- */
+  var SAO_LUU_THU = [{ ten:'sao-luu-2026-09-06-20-00-01.json', luc: d(-6*864e5), kich_thuoc: 45120 }];
   var NGAN_HANG_THU = P.get('bank') === '0' ? {} : { bin:'970422', ma:'MB', ten_nh:'MB Bank', stk:'0123456789', ten_tk:'PHAM ANH NGOC' };
   var DB = {
+    /* v28: lỗi phía sinh viên */
+    loi_khach: P.get('lk') === '0' ? undefined : [
+      { id:1, user_id:'u1', luc:d(-2*36e5), trang:'hoc', thong_diep:"Cannot read properties of undefined (reading 'progress')", nguon:'hoc:1623:14', ua:'LopHocApp/1.0.17 Windows' },
+      { id:2, user_id:'u3', luc:d(-26*36e5), trang:'hoc', thong_diep:'Failed to fetch', nguon:'', ua:'LopHocApp/1.0.16 Mac' }
+    ],
     /* v27: đăng ký từ trang công khai — ?dk=0 giả chưa chạy SQL */
     dang_ky: P.get('dk') === '0' ? undefined : [
       { id:'dk1', ho_ten:'Phạm Thu Trang', email:'thutrang@gmail.com', sdt:'0912 000 111', mssv:'23001999', khoa:'Hóa phân tích K68 · Hóa hữu cơ K68', khoa_ds:['Hóa phân tích K68', 'Hóa hữu cơ K68'], ghi_chu:'Hóa dược năm 2, học buổi tối', trang_thai:'cho', tao_luc:d(-3*36e5) },
@@ -116,6 +122,7 @@ const stub = `<script>
     if (ten === 'sessions') rows.forEach(function (s) {
       s.materials = DB.materials.filter(function (m) { return m.session_id === s.id; }).map(hop);
     });
+    if (ten === 'loi_khach') rows.forEach(function (e) { e.profiles = hop(TEN[e.user_id] || {}); });
     if (ten === 'enrollments') rows.forEach(function (e) { e.profiles = hop(TEN[e.student] || {}); e.classes = hop(DB.classes.filter(function (c) { return c.id === e.class_id; })[0] || {}); });
     if (ten === 'screenshot_events') rows.forEach(function (e) { e.profiles = hop(TEN[e.user_id] || {}); });
     return rows;
@@ -166,7 +173,7 @@ const stub = `<script>
     o.single = function () { mot = true; return o; };
     o.maybeSingle = function () { mot = true; return o; };
     o.then = function (a, b) {
-      if ((ten === 'trang_cong_khai' || ten === 'dang_ky') && !DB[ten]) return Promise.resolve({ data: null, error: { message: 'relation "public.' + ten + '" does not exist' } }).then(a, b);
+      if ((ten === 'trang_cong_khai' || ten === 'dang_ky' || ten === 'loi_khach') && !DB[ten]) return Promise.resolve({ data: null, error: { message: 'relation "public.' + ten + '" does not exist' } }).then(a, b);
       var rows = hd ? ghi(ten, dk, hd, tai) : doc(ten, dk);
       if (sapXep && !hd) rows.sort(function (x, y) {
         var p = x[sapXep[0]], q2 = y[sapXep[0]];
@@ -371,6 +378,8 @@ const stub = `<script>
     ] };
     if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, lop:'Hóa phân tích K68', email: body.email, mat_khau:'Thu1234@', da_co:false, ket_qua: (body.students || []).map(function (x) { var m = String(x.student_no || '').replace(/\s+/g, ''); return { email:x.email, ok:true, password: m.length >= 6 ? m : 'Thu1234@', la_mssv: m.length >= 6, full_name:x.full_name }; }) };
     if (s.indexOf('/api/cap-lai-mat-khau') >= 0) tra = { ok:true, mat_khau:'Moi5678@' };
+    if (s.indexOf('/api/sao-luu/danh-sach') >= 0) tra = P.get('sl') === '0' ? { ok:false, reason:'chua_co_kho' } : { ok:true, co_r2:false, ban: SAO_LUU_THU.slice() };
+    else if (s.indexOf('/api/sao-luu') >= 0) { var tenSl = 'sao-luu-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json'; SAO_LUU_THU.unshift({ ten: tenSl, luc: new Date().toISOString(), kich_thuoc: 48213 }); tra = { ok:true, ten: tenSl, kich_thuoc: 48213, so_dong: {}, loi: [] }; }
     return Promise.resolve({ ok:true, status:200, json: function () { return Promise.resolve(tra); } });
   };
 

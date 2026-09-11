@@ -286,6 +286,22 @@ Quá hạn thì nút nộp đóng lại. Cần mở thêm cho một bạn thì s
 
 ## Sao lưu dữ liệu lớp
 
+**Tự động (v28):** máy chủ tự gom 15 bảng thành một tệp JSON lúc **3h sáng Chủ nhật** hằng tuần, cất vào kho riêng tư `sao-luu`
+trong Supabase (giữ 8 bản gần nhất). Quản trị → **Kho tệp** → thẻ *Sao lưu tự động*: danh sách bản, **⤓ Tải về**, **Sao lưu ngay**.
+Cần chạy `schema_v28_sao_luu_loi_khach.sql` một lần. Muốn có thêm bản ở Cloudflare R2 (ngoài Supabase, đề phòng mất cả dự án):
+tạo bucket R2 riêng tư (vd `giang-duong-sao-luu`) rồi nhắn t thêm `r2_buckets` binding `SAO_LUU` vào `wrangler.jsonc` — Worker tự
+ghi thêm sang đó. Tệp PDF/ảnh/video **không** nằm trong bản sao (chỉ có đường dẫn), như sao lưu tay.
+
+**Tay:** nút *⤓ Sao lưu dữ liệu* vẫn còn — tải tệp về máy ngay lúc bấm.
+
+## Lỗi phía sinh viên
+
+App (trang học) và trang quản trị gặp lỗi JavaScript thì tự ghi một dòng về bảng `loi_khach` (tối đa 5 dòng/phiên, không lặp cùng
+thông điệp; giữ 30 ngày, tự dọn mỗi lần sao lưu). Quản trị → **Cảnh báo** → mục *Lỗi phía sinh viên*: lúc, ai, trang, thông điệp, chỗ
+(tệp:dòng:cột), rê chuột thấy trình duyệt/app. Thấy lỗi lặp ở nhiều em thì chép dòng lỗi gửi t.
+
+### (cũ) Sao lưu tay
+
 Quản trị → tab **Kho tệp** → nút **⤓ Sao lưu dữ liệu**. Nó gom mọi bảng về một tệp `.json` tải thẳng xuống máy, tên có sẵn ngày tháng.
 
 Trong tệp có: lớp, buổi học, tài liệu, danh sách sinh viên và hồ sơ, lượt xem và giờ xem, **bài nộp kèm câu trả lời và điểm**, hỏi đáp, đáp án các ô, thiết bị đã gắn, cảnh báo chụp màn hình, và bộ đếm phút phát video.

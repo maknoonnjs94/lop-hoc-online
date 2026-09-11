@@ -20,7 +20,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.17** (tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v26** đều `true` trên `/api/trang-thai`. **v27 (đăng ký + sao chép buổi) chờ m chạy.**
+**SQL:** v9 → **v27c** đều `true` trên `/api/trang-thai`. **v27d và v28 chờ m chạy.**
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
@@ -39,6 +39,28 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-12 — Sao lưu tự động (C8) + nhật ký lỗi phía SV (C9) — v28; duyệt từng khoá (v27d)
+
+- **SQL v28** `schema_v28_sao_luu_loi_khach.sql`: bucket Storage `sao-luu` (riêng tư, policy `sl_doc` staff select; ghi bằng khoá
+  quản trị), bảng `loi_khach` (insert own, staff all), `don_loi_khach()` 30 ngày.
+- **Worker**: `scheduled()` + `wrangler.jsonc triggers.crons ["0 20 * * 6"]` (3h CN giờ VN) → `saoLuuNgay(env)`: `layHetBang` phân
+  trang 1000 (không order — mỗi bảng khoá khác nhau), 15 bảng (thêm trang_cong_khai, dang_ky), upload `/storage/v1/object/sao-luu/<tên>`,
+  `donKhoSaoLuu` giữ 8; R2 tuỳ chọn khi có binding `env.SAO_LUU` (chưa khai — khai mà bucket chưa có là deploy hỏng). Đường
+  `/api/sao-luu` (giảng viên) + `/api/sao-luu/danh-sach`. Trạng thái `v28_sao_luu_loi_khach` = coKho(sao-luu) && coCot(loi_khach).
+- **Quản trị**: Kho tệp → thẻ *Sao lưu tự động* (danh sách, Tải về qua signed URL 300 s, Sao lưu ngay, nhắc chạy SQL khi
+  `chua_co_kho`); Cảnh báo → mục *Lỗi phía sinh viên* (`loadLoi`, join profiles, Xoá tất cả).
+- **Ghi lỗi** ở cả hoc.html và quan-tri.html: `ghiLoiKhach` bắt `error` + `unhandledrejection`, tối đa 5/phiên, không lặp, im lặng
+  khi chưa có bảng hay chưa đăng nhập.
+- **v27d**: hộp Duyệt liệt kê từng khoá xin, không tick sẵn, chọn lớp từng dòng; `khoa_da_duyet` ghi khoá đã xong, chưa đủ thì đơn
+  ở lại hàng chờ (chip ✓). Trạng thái tách `v27b_mssv / v27c_khoa_ds / v27d_duyet_tung_khoa` — m đã chạy b, c; d chưa.
+- Thử stub: Sao lưu ngay → thêm bản; Cảnh báo có 2 lỗi giả + 1 lỗi bắn thật từ trang quản trị (ErrorEvent) → 3; `?sl=0&lk=0` ra lời nhắc SQL.
+- **Bẫy lặp lại 2 lần trong ngày:** `node -e "…"` trong Bash nuốt backtick → nhật ký/sổ tay thủng chữ. Từ giờ mọi đoạn có backtick
+  đi qua Write + `node file`.
+
+**M phải làm:** chạy `schema_v27d_duyet_tung_khoa.sql` và `schema_v28_sao_luu_loi_khach.sql`; vào Kho tệp bấm *Sao lưu ngay* một lần để có bản đầu.
+
 ---
 
 ## 2026-09-12 — Đối chiếu sao kê, đăng ký nhiều khoá, mã SV, hộp hướng dẫn cài

@@ -100,12 +100,84 @@ export default {
       if (url.pathname === '/api/stream/tai-len') return await streamTaiLen(body, env, request);
       if (url.pathname === '/api/stream/tai-len-lon') return await streamTaiLenLon(body, env, request);
       if (url.pathname === '/api/stream/khoa-lai') return await streamKhoaLai(env, request);
+      if (url.pathname === '/api/sao-luu') return json(await saoLuuNgay(env, 'tay'), 200, request);
+      if (url.pathname === '/api/sao-luu/danh-sach') return json(await saoLuuDanhSach(env), 200, request);
       return json({ ok: false, reason: 'khong_co_duong_nay' }, 404, request);
     } catch (e) {
       return json({ ok: false, reason: 'loi_may_chu', chi_tiet: String(e && e.message || e).slice(0, 200) }, 500, request);
     }
+  },
+  /* Lịch (wrangler.jsonc → triggers.crons): mỗi tuần một bản sao lưu, không cần ai bấm */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(saoLuuNgay(env, 'lich'));
   }
 };
+
+/* ================= SAO LƯU TỰ ĐỘNG (v28) =================
+   Gom các bảng qua REST bằng khoá quản trị → một tệp JSON → kho Supabase Storage 'sao-luu' (riêng tư, giảng viên
+   tải ở Quản trị) + kho R2 nếu có binding SAO_LUU. Giữ 8 bản gần nhất ở mỗi kho. Tệp PDF/ảnh/video không kèm. */
+const BANG_SAO_LUU = ['classes', 'sessions', 'materials', 'material_contents', 'enrollments', 'profiles', 'view_events',
+  'bai_nop', 'cau_hoi', 'dap_an_o', 'device_bindings', 'screenshot_events', 'dung_luong_thang', 'trang_cong_khai', 'dang_ky'];
+const GIU_BAN = 8;
+async function layHetBang(env, bang) {
+  const dong = []; let tu = 0;
+  for (let k = 0; k < 200; k++) {
+    /* không order theo cột (mỗi bảng khoá khác nhau) — PostgREST vẫn phân trang ổn định trong cùng một lượt đọc như bản sao lưu tay */
+    const r = await fetch(SUPABASE_URL + '/rest/v1/' + bang + '?select=*&limit=1000&offset=' + tu, { headers: adminHeaders(env) });
+    if (!r.ok) return { loi: 'HTTP ' + r.status + ' ' + locLoi(await r.text()), dong: dong };
+    const ds = await r.json();
+    ds.forEach(function (x) { dong.push(x); });
+    if (ds.length < 1000) break;
+    tu += 1000;
+  }
+  return { dong: dong };
+}
+async function saoLuuNgay(env, nguon) {
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) return { ok: false, reason: 'chua_cau_hinh' };
+  const luc = new Date(), kho = { _meta: { he_thong: 'Giảng đường Hóa học', luc: luc.toISOString(), nguon: nguon, ghi_chu: 'Bản sao dữ liệu tự động. KHÔNG gồm tệp PDF/ảnh (kho Supabase) và video (Cloudflare Stream) — chỉ có đường dẫn.' }, bang: {} };
+  const dem = {}, loi = [];
+  for (const b of BANG_SAO_LUU) {
+    const kq = await layHetBang(env, b);
+    kho.bang[b] = kq.dong; dem[b] = kq.dong.length;
+    if (kq.loi) loi.push(b + ': ' + kq.loi);
+  }
+  kho._meta.so_dong = dem; if (loi.length) kho._meta.bang_khong_doc_duoc = loi;
+  const ten = 'sao-luu-' + luc.toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+  const than = JSON.stringify(kho);
+  const ra = { ok: true, ten: ten, kich_thuoc: than.length, so_dong: dem, loi: loi, noi: [] };
+  /* 1. kho Supabase Storage (riêng tư) */
+  const up = await fetch(SUPABASE_URL + '/storage/v1/object/sao-luu/' + ten, {
+    method: 'POST', headers: adminHeaders(env, { 'Content-Type': 'application/json', 'x-upsert': 'true' }), body: than });
+  if (up.ok) { ra.noi.push('supabase'); await donKhoSaoLuu(env); }
+  else ra.loi_kho = locLoi(await up.text());
+  /* 2. R2 nếu có binding (tuỳ chọn, tạo bucket + thêm r2_buckets vào wrangler.jsonc) */
+  if (env.SAO_LUU && typeof env.SAO_LUU.put === 'function') {
+    try {
+      await env.SAO_LUU.put(ten, than, { httpMetadata: { contentType: 'application/json' } });
+      ra.noi.push('r2');
+      const ds = await env.SAO_LUU.list({ prefix: 'sao-luu-' });
+      const cu = (ds.objects || []).map(function (o) { return o.key; }).sort().reverse().slice(GIU_BAN);
+      for (const k of cu) await env.SAO_LUU.delete(k);
+    } catch (e) { ra.loi_r2 = String(e && e.message || e).slice(0, 120); }
+  }
+  /* dọn nhật ký lỗi cũ (hàm có từ v28; thiếu thì bỏ qua) */
+  try { await fetch(SUPABASE_URL + '/rest/v1/rpc/don_loi_khach', { method: 'POST', headers: adminHeaders(env), body: '{}' }); } catch (e) {}
+  return ra;
+}
+/* giữ GIU_BAN bản gần nhất trong kho Supabase */
+async function donKhoSaoLuu(env) {
+  const ds = await saoLuuDanhSach(env);
+  const cu = (ds.ban || []).map(function (o) { return o.ten; }).sort().reverse().slice(GIU_BAN);
+  if (!cu.length) return;
+  await fetch(SUPABASE_URL + '/storage/v1/object/sao-luu', { method: 'DELETE', headers: adminHeaders(env), body: JSON.stringify({ prefixes: cu }) });
+}
+async function saoLuuDanhSach(env) {
+  const r = await fetch(SUPABASE_URL + '/storage/v1/object/list/sao-luu', {
+    method: 'POST', headers: adminHeaders(env), body: JSON.stringify({ prefix: '', limit: 100, sortBy: { column: 'name', order: 'desc' } }) });
+  if (!r.ok) return { ok: false, reason: r.status === 404 || r.status === 400 ? 'chua_co_kho' : 'khong_doc_duoc', chi_tiet: locLoi(await r.text()) };
+  const ds = await r.json();
+  return { ok: true, ban: (Array.isArray(ds) ? ds : []).filter(function (o) { return /^sao-luu-.*\.json$/.test(o.name); }).map(function (o) { return { ten: o.name, luc: o.created_at || o.updated_at, kich_thuoc: (o.metadata && o.metadata.size) || 0 }; }), co_r2: !!env.SAO_LUU };
+}
 
 /* ---------- tiện ích ---------- */
 function cors(request) {
@@ -506,7 +578,7 @@ async function coHam(env, ten, than) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27, v27b, v27c, v27d] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27, v27b, v27c, v27d, v28a, v28b] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -535,7 +607,9 @@ async function kiemSchema(env) {
     coCot(env, 'dang_ky', 'trang_thai'),
     coCot(env, 'dang_ky', 'mssv'),
     coCot(env, 'dang_ky', 'khoa_ds'),
-    coCot(env, 'dang_ky', 'khoa_da_duyet')
+    coCot(env, 'dang_ky', 'khoa_da_duyet'),
+    coKho(env, 'sao-luu'),
+    coCot(env, 'loi_khach', 'thong_diep')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -559,6 +633,7 @@ async function kiemSchema(env) {
     v27b_mssv: v27b,
     v27c_khoa_ds: v27c,
     v27d_duyet_tung_khoa: v27d,
+    v28_sao_luu_loi_khach: v28a && v28b,
     ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }
