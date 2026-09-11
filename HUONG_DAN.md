@@ -424,6 +424,12 @@ thì vào cột Học phí của em đó bấm **✓ Đã nhận** và chọn h�
 khi em đó bấm nút. Nút **✓ Đã nhận** (hỏi số tiền, mặc định = học phí lớp) · **Gia hạn** (+N ngày từ hôm nay hoặc từ hạn hiện tại) ·
 **Miễn** / **Thu lại** · **Hoàn tác**. Thanh trên tab tóm tắt: `1.500.000 ₫ · 3 đã đóng · 2 còn hạn · 1 quá hạn · 1 báo đã chuyển`.
 
+**Đối chiếu sao kê (tab Sinh viên → 📋 Đối chiếu sao kê):** mở app ngân hàng → Lịch sử giao dịch → sao chép (hoặc xuất CSV, hoặc SMS) → dán vào ô
+→ *Đối chiếu*. Máy tìm trên từng dòng chữ **HP + mã sinh viên** (+ viết tắt lớp nếu em ấy học nhiều khoá) và số tiền (ưu tiên số có dấu nghìn
+hoặc dấu +; bỏ số tài khoản, mã giao dịch, ngày giờ). Bảng kết quả: **Khớp** (tick sẵn) · *Lệch tiền* (duyệt được, ghi đúng số trên sao kê) ·
+*Chọn lớp* (học nhiều khoá mà nội dung không có viết tắt lớp) · *Đã đóng rồi* · *Không thấy mã SV* · *Trùng dòng trên*. Bấm **Duyệt các dòng đã tick**
+→ ghi `da_dong_at`, số tiền, ghi chú "Sao kê <ngày> — <dòng gốc>". Chưa bấm Duyệt thì chưa ghi gì.
+
 **Vì sao "thông minh":** một em học 3 khoá = 3 dòng ghi danh, mỗi dòng hạn riêng, mốc đóng riêng, miễn riêng — đóng khoá nào mở khoá đó.
 Hạn = ngày ghi danh (hoặc ngày bắt đầu thu, nếu muộn hơn) + số ngày; gia hạn ghi vào dòng đó. Không có "khoá cả tài khoản".
 

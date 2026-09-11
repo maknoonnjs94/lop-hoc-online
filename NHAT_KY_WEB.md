@@ -41,6 +41,21 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Đối chiếu sao kê, đăng ký nhiều khoá, mã SV, hộp hướng dẫn cài
+
+- **📋 Đối chiếu sao kê** (Sinh viên): `skDoc()` mỗi dòng bắt `HP <mã SV> [viết tắt lớp]` + `skTien()` (bỏ đoạn HP…, ngày, giờ; ưu tiên số có
+  dấu nghìn hoặc +/-; số trần 5–8 chữ số là dự phòng; ≥ 9 chữ số bỏ — bẫy lần 1: mã SV 8 số bị nhận nhầm là tiền). Khớp với mọi ghi danh
+  chưa đóng (lớp có thu); viết tắt lớp chỉ nhận khi trùng `skVietTat` của lớp thật (bẫy lần 2: tên người sau mã SV bị coi là viết tắt).
+  Trạng thái khop/lech/khong_tien/nhieu_lop(select)/da_dong/khong_thay/trung; Duyệt = update enrollments hàng loạt, ghi chú "Sao kê …".
+- **Đăng ký nhiều khoá**: form tick nhiều; worker nhận mảng, `khoa` = "A · B", `khoa_ds` jsonb (v27c); duyệt tick nhiều lớp → gọi
+  `/api/tao-tai-khoan` lần lượt (lớp sau: email đã có → chỉ ghi danh). **Mã SV** trên form (v27b, bắt buộc) → điền sẵn khi duyệt →
+  **mật khẩu khởi tạo = mã SV** (≥ 6 ký tự; worker `la_mssv`). Worker thử 3 dạng payload để chạy được dù chưa chạy v27b/v27c.
+- Bẫy hàng chờ: `loadRoster` dừng sớm khi lớp đang chọn không có SV → hàng chờ không nạp; đã đưa `loadChoDangKy(); loadChoDuyet();` lên đầu.
+- Trang công khai: *Cách cài từng bước* mở hộp `#hdBox` với `img/huong-dan-app.jpg` (infographic 1.5×, JPEG 450 KB, tải lười), nút tải
+  Win/Mac trên thanh, Esc/backdrop đóng, `#huong-dan` mở sẵn. Trang chủ SV: tổng quan cả tài khoản (mục riêng bên dưới).
+
+---
+
 ## 2026-09-12 — Trang chủ = tổng quan cả tài khoản (m sửa lại thứ tự)
 
 M: "Trang chủ ở đầu, khoá học thứ 2… trang chủ báo số khoá đăng ký, xem video ở khoá nào, bài khoá nào vừa đăng". Đảo thanh trái

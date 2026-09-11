@@ -507,6 +507,7 @@
             <b>Sinh viên trong lớp</b>
             <span class="grow"></span>
             <span class="hptom" id="hpTom"></span>
+            <button class="btn" id="saoKeBtn" title="Dán lịch sử giao dịch từ app ngân hàng — tự tìm HP + mã SV, khớp với sinh viên chưa đóng, duyệt một phát">📋 Đối chiếu sao kê</button>
             <button class="btn" id="hocPhiLopBtn" title="Đặt số tiền và số ngày được nợ cho lớp đang chọn">💰 Học phí lớp này</button>
             <button class="btn" id="bankBtn" title="Ngân hàng nhận học phí: sinh viên thấy mã VietQR có sẵn số tiền và nội dung">💳 Nhận học phí</button>
             <button class="btn" id="addStuBtn">＋ Thêm bằng email</button>
@@ -2584,6 +2585,91 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('dlgBody').addEventListener('click', function (e) { if (e.target.closest('#fQrBo')) { $('fQrGia').value = ''; $('fQrBo').disabled = true; bankVeXem(); } });
 
   $('bankBtn').addEventListener('click', moNganHang);
+
+  /* ================= ĐỐI CHIẾU SAO KÊ =================
+     Không nối ngân hàng. M copy lịch sử giao dịch (app ngân hàng / CSV / SMS) dán vào; mỗi dòng có "HP <mã SV> <viết tắt lớp>"
+     và một số tiền → khớp với ghi danh chưa đóng của mã SV đó (viết tắt lớp để phân biệt khi một em học 2–3 khoá). */
+  function skKhongDau(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D'); }
+  function skVietTat(ten) { return skKhongDau(ten).split(/\s+/).filter(function (w) { return /^[A-Za-z]/.test(w); }).map(function (w) { return w.charAt(0); }).join('').toUpperCase().slice(0, 6); }
+  function skTien(dong) {
+    /* số tiền: bỏ đoạn 'HP <mã SV> <viết tắt>' trước; bỏ ngày tháng & giờ; ưu tiên số có dấu nghìn (1.500.000 / 1,500,000)
+       hoặc có dấu +/-; số trần 5–8 chữ số chỉ dùng khi không có gì mạnh hơn; số trần từ 9 chữ số (số TK, mã GD) bị bỏ */
+    var s = String(dong)
+      .replace(/\bHP\s*[:\-]?\s*[A-Za-z0-9]{4,20}(?:\s+[A-Za-z]{2,8})?/i, ' ')
+      .replace(/\b\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\b/g, ' ')
+      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ');
+    var manh = 0, yeu = 0;
+    (s.match(/[+-]?\d{1,3}(?:[.,]\d{3})+(?![\d])/g) || []).forEach(function (t) { var v = Math.abs(Number(t.replace(/[^0-9]/g, ''))); if (v >= 10000 && v < 1e9 && v > manh) manh = v; });
+    (s.match(/[+-]\d{5,8}(?![\d.,])/g) || []).forEach(function (t) { var v = Math.abs(Number(t.replace(/[^0-9]/g, ''))); if (v >= 10000 && v > manh) manh = v; });
+    if (manh) return manh;
+    (s.match(/(?<![\d.,])\d{5,8}(?![\d.,])/g) || []).forEach(function (t) { var v = Number(t); if (v >= 10000 && v > yeu) yeu = v; });
+    return yeu;
+  }
+  function skDoc(text) {
+    var ra = [];
+    String(text || '').split(/\r?\n/).forEach(function (dong, i) {
+      var m = /\bHP\s*[:\-]?\s*([A-Za-z0-9]{4,20})(?:\s+([A-Za-z]{2,8}))?/i.exec(dong);
+      if (!m) return;
+      var tat = (m[2] || '').toUpperCase(); if (!classes.some(function (x) { return skVietTat(x.name) === tat; })) tat = '';   /* chữ sau mã SV mà không phải viết tắt lớp nào (tên người…) thì bỏ */
+      ra.push({ dong: i + 1, mssv: m[1].toUpperCase(), tat: tat, tien: skTien(dong), goc: dong.trim().slice(0, 120) });
+    });
+    return ra;
+  }
+  var skCandidates = [], skKetQua = [];
+  async function moSaoKe() {
+    dialog('Đối chiếu sao kê học phí',
+      '<label class="f">Dán lịch sử giao dịch (mỗi giao dịch một dòng, có nội dung chuyển khoản)<textarea id="fSaoKe" style="min-height:150px;font:13px/1.45 ui-monospace,Consolas,monospace" placeholder="12/09 09:15  +1.500.000  HP 23001234 HPTK  NGUYEN MINH ANH chuyen tien\n12/09 10:02  +1.500.000  HP 23001236"></textarea><small>Lấy từ app ngân hàng (Lịch sử giao dịch → chọn → sao chép), file CSV xuất ra, hay SMS. Máy tìm chữ <b>HP + mã sinh viên</b> và số tiền trên từng dòng; mã viết tắt lớp (HPTK…) dùng khi một em học nhiều khoá.</small></label>'
+      + '<div id="skKq"></div>',
+      async function () {
+        var chon = [].filter.call(document.querySelectorAll('#skKq input[data-sk]'), function (i) { return i.checked && !i.disabled; });
+        if (!chon.length) { msg($('dlgMsg'), 'Bấm Đối chiếu trước, rồi tick các dòng muốn duyệt.'); return false; }
+        var luc = new Date().toISOString(), ok = 0, loi = [];
+        for (var i = 0; i < chon.length; i++) {
+          var k = skKetQua[Number(chon[i].dataset.sk)]; if (!k) continue;
+          var sel = document.querySelector('#skKq select[data-sk="' + chon[i].dataset.sk + '"]');
+          var e = sel ? k.ung.filter(function (x) { return x.class_id === sel.value; })[0] : k.ung[0];
+          if (!e) continue;
+          var r = await sb.from('enrollments').update({ da_dong_at: luc, so_tien: k.tien || Number(e.classes.hoc_phi) || 0, ghi_chu_hp: 'Sao kê ' + new Date().toLocaleDateString('vi-VN') + ' — ' + k.goc.slice(0, 80) }).eq('class_id', e.class_id).eq('student', e.student);
+          if (r.error) loi.push(k.mssv + ': ' + r.error.message); else ok++;
+        }
+        toast('Đã ghi nhận ' + ok + ' khoản' + (loi.length ? ' — lỗi ' + loi.length + ': ' + loi.join('; ') : '') + '.');
+        await loadRoster();
+      }, 'Duyệt các dòng đã tick');
+    $('dlgBody').insertAdjacentHTML('beforeend', '<div class="bar" style="margin:-4px 0 10px"><button type="button" class="btn sm primary" id="skDoi">🔍 Đối chiếu</button><span class="hint" style="margin:0">Chưa ghi gì cho tới khi bấm Duyệt.</span></div>');
+    /* ứng viên: mọi ghi danh chưa đóng, lớp có thu */
+    var r = await sb.from('enrollments').select('class_id, student, da_dong_at, mien, so_tien, profiles(student_no, full_name, email), classes(name, hoc_phi)');
+    skCandidates = (r.data || []).filter(function (e) { return e.classes && Number(e.classes.hoc_phi) > 0; });
+  }
+  function skDoiChieu() {
+    var ds = skDoc($('fSaoKe').value), box = $('skKq');
+    if (!ds.length) { box.innerHTML = '<p class="hint">Không thấy dòng nào có "HP + mã sinh viên". Kiểm lại nội dung dán vào.</p>'; skKetQua = []; return; }
+    skKetQua = ds.map(function (d) {
+      var cua = skCandidates.filter(function (e) { return String((e.profiles || {}).student_no || '').replace(/\s+/g, '').toUpperCase() === d.mssv; });
+      var chua = cua.filter(function (e) { return !e.da_dong_at && !e.mien; });
+      var k = { mssv: d.mssv, tat: d.tat, tien: d.tien, goc: d.goc, dong: d.dong, ten: cua[0] ? (cua[0].profiles.full_name || cua[0].profiles.email) : '', ung: chua, tt: '' };
+      if (!cua.length) k.tt = 'khong_thay';
+      else if (!chua.length) k.tt = 'da_dong';
+      else {
+        if (chua.length > 1 && d.tat) { var kh = chua.filter(function (e) { return skVietTat(e.classes.name) === d.tat; }); if (kh.length === 1) k.ung = kh; }
+        k.tt = k.ung.length === 1 ? (d.tien === Math.round(Number(k.ung[0].classes.hoc_phi)) ? 'khop' : (d.tien ? 'lech' : 'khong_tien')) : 'nhieu_lop';
+      }
+      return k;
+    });
+    /* cùng mã SV + cùng lớp gặp lần hai (dán trùng, hai giao dịch) → chỉ dòng đầu được duyệt */
+    var daGap = {};
+    skKetQua.forEach(function (k) { if (k.ung.length !== 1) return; var key = k.mssv + '|' + k.ung[0].class_id; if (daGap[key]) k.tt = 'trung'; else daGap[key] = true; });
+    var NHAN = { trung: ['pill', 'Trùng dòng trên'], khop: ['pill on', 'Khớp'], lech: ['pill off', 'Lệch tiền'], khong_tien: ['pill off', 'Không thấy số tiền'], nhieu_lop: ['pill', 'Chọn lớp'], da_dong: ['pill', 'Đã đóng rồi'], khong_thay: ['pill no', 'Không thấy mã SV'] };
+    box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th></th><th>Mã SV</th><th>Sinh viên</th><th>Lớp</th><th>Sao kê</th><th>Học phí</th><th>Kết quả</th></tr></thead><tbody>'
+      + skKetQua.map(function (k, i) {
+        var duoc = k.tt === 'khop' || k.tt === 'lech' || k.tt === 'nhieu_lop' || k.tt === 'khong_tien';
+        var lop = k.tt === 'nhieu_lop' ? '<select data-sk="' + i + '">' + k.ung.map(function (e) { return '<option value="' + e.class_id + '">' + esc(e.classes.name) + '</option>'; }).join('') + '</select>' : (k.ung[0] ? esc(k.ung[0].classes.name) : '—');
+        return '<tr title="' + esc(k.goc) + '"><td><input type="checkbox" data-sk="' + i + '"' + (k.tt === 'khop' ? ' checked' : '') + (duoc ? '' : ' disabled') + '></td><td><code>' + esc(k.mssv) + '</code>' + (k.tat ? ' <small class="hint" style="margin:0">' + esc(k.tat) + '</small>' : '') + '</td><td>' + esc(k.ten || '—') + '</td><td>' + lop + '</td>'
+          + '<td>' + (k.tien ? vnd(k.tien) : '—') + '</td><td>' + (k.ung[0] ? vnd(k.ung[0].classes.hoc_phi) : '—') + '</td><td><span class="' + NHAN[k.tt][0] + '">' + NHAN[k.tt][1] + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>'
+      + '<p class="hint" style="margin:8px 0 0">Tick sẵn các dòng <b>Khớp</b>. Dòng <b>Lệch tiền</b> vẫn duyệt được (ghi đúng số trên sao kê). <b>Chọn lớp</b>: em ấy học nhiều khoá mà nội dung không có viết tắt lớp — chọn tay.</p>';
+  }
+  $('dlgBody').addEventListener('click', function (e) { if (e.target.closest('#skDoi')) skDoiChieu(); });
+  $('saoKeBtn').addEventListener('click', moSaoKe);
 
   function oHoSo(p) {
     if (!coHoSo) return '<small style="color:var(--muted)">chạy schema_v10 để xem</small>';
