@@ -44,14 +44,17 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 ## 2026-09-12 — Trang chủ = tổng quan cả tài khoản (m sửa lại thứ tự)
 
 M: "Trang chủ ở đầu, khoá học thứ 2… trang chủ báo số khoá đăng ký, xem video ở khoá nào, bài khoá nào vừa đăng". Đảo thanh trái
-(Trang chủ → Khoá học → …), bỏ ép mở mục Khoá học khi vào app.  viết lại thành tổng quan MỌI khoá: lời chào "Bạn đang học
+(Trang chủ → Khoá học → …), bỏ ép mở mục Khoá học khi vào app. `renderHome` viết lại thành tổng quan MỌI khoá: lời chào "Bạn đang học
 N khoá · X bài mới · Y phiếu chưa xong"; thông báo từng lớp (ghi tên lớp); thẻ học phí; hạn nộp mọi khoá; hero *Tiếp tục học* = bài đang dở
 gần nhất ở bất kỳ khoá nào (ghi tên khoá); thẻ *Bạn đang học N khoá* (dòng mỗi khoá: buổi · tài liệu · % · nhãn mới/học phí/tạm đóng,
 bấm là vào khoá); 3 ô nhanh (Bài tập / Bài giảng / Khoá học); **Vừa đăng** 5 bài mới nhất mọi khoá ("1 giờ trước"); *Lịch sắp tới* mọi khoá;
-*Bài tập cần làm* mọi khoá; *Mục tiêu tuần* mọi khoá. Dữ liệu:  (sessions+materials mọi lớp, từ ) + 
-giờ nạp cho mọi lớp (bỏ lọc class_id). Bấm bài ở khoá khác:  gắn  →  chuyển khoá,  mở sau khi
- xong (đã thử: từ Hữu cơ bấm Tiếp tục học → sang Phân tích, viewer mở đúng video).  không đè lời chào
+*Bài tập cần làm* mọi khoá; *Mục tiêu tuần* mọi khoá. Dữ liệu: `tatCaBuoi` (sessions + materials mọi lớp, từ `taiTomTatKhoa`) + `views`
+giờ nạp cho mọi lớp (bỏ lọc class_id). Bấm bài ở khoá khác: `nutMo` gắn `data-lop` → `moTrongKhoa()` chuyển khoá, `moSau` mở sau khi
+`loadSessions` xong (đã thử: từ Hữu cơ bấm Tiếp tục học → sang Phân tích, viewer mở đúng video). `capNhatTenLop` không đè lời chào
 khi đang ở trang chủ.
+
+**Bẫy (lại):** viết nhật ký bằng `node -e "…"` trong Bash → backtick trong chuỗi bị bash coi là lệnh → mục bị khoét rỗng; phải sửa lại
+bằng script ghi qua Write. Đúng quy tắc cũ: nội dung có backtick/`$` → Write file rồi `node file`.
 
 ---
 
