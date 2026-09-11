@@ -99,6 +99,10 @@ Supabase chỉ chấp nhận địa chỉ đã khai, không thì ném về Site 
 3. **Redirect URLs** → **Add URL** → `https://hoc.giangduonghoahoc.com/**` → **Save**.
    **Giữ nguyên** dòng `https://lop-hoc-online.giangduonghoahoc.workers.dev/**` — app máy tính vẫn dùng.
 
+**Ghi chú 11/9 (tối):** từ đợt "trang công khai", `/` là trang giới thiệu, sinh viên chỉ học trong app (`/hoc`). Bước 6 dưới đây
+viết lúc sinh viên còn đăng nhập được trên web — giờ mục 1–2 thay bằng: mở `/` thấy trang giới thiệu, mở `/hoc` bằng trình duyệt
+với tài khoản SV thấy màn "Lớp học mở trong ứng dụng". Bước 6b không còn xảy ra với sinh viên mới.
+
 ## Bước 6 — Thử một vòng bằng tài khoản sinh viên
 
 Trên trình duyệt thường, ở địa chỉ mới:

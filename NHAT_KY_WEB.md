@@ -13,13 +13,14 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 ## Trạng thái hiện tại (2026-09-11)
 
 Đang chạy trên web:
-- **Trang học sinh viên** — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** có bộ gõ công thức (₂ ⁻ × → …), máy chấm hiểu mọi cách viết số khoa học, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
+- **Trang công khai** `web/index.html` (`/`) — giới thiệu, khoá học, cách học, hỏi đáp nhanh, Zalo, tải app; nội dung sửa ở Quản trị → Trang công khai (v25).
+- **Trang học sinh viên** `web/hoc.html` (`/hoc`, **chỉ trong app** — `BAT_BUOC_APP = 'tat_ca'`) — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** có bộ gõ công thức (₂ ⁻ × → …), máy chấm hiểu mọi cách viết số khoa học, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
 - **Trang quản trị** — Buổi học (xoá mềm, Hoàn tác, 🗑 Thùng rác giữ 30 ngày) / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
 - **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` — đang ở **đợt 85**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc.
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.16** — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v24** đều `true` trên `/api/trang-thai` (kiểm 11/9, máy chấm thật 10/10 phép qua RPC). Không còn schema nào treo.
+**SQL:** v9 → **v24** đều `true` trên `/api/trang-thai` (kiểm 11/9, máy chấm thật 10/10 phép qua RPC). **v25 (trang công khai) chờ m chạy.**
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
@@ -38,6 +39,43 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-11 (khuya) — Tách trang công khai / học chỉ trong app (v25)
+
+M chốt kiến trúc mới: `giangduonghoahoc.com/` là **trang công khai** (giới thiệu khoá học, cách học, hỏi đáp nhanh, Zalo,
+tải app); **toàn bộ việc học chỉ trong app**. Hỏi 3 câu, m chọn: chấp nhận mất đường học bằng điện thoại; t soạn nháp nội
+dung; nội dung sửa được trong Quản trị.
+
+Làm:
+- `web/index.html` (trang học) → `git mv` thành **`web/hoc.html`**; `BAT_BUOC_APP = 'tat_ca'`. Thêm màn `#appOnly` ("Lớp học
+  mở trong ứng dụng" + 2 nút tải) thay cho alert; kiểm "trong app?" **trước** `xinThietBi()` để SV thử trình duyệt không bị
+  gắn nhầm máy vào trình duyệt. Link khôi phục mật khẩu (`type=recovery` trong hash) → `hienKhoiPhuc()`: chỉ ô đặt mật khẩu
+  mới, không `enter()`, không gắn máy, xong `khoiPhucXong()` đăng xuất lặng (`khongReload`). Sửa luôn lỗi cũ: link quên mật
+  khẩu của SV đã gắn app trước đây vấp `other_device` ngay khi mở bằng trình duyệt.
+- `web/index.html` **mới** = trang công khai: palette logo (ink/sea/flask), Be Vietnam Pro + Lora nghiêng cho khẩu hiệu, hero
+  2 cột + 2 nút tải R2 + link tai-app, 6 thẻ "được gì", khoá học / cách học / hỏi đáp / liên hệ nạp từ bảng
+  `trang_cong_khai` qua REST anon (fetch, không cần SDK); có bản mẫu `MAU` trong mã nên chưa chạy SQL hay mất mạng vẫn đủ trang.
+- `schema_v25_trang_cong_khai.sql`: bảng `trang_cong_khai(khoa pk, noi_dung jsonb, updated_at)`, RLS đọc `true`, sửa `is_staff()`,
+  grant anon select; seed 5 khoá (gioi_thieu, khoa_hoc, cach_dung, hoi_dap, lien_he) `on conflict do nothing`. Zalo để trống.
+- `web/quan-tri.html`: tab **Trang công khai** (`paneWeb`): `veTck/docTck/loadWeb/luuWeb`, dòng thêm/xoá, upsert theo `khoa`,
+  toast "Đã đăng" có nút Mở trang; chưa có bảng → nhắc đúng tên tệp SQL.
+- `worker.js`: `/` hoặc `/index.html` với UA `LopHocApp/` → trả `/hoc` (app ≤ 1.0.16 không phải cập nhật); `v25_trang_cong_khai`.
+- `app/main.js`: `SITE_URL` → `/hoc` (bản sau). Link "Trang học" ở quản trị / shim sổ / so-bai-tap / tai-app → `hoc.html`.
+  `manifest.json` start_url `./hoc`; `_headers` no-cache `/hoc`. PR infographic bỏ câu "mở bằng trình duyệt".
+- Test: `tao-ban-thu.js` đọc `hoc.html`, ghi `_test_hoc.html`, tự giả lập app (`window.lopHocApp.getMachineId`), `?web=1` xem
+  màn cần app; `#access_token=x&type=recovery` xem luồng khôi phục. Stub quản trị: bảng `trang_cong_khai` + `?tck=0` giả vắng
+  bảng. `ra-soat.js` kiểm cả `hoc.html`. `may-chu.js` mở `_test_hoc.html`.
+- Đã chạy thử 3 luồng trong pane (đo DOM): màn cần app, vào lớp trong "app", khôi phục mật khẩu; tab quản trị thêm/xoá/lưu/tải lại.
+- Sổ tay `HUONG_DAN.md`: mục Trên điện thoại viết lại, bảng BAT_BUOC_APP (đang `tat_ca` + vì sao + 3 việc mã đã lo), bảng
+  web/app, **bảng 4 địa chỉ**, mục mới "Trang công khai — sửa nội dung ở đâu".
+
+**Bẫy gặp:** heredoc Bash nuốt `\\n` thành `\n` trong script vá → anchor có `\n\n` literal không khớp; chuyển sang Write.
+Screenshot pane ẩn hay timeout/zoom lạ → đo DOM bằng javascript_tool (grid columns, chiều cao thẻ, scrollWidth).
+
+**M phải làm:** chạy `schema_v25_trang_cong_khai.sql`; vào Quản trị → Trang công khai điền số Zalo (+ sửa khoá học cho đúng);
+thử `/hoc` bằng trình duyệt với tài khoản SV → phải thấy màn "mở trong ứng dụng"; mở app 1.0.16 → vẫn vào lớp như cũ.
+
 ---
 
 ## 2026-09-11 (tối) — Tên miền giangduonghoahoc.com đã gắn

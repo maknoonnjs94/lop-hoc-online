@@ -99,7 +99,7 @@ function ra(ten) {
 
 let tong = 0;
 const canRa = process.argv.slice(2);
-(canRa.length ? canRa : ['index.html', 'quan-tri.html']).forEach(function (t) {
+(canRa.length ? canRa : ['index.html', 'hoc.html', 'quan-tri.html']).forEach(function (t) {
   const loi = ra(t);
   tong += loi.length;
   console.log('\n=== ' + t + ' — ' + (loi.length ? loi.length + ' chỗ đáng ngờ' : 'sạch') + ' ===');

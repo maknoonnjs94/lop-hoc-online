@@ -5,6 +5,8 @@
   Cache-Control: no-cache, must-revalidate
 /tai-app
   Cache-Control: no-cache, must-revalidate
+/hoc
+  Cache-Control: no-cache, must-revalidate
 /quan-tri
   Cache-Control: no-cache, must-revalidate
 /so-bai-tap

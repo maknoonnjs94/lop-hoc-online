@@ -19,7 +19,7 @@ Cần có Node.js. Chưa có thì tải ở nodejs.org.
 
 ## Thử từng luồng
 
-Địa chỉ gốc: `http://127.0.0.1:8765/_test_index.html`
+Địa chỉ gốc: `http://127.0.0.1:8765/_test_hoc.html`
 Thêm phần sau vào đuôi địa chỉ:
 
 | Thêm vào | Xem được gì |
@@ -43,7 +43,7 @@ Thêm phần sau vào đuôi địa chỉ:
 | `?o=1` (đã có) | Bấm vào một ô trả lời → hiện **bộ gõ ký hiệu**; ô thứ 4 đáp án `1,74×10⁻⁵`, gõ `0,0000174` hay `1.74e-5` đều phải xanh |
 
 Ghép nhiều cái bằng `&`, ví dụ:
-`http://127.0.0.1:8765/_test_index.html?g=nam&het=1`
+`http://127.0.0.1:8765/_test_hoc.html?g=nam&het=1`
 
 ## Trang quản trị
 
@@ -98,4 +98,4 @@ Những thứ này phải thử trên bản thật ở `lop-hoc-online.giangduon
 
 Mở `tao-ban-thu.js`, phần `sessions` / `views` / `profile` ở đầu file — sửa tên buổi, tên tài liệu, tiến độ tuỳ ý, rồi chạy lại `chay-thu.cmd`.
 
-Bản thử ghi ra `web/_test_index.html`. Tệp đó nằm trong `.gitignore` nên không bị đẩy lên GitHub và **không có trên trang thật** (đã kiểm: trang thật trả 404).
+Bản thử ghi ra `web/_test_hoc.html` (trang học thật là `web/hoc.html`; `index.html` giờ là trang công khai). Bản thử giả lập app; thêm `?web=1` để xem màn "cần mở bằng app" như sinh viên mở bằng trình duyệt. Tệp đó nằm trong `.gitignore` nên không bị đẩy lên GitHub và **không có trên trang thật** (đã kiểm: trang thật trả 404).

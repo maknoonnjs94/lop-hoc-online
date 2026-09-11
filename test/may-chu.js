@@ -5,7 +5,7 @@ const http = require('http'), fs = require('fs'), path = require('path'), { exec
 
 const web = path.join(__dirname, '..', 'web');
 const cong = 8765;
-const trang = '/_test_index.html';
+const trang = '/_test_hoc.html';
 
 const mime = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',

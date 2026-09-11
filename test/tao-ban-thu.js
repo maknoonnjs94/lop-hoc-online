@@ -1,4 +1,4 @@
-/* Dựng web/_test_index.html — bản sao của trang học sinh viên, nhưng Supabase được thay
+/* Dựng web/_test_hoc.html — bản sao của trang học sinh viên (web/hoc.html), nhưng Supabase được thay
    bằng một bản giả chạy ngay trong trình duyệt. Không cần mạng, không cần đăng nhập,
    không đụng vào dữ liệu thật. Dữ liệu chỉ nằm trong bộ nhớ: tải lại trang là về như cũ.
 
@@ -6,12 +6,14 @@
 const fs = require('fs'), path = require('path');
 const web = path.join(__dirname, '..', 'web');
 
-let h = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
+let h = fs.readFileSync(path.join(web, 'hoc.html'), 'utf8');
 
 const stub = `<script>
 (function(){
   var P = new URLSearchParams(location.search), now = Date.now(), d = function(ms){ return new Date(now + ms).toISOString(); };
   var g = P.get('g') || 'nu', onb = P.get('onb') === '1';
+  /* Từ 11/9: học chỉ trong app. Bản thử giả lập app (mã máy giả) để vào được lớp; ?web=1 = như mở bằng trình duyệt → màn "cần app". */
+  if (P.get('web') !== '1') window.lopHocApp = { getMachineId: function(){ return Promise.resolve('thu-may-' + g); } };
   /* ?o=1 — phiếu buổi 5 có sẵn 4 ô trả lời đặt trên PDF, máy chấm đúng/sai */
   var coO = P.get('o') === '1';
   /* toạ độ khoanh trên phiếu mẫu web/_test_phieu.png (794×1123) */
@@ -154,7 +156,7 @@ const stub = `<script>
 </script>`;
 
 h = h.replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2\/dist\/umd\/supabase\.js"><\/script>/, stub);
-if (h.indexOf('window.supabase = {') < 0) throw new Error('Không thay được thẻ supabase trong web/index.html — kiểm lại địa chỉ script.');
+if (h.indexOf('window.supabase = {') < 0) throw new Error('Không thay được thẻ supabase trong web/hoc.html — kiểm lại địa chỉ script.');
 
-fs.writeFileSync(path.join(web, '_test_index.html'), h);
-console.log('Đã dựng web/_test_index.html —', h.length, 'ký tự.');
+fs.writeFileSync(path.join(web, '_test_hoc.html'), h);
+console.log('Đã dựng web/_test_hoc.html —', h.length, 'ký tự.');

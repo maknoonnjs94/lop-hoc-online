@@ -146,7 +146,7 @@ ipcMain.handle('lophoc:check-update', async () => {
 /* Địa chỉ trang lớp học. Bản ≤ 1.0.16 trỏ lop-hoc-online.giangduonghoahoc.workers.dev (vẫn chạy song song).
    Từ bản sau trỏ tên miền riêng — TRƯỚC KHI phát hành: quản trị → Kho tệp → 🔒 Khoá lại video một lần,
    để video tải lên từ trước cũng phát được ở địa chỉ mới. */
-const SITE_URL = 'https://giangduonghoahoc.com/';
+const SITE_URL = 'https://giangduonghoahoc.com/hoc';   /* / là trang công khai, /hoc là trang học */
 const APP_TAG = 'LopHocApp/' + app.getVersion();     /* trang web nhận ra mình đang chạy trong app nhờ chuỗi này */
 
 app.setName('Lớp học');

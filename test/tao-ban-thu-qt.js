@@ -16,6 +16,13 @@ const stub = `<script>
 
   /* ---------------- kho dữ liệu giả, có thật trong bộ nhớ ---------------- */
   var DB = {
+    /* v25: trang công khai — ?tck=0 để xem lời nhắc chưa chạy SQL (bảng vắng) */
+    trang_cong_khai: P.get('tck') === '0' ? undefined : [
+      { khoa:'gioi_thieu', noi_dung:{ khau_hieu:'Hóa học khó, có Phạm Ngọc lo', mo_ta:'Bản thử.' } },
+      { khoa:'khoa_hoc', noi_dung:[{ ten:'Hóa phân tích', mo_ta:'Thử', doi_tuong:'Năm 2', lich:'Kì 1', trang_thai:'dang_mo' }] },
+      { khoa:'hoi_dap', noi_dung:[{ hoi:'Học trên điện thoại được không?', dap:'Chưa.' }] },
+      { khoa:'lien_he', noi_dung:{ zalo:'0912 345 678', email:'gv@vnu.edu.vn' } }
+    ],
     profiles: [
       { id:'gv1', full_name:'Phạm Anh Ngọc', email:'gv@vnu.edu.vn', role:'admin', active:true },
       { id:'u1', full_name:'Nguyễn Minh Anh', email:'minhanh@vnu.edu.vn', role:'student', active:true, student_no:'23001234', gender:'nu', major:'Hóa dược', birth_year:2005, onboarded_at:d(-30*864e5), must_change_pw:false, avatar_path:'' },
@@ -107,6 +114,11 @@ const stub = `<script>
   }
   function ghi(ten, dk, hd, tai) {
     var kho = DB[ten] = DB[ten] || [];
+    if (hd === 'upsert' && ten === 'trang_cong_khai') {   /* v25: khoá là 'khoa' */
+      var ra2 = [];
+      [].concat(tai).forEach(function (r) { r = hop(r); var cu = kho.filter(function (x) { return x.khoa === r.khoa; })[0]; if (cu) Object.assign(cu, r); else kho.push(r); ra2.push(hop(r)); });
+      return ra2;
+    }
     if (hd === 'insert' || (hd === 'upsert' && ten === 'material_contents')) {
       var ds = [].concat(tai), ra = [];
       ds.forEach(function (r) {
@@ -146,6 +158,7 @@ const stub = `<script>
     o.single = function () { mot = true; return o; };
     o.maybeSingle = function () { mot = true; return o; };
     o.then = function (a, b) {
+      if (ten === 'trang_cong_khai' && !DB[ten]) return Promise.resolve({ data: null, error: { message: 'relation "public.trang_cong_khai" does not exist' } }).then(a, b);
       var rows = hd ? ghi(ten, dk, hd, tai) : doc(ten, dk);
       if (sapXep && !hd) rows.sort(function (x, y) {
         var p = x[sapXep[0]], q2 = y[sapXep[0]];

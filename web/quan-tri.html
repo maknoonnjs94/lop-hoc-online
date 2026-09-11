@@ -314,6 +314,20 @@
   .uptien .bar i{ display:block; height:100%; width:0; border-radius:99px; background:var(--primary); transition:width .3s }
   .uptien .chu{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:5px }
   .uptien .chu button{ border:0; background:none; color:var(--danger, #a72e48); font:inherit; font-size:12.5px; cursor:pointer; text-decoration:underline }
+  /* ---------- Trang công khai ---------- */
+  .tck{ display:grid; gap:14px }
+  .tck .card{ padding:18px 18px 14px }
+  .tck .card > h3{ font-size:15.5px; margin:0 0 4px }
+  .tck .card > .phu{ color:var(--muted); font-size:12.5px; margin-bottom:12px }
+  .tck .row{ display:grid; grid-template-columns:1fr auto; gap:10px; align-items:start; padding:12px; border:1px dashed var(--line-2); border-radius:var(--r-m); margin-bottom:10px }
+  .tck .row .fs{ display:grid; gap:8px; grid-template-columns:1fr 1fr }
+  .tck .row .fs label.f{ margin:0 }
+  .tck .row .fs label.f.w{ grid-column:1 / -1 }
+  .tck .row .fs label.f input, .tck .row .fs label.f select, .tck .row .fs label.f textarea{ padding:8px 10px; font-size:13.5px }
+  .tck .row .fs label.f textarea{ min-height:56px }
+  .tck .row .xoa{ padding:6px 9px; font-size:12px }
+  .tck .lh{ display:grid; gap:8px; grid-template-columns:1fr 1fr } .tck .lh label.f{ margin:0 } .tck .lh label.f.w{ grid-column:1 / -1 }
+  @media (max-width:640px){ .tck .row .fs, .tck .lh{ grid-template-columns:1fr } }
 </style>
 </head>
 <body>
@@ -337,7 +351,7 @@
       <span><b>Quản trị lớp học</b><small id="whoAmI"></small></span>
     </a>
     <a class="chip" href="so-bai-tap.html"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/></svg></span>Sổ Bài Tập</a>
-    <a class="chip" href="index.html" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="3"/></svg></span>Trang học</a>
+    <a class="chip" href="hoc.html" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="3"/></svg></span>Trang học</a>
     <button class="chip out" id="outBtn" type="button"><span class="ico"><svg viewBox="0 0 24 24"><path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4M18 12H9"/></svg></span>Thoát</button>
   </div></header>
   <div class="wrap">
@@ -356,6 +370,7 @@
           <button data-tab="nop">Bài nộp</button>
           <button data-tab="hoi">Hỏi đáp <span class="pill" id="hoiN" hidden style="margin-left:4px">0</span></button>
           <button data-tab="bao">Cảnh báo <span class="pill off" id="baoN" hidden style="margin-left:4px">0</span></button>
+          <button data-tab="web">Trang công khai</button>
         </div>
         <div id="paneSes">
           <div class="bar">
@@ -455,6 +470,21 @@
             Trang học ghi lại khi sinh viên bấm PrintScreen, Ctrl+P hoặc Ctrl+S, kèm tài liệu đang mở lúc đó.
             Win+Shift+S, máy Mac và điện thoại thì trình duyệt không thấy được — dấu chìm tên trên tài liệu là lớp bảo vệ cho những trường hợp ấy.
             Có sự kiện mới là báo ngay tại trang này, kể cả khi đang ở tab khác.
+          </p>
+        </div>
+        <div id="paneWeb" hidden>
+          <div class="bar">
+            <b>Trang công khai giangduonghoahoc.com</b>
+            <span class="grow"></span>
+            <a class="btn sm" href="./" target="_blank" rel="noopener">↗ Mở trang</a>
+            <button class="btn sm" id="tckReload">↻ Tải lại</button>
+            <button class="btn sm primary" id="tckLuu">Lưu và đăng</button>
+          </div>
+          <div id="tckMsg" class="hint" hidden style="margin:0 0 10px"></div>
+          <div class="tck" id="tckBox"></div>
+          <p class="hint" style="margin-top:10px">
+            Ai cũng xem được trang này, kể cả chưa đăng nhập — đừng ghi gì riêng tư. Bấm <b>Lưu và đăng</b> là trang đổi ngay.
+            Nút tải app và phần "được gì" là cố định trong trang; ở đây sửa khoá học, các bước học, hỏi đáp nhanh và liên hệ.
           </p>
         </div>
         <div id="paneStu" hidden>
@@ -705,6 +735,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('paneTheo').hidden = tab !== 'theo';
     $('paneNop').hidden = tab !== 'nop';
     $('paneHoi').hidden = tab !== 'hoi';
+    $('paneWeb').hidden = tab !== 'web';
     refreshPane();
   });
   async function refreshPane() {
@@ -716,6 +747,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (tab === 'kho') { await loadKho(); return; }          /* kho gom tệp của MỌI lớp nên không cần chọn lớp */
     if (tab === 'nop') { await loadNop(); return; }
     if (tab === 'hoi') { await loadHoi(); return; }
+    if (tab === 'web') { await loadWeb(); return; }
     if (!c) {
       $('flowBar').innerHTML = '';
       $('sesList').innerHTML = '<div class="card steps">'
@@ -2426,6 +2458,85 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
      Trình duyệt không được cầm khoá quản trị Supabase, nên việc tạo tài khoản đi qua /api của Worker
      (worker.js); khoá nằm trong secret của Cloudflare. Worker kiểm tra người gọi phải là giảng viên. */
   var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://lop-hoc-online.giangduonghoahoc.workers.dev' : '';
+  /* ================= TRANG CÔNG KHAI (v25) ================= */
+  var TCK_TT = [["dang_mo", "Đang mở"], ["sap_mo", "Sắp mở"], ["ket_thuc", "Đã kết thúc"]];
+  var tckDaTai = false;
+  function tckF(ten, nhan, gt, kieu, w) {
+    var v = esc(gt == null ? "" : gt);
+    if (kieu === "textarea") return '<label class="f' + (w ? " w" : "") + '">' + nhan + '<textarea data-k="' + ten + '">' + v + '</textarea></label>';
+    if (kieu === "tt") return '<label class="f">' + nhan + '<select data-k="' + ten + '">' + TCK_TT.map(function (t) { return '<option value="' + t[0] + '"' + (gt === t[0] ? " selected" : "") + ">" + t[1] + "</option>"; }).join("") + "</select></label>";
+    return '<label class="f' + (w ? " w" : "") + '">' + nhan + '<input data-k="' + ten + '" value="' + v + '"></label>';
+  }
+  function tckRow(loai, o) {
+    o = o || {};
+    var fs = "";
+    if (loai === "khoa_hoc") fs = tckF("ten", "Tên khoá", o.ten) + tckF("trang_thai", "Trạng thái", o.trang_thai || "dang_mo", "tt") + tckF("lich", "Lịch (vd: Kì 1 · 2026–2027)", o.lich) + tckF("doi_tuong", "Dành cho", o.doi_tuong) + tckF("mo_ta", "Mô tả ngắn", o.mo_ta, "textarea", true);
+    else if (loai === "cach_dung") fs = tckF("tieu_de", "Tiêu đề bước", o.tieu_de, null, true) + tckF("mo_ta", "Nội dung", o.mo_ta, "textarea", true);
+    else fs = tckF("hoi", "Câu hỏi", o.hoi, null, true) + tckF("dap", "Trả lời", o.dap, "textarea", true);
+    return '<div class="row" data-loai="' + loai + '"><div class="fs">' + fs + '</div><button type="button" class="btn sm danger xoa" title="Bỏ dòng này">✕</button></div>';
+  }
+  function tckKhoi(loai, tieuDe, phu, ds, nhanThem) {
+    return '<div class="card" data-khoi="' + loai + '"><h3>' + tieuDe + '</h3><div class="phu">' + phu + '</div><div class="ds">'
+      + (ds || []).map(function (o) { return tckRow(loai, o); }).join("")
+      + '</div><button type="button" class="btn sm them" data-loai="' + loai + '">＋ ' + nhanThem + "</button></div>";
+  }
+  function veTck(d) {
+    var gt = d.gioi_thieu || {}, lh = d.lien_he || {};
+    $("tckBox").innerHTML =
+      '<div class="card" data-khoi="gioi_thieu"><h3>Lời mở đầu</h3><div class="phu">Hiện ngay đầu trang, dưới tên Giảng đường.</div><div class="lh">'
+        + tckF("khau_hieu", "Khẩu hiệu (không cần ngoặc kép)", gt.khau_hieu, null, true) + tckF("mo_ta", "Đoạn giới thiệu (2–3 câu)", gt.mo_ta, "textarea", true) + "</div></div>"
+      + tckKhoi("khoa_hoc", "Khoá học", "Mỗi khoá một thẻ; nút Đăng ký dẫn tới Zalo bên dưới.", d.khoa_hoc, "Thêm khoá")
+      + tckKhoi("cach_dung", "Cách học — các bước", "Đánh số tự động theo thứ tự.", d.cach_dung, "Thêm bước")
+      + tckKhoi("hoi_dap", "Hỏi đáp nhanh", "Câu đầu tiên mở sẵn, các câu sau gấp lại.", d.hoi_dap, "Thêm câu")
+      + '<div class="card" data-khoi="lien_he"><h3>Liên hệ</h3><div class="phu">Số Zalo hiện to ở mục Liên hệ; có link zalo.me thì nút Nhắn Zalo dùng link đó.</div><div class="lh">'
+        + tckF("zalo", "Số Zalo", lh.zalo) + tckF("zalo_link", "Link Zalo (zalo.me/…, tuỳ chọn)", lh.zalo_link) + tckF("email", "Email", lh.email) + tckF("facebook", "Facebook (link)", lh.facebook) + tckF("ghi_chu", "Ghi chú ngắn", lh.ghi_chu, null, true) + "</div></div>";
+  }
+  function docKhoi(el) {
+    var o = {};
+    [].forEach.call(el.querySelectorAll("[data-k]"), function (i) { o[i.dataset.k] = i.value.trim(); });
+    return o;
+  }
+  function docTck() {
+    var d = {};
+    [].forEach.call($("tckBox").querySelectorAll("[data-khoi]"), function (k) {
+      var loai = k.dataset.khoi;
+      if (loai === "gioi_thieu" || loai === "lien_he") d[loai] = docKhoi(k.querySelector(".lh"));
+      else d[loai] = [].map.call(k.querySelectorAll(".row"), function (r) { return docKhoi(r); }).filter(function (o) { return Object.keys(o).some(function (x) { return o[x]; }); });
+    });
+    return d;
+  }
+  async function loadWeb() {
+    var m = $("tckMsg"); m.hidden = true;
+    if (!tckDaTai) $("tckBox").innerHTML = '<div class="hint">Đang tải…</div>';
+    var r = await sb.from("trang_cong_khai").select("khoa, noi_dung");
+    if (r.error) {
+      $("tckBox").innerHTML = "";
+      m.hidden = false;
+      m.innerHTML = /trang_cong_khai/.test(r.error.message)
+        ? "Máy chủ chưa có bảng của trang công khai. Supabase → SQL Editor → chạy <b>schema_v25_trang_cong_khai.sql</b> rồi bấm Tải lại. Trang giangduonghoahoc.com vẫn hiện bản mẫu trong lúc chờ."
+        : "Không đọc được: " + esc(r.error.message);
+      return;
+    }
+    var d = {};
+    (r.data || []).forEach(function (x) { d[x.khoa] = x.noi_dung; });
+    veTck(d); tckDaTai = true;
+  }
+  async function luuWeb() {
+    var b = $("tckLuu"); b.disabled = true; b.textContent = "Đang lưu…";
+    var d = docTck(), luc = new Date().toISOString();
+    var rows = Object.keys(d).map(function (k) { return { khoa: k, noi_dung: d[k], updated_at: luc }; });
+    var r = await sb.from("trang_cong_khai").upsert(rows, { onConflict: "khoa" });
+    b.disabled = false; b.textContent = "Lưu và đăng";
+    if (r.error) { toast("Không lưu được: " + r.error.message); return; }
+    toast("Đã đăng lên giangduonghoahoc.com.", "Mở trang", function () { window.open("./", "_blank"); });
+  }
+  $("tckLuu").addEventListener("click", luuWeb);
+  $("tckReload").addEventListener("click", function () { tckDaTai = false; loadWeb(); });
+  $("tckBox").addEventListener("click", function (e) {
+    var t = e.target.closest(".them"); if (t) { t.parentNode.querySelector(".ds").insertAdjacentHTML("beforeend", tckRow(t.dataset.loai)); var last = t.parentNode.querySelector(".ds .row:last-child input"); if (last) last.focus(); return; }
+    var x = e.target.closest(".xoa"); if (x) { x.closest(".row").remove(); }
+  });
+
   var LOI_API = {
     chua_cau_hinh: 'Máy chủ chưa có khoá quản trị. Vào Cloudflare → Workers & Pages → lop-hoc-online → Settings → Variables and Secrets, thêm secret SUPABASE_SERVICE_ROLE_KEY (xem HUONG_DAN.md, mục Tạo tài khoản cho sinh viên).',
     chua_dang_nhap: 'Chưa đăng nhập.', phien_het_han: 'Phiên đăng nhập hết hạn, tải lại trang rồi thử lại.',

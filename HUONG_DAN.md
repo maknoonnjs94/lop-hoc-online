@@ -163,21 +163,13 @@ Trước giờ đó sinh viên thấy dòng "Đáp án và lời giải · Mở 
 
 Không đặt hạn thì không có nhắc gì cả — chỉ ghi “cần nộp bài”.
 
-## Trên điện thoại: thêm vào màn hình chính
+## Trên điện thoại
 
-**Không có app điện thoại trên kho ứng dụng.** Nhưng trang web thêm được vào màn hình chính, sau đó nó có icon logo, có tên, mở toàn màn hình không thanh địa chỉ — nhìn và dùng y như một app.
+**Từ 11/9/2026 sinh viên không học trên điện thoại được nữa** — việc học chỉ nằm trong app Windows/macOS (xem hai mục dưới).
+Điện thoại mở `giangduonghoahoc.com` thì thấy trang giới thiệu, khoá học, cách học, hỏi đáp nhanh, Zalo và nút tải app.
 
-- **Android (Chrome):** mở trang → menu ba chấm → *Thêm vào Màn hình chính*. Nhiều máy tự hiện lời mời cài.
-- **iPhone (bắt buộc Safari):** mở trang → nút Chia sẻ → *Thêm vào Màn hình chính*. Chrome trên iPhone **không làm được**, phải Safari.
-
-Sinh viên thêm trang học, m thêm trang quản trị — hai cái là hai icon riêng, tên riêng, mở thẳng vào đúng trang của mình.
-
-Hai điều cần nói rõ với sinh viên:
-
-- **Video bài giảng vẫn không xem được trên điện thoại.** Icon ngoài màn hình chính không phải là ứng dụng máy tính; nó vẫn là trình duyệt nên vẫn bị chặn theo `BAT_BUOC_APP`. Phiếu, đề, đáp án, nộp bài, hỏi bài thì dùng bình thường.
-- **Trên điện thoại không có chống chụp màn hình.** Cửa sổ chỉ được hệ điều hành che khi chạy trong app máy tính. Dấu chìm tên thì vẫn có ở mọi nơi.
-
-Muốn đổi icon hay tên hiển thị: sửa `web/manifest.json` (trang học) và `web/manifest-quan-tri.json` (quản trị); ảnh nằm ở `web/img/app-*.png`.
+Trang quản trị vẫn thêm được vào màn hình chính điện thoại cho m (Android: Chrome → ba chấm → *Thêm vào Màn hình chính*;
+iPhone: Safari → Chia sẻ → *Thêm vào Màn hình chính*) — icon/tên ở `web/manifest-quan-tri.json`.
 
 ## Ai phải dùng ứng dụng máy tính
 
@@ -186,19 +178,27 @@ Muốn đổi icon hay tên hiển thị: sửa `web/manifest.json` (trang học
 | Giá trị | Nghĩa là |
 |---|---|
 | `'khong'` | Không bắt buộc gì. Mọi thứ mở được trên trình duyệt, kể cả điện thoại. |
-| `'video'` | **Đang dùng.** Chỉ video bài giảng phải mở trong app; phiếu, đề, đáp án vẫn đọc trên điện thoại. |
-| `'tat_ca'` | Khoá sạch: không có app thì không vào được — **kể cả điện thoại và máy tính bảng**. |
+| `'video'` | Chỉ video bài giảng phải mở trong app; phiếu, đề, đáp án vẫn đọc trên điện thoại. (Dùng tới 11/9/2026.) |
+| `'tat_ca'` | **Đang dùng.** Khoá sạch: sinh viên không có app thì không vào được — kể cả điện thoại. Trình duyệt chỉ hiện màn "Lớp học mở trong ứng dụng" + nút tải. |
 
 Giảng viên và quản trị luôn được miễn.
 
-Vì sao mặc định là `'video'`: app chỉ có bản Windows và macOS, nên `'tat_ca'` là chặn hết sinh viên học bằng điện thoại. Video bài giảng mới là thứ đáng bảo vệ, còn phiếu bài tập thì để các em ôn ở đâu cũng được.
+Vì sao đổi sang `'tat_ca'` (11/9/2026): tách hẳn **trang công khai** (`giangduonghoahoc.com/` — giới thiệu, tải app) khỏi
+**chỗ học** (trong app, trang `/hoc`). Sinh viên chỉ có một đường, mọi tài liệu đều nằm sau màn đen chống chụp/quay và
+khoá mã máy thật, hết cảnh đề đọc được trên web còn video thì không. Giá phải trả, đã chấp nhận: không học, không nộp bài
+từ điện thoại; sinh viên chụp bài làm rồi chuyển ảnh sang máy tính để nộp.
+
+Ba việc mã đã lo để đổi chế độ không gãy gì:
+- **App bản ≤ 1.0.16** vẫn mở địa chỉ gốc `/`: Worker nhận ra app qua User-Agent `LopHocApp/…` và trả thẳng trang học, sinh viên không phải cập nhật. Bản app sau trỏ thẳng `/hoc`.
+- **Quên mật khẩu**: link trong thư mở bằng trình duyệt → trang `/hoc` nhận ra `type=recovery`, chỉ hiện ô đặt mật khẩu mới, không gắn máy, không bắt app; xong thì nhắc mở app.
+- **Sinh viên thử đăng nhập bằng trình duyệt** không bị gắn nhầm tài khoản vào trình duyệt: trang kiểm "đang trong app?" **trước** khi gắn máy.
 
 Chặn thật nằm ở máy chủ chứ không chỉ ở giao diện: `APP_CHO_VIDEO` trong `worker.js` làm Worker **không ký vé xem** cho ai không chạy trong app, dù có gọi thẳng vào `/api/stream/token`. Đổi `BAT_BUOC_APP` thì nhớ đổi cả hai cho khớp.
 
 ## Web hay app: cái gì chặn được, cái gì không
 
-Cùng một địa chỉ `giangduonghoahoc.com`, mở bằng trình duyệt và mở trong app tải về **khác nhau ở mức bảo vệ**.
-Đây là bảng thật để khỏi kỳ vọng nhầm:
+Từ 11/9/2026 sinh viên **không học trên trình duyệt nữa**, nên cột "web" dưới đây chỉ còn đúng với giảng viên (được miễn)
+và để hiểu vì sao phải bắt app. Bảng thật để khỏi kỳ vọng nhầm:
 
 | Bảo vệ | Trình duyệt (web) | App tải về |
 |---|---|---|
@@ -209,19 +209,37 @@ Cùng một địa chỉ `giangduonghoahoc.com`, mở bằng trình duyệt và 
 | Quay màn hình (OBS, Game Bar, Zoom, Teams…) | ❌ trình duyệt không nhìn thấy | ✅ bản quay ra **màn đen**; app còn dò tiến trình quay và ghi cảnh báo |
 | Chụp bằng điện thoại chĩa vào màn hình | ❌ | ❌ — không công nghệ nào chặn được, chỉ còn dấu chìm để truy nguồn |
 | Một tài khoản = một máy | ⚠️ nhớ theo bộ nhớ trình duyệt, **riêng từng địa chỉ**; xoá dữ liệu duyệt web hay đổi địa chỉ là "máy mới" | ✅ mã của chính chiếc máy, bền qua mọi thứ |
-| Video bài giảng | ❌ sinh viên thấy khung "cần mở bằng app" | ✅ |
+| Toàn bộ việc học (bài giảng, tài liệu, bài tập, nộp bài, hỏi đáp) | ❌ sinh viên thấy màn "Lớp học mở trong ứng dụng" + nút tải | ✅ |
 | Rời cửa sổ / bỏ đi 5 phút | ✅ che mờ, hỏi rồi đăng xuất | ✅ |
 | Ba lần vi phạm chắc chắn | ✅ đóng phiên | ✅ |
 
 Nói ngắn: **trên web, ảnh chụp và bản quay vẫn ra nội dung thật**, hệ thống chỉ ghi lại được một phần và báo cho m.
-**Trong app, ảnh chụp và bản quay ra màn đen** — trình duyệt không bao giờ làm được điều này, nên video mới bắt buộc app.
-Đề và đáp án thì cố ý để xem được trên web, kể cả điện thoại; muốn siết cả đề thì đổi `BAT_BUOC_APP` sang `'tat_ca'` và chấp nhận mất đường học bằng điện thoại.
+**Trong app, ảnh chụp và bản quay ra màn đen** — trình duyệt không bao giờ làm được điều này, nên toàn bộ việc học nằm trong app.
+Muốn mở lại đường đọc đề trên điện thoại thì đổi `BAT_BUOC_APP` về `'video'` (và `APP_CHO_VIDEO` giữ nguyên).
 
 Mọi vi phạm (dù bắt được ở web hay app) đều vào Quản trị → **Cảnh báo**, kèm tên, tài liệu đang mở và giờ.
 
-**Tài khoản giảng viên** mở `giangduonghoahoc.com/` cũng thấy giao diện sinh viên — đó là trang học, thêm hai nút
-**Quản trị** và **Soạn bài** trên thanh trên. Trang quản trị nằm ở `giangduonghoahoc.com/quan-tri`. Giảng viên được miễn
-khoá máy và miễn bắt buộc app, nên xem video ngay trên trình duyệt để kiểm được.
+**Bốn địa chỉ, nhớ cho đúng:**
+
+| Địa chỉ | Là gì | Ai mở |
+|---|---|---|
+| `giangduonghoahoc.com/` | Trang công khai: giới thiệu, khoá học, cách học, hỏi đáp nhanh, Zalo, tải app | Ai cũng được, không đăng nhập |
+| `giangduonghoahoc.com/hoc` | Trang học — app mở trang này | Sinh viên trong app; giảng viên mở bằng trình duyệt để xem như sinh viên (miễn khoá máy, miễn app) |
+| `giangduonghoahoc.com/quan-tri` | Trang quản trị | Giảng viên, trình duyệt |
+| `giangduonghoahoc.com/so-bai-tap` | Bản web của Sổ Bài Tập | Giảng viên, trình duyệt |
+
+Địa chỉ cũ `lop-hoc-online.giangduonghoahoc.workers.dev` vẫn trả y hệt bốn trang trên.
+
+## Trang công khai — sửa nội dung ở đâu
+
+Quản trị → tab **Trang công khai**: lời mở đầu (khẩu hiệu + đoạn giới thiệu), **khoá học** (tên, trạng thái đang mở / sắp mở / đã kết thúc,
+lịch, dành cho ai, mô tả), **cách học** (các bước, tự đánh số), **hỏi đáp nhanh**, **liên hệ** (số Zalo, link zalo.me, email, Facebook).
+Bấm **Lưu và đăng** là trang đổi ngay. Nút tải app, phần "học ở đây thì được gì" và nội quy ngắn là cố định trong `web/index.html`.
+
+Cần chạy `schema_v25_trang_cong_khai.sql` một lần (bảng `trang_cong_khai`, ai cũng đọc, chỉ giảng viên sửa). Chưa chạy thì tab
+nhắc đúng tên tệp, còn trang công khai vẫn hiện bản mẫu có sẵn trong mã. Đừng ghi gì riêng tư vào tab này — ai cũng đọc được.
+
+Số Zalo đang **để trống** trong bản mẫu — m điền ở tab này, trang mới hiện nút *Nhắn Zalo* và *Đăng ký qua Zalo*.
 
 ## Video: chọn nơi đặt
 
@@ -391,7 +409,7 @@ M làm việc ở tab **Hỏi đáp** của trang quản trị, có hai phần:
 Sinh viên đăng nhập lần đầu, hệ thống ghi nhớ chiếc máy đó; máy khác đăng nhập cùng tài khoản sẽ bị chặn.
 
 - **Trong ứng dụng máy tính** (từ bản 1.0.16): nhớ theo *mã của chính chiếc máy*. Cập nhật app, cài lại app, đổi tên miền, xoá dữ liệu duyệt web — đều **không** làm mất, sinh viên không bị chặn oan.
-- **Trên trình duyệt**: nhớ theo bộ nhớ của trình duyệt, **riêng cho từng địa chỉ**. Xoá dữ liệu duyệt web, dùng chế độ ẩn danh, hoặc đã gắn ở `workers.dev` rồi mở `giangduonghoahoc.com` — đều bị coi là máy khác và bị chặn. Sinh viên báo thì bấm **Gỡ**, mười giây.
+- **Trên trình duyệt**: từ 11/9/2026 sinh viên không đăng nhập được bằng trình duyệt nữa (chỉ thấy màn "mở bằng app"), và link quên mật khẩu **không** gắn máy. Sinh viên đã lỡ gắn máy bằng trình duyệt từ trước (cột *Thiết bị* không có chữ *app*) sẽ bị chặn khi vào app lần đầu → bấm **Gỡ** cho em đó, mười giây.
 - **Đổi máy thật / cài lại Windows**: vào Quản trị → tab **Sinh viên** → dòng của người đó → **Gỡ**. Xong là họ đăng nhập được ở máy mới.
 - Cột *Thiết bị* ghi rõ "đã gắn máy (app)" hay "đã gắn máy" (trình duyệt), rê chuột lên xem giờ gắn.
 

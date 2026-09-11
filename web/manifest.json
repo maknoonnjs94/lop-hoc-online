@@ -4,7 +4,7 @@
   "description": "Lớp học online: buổi học, bài giảng, tài liệu và bài tập của lớp.",
   "lang": "vi",
   "dir": "ltr",
-  "start_url": "./",
+  "start_url": "./hoc",
   "scope": "./",
   "id": "/",
   "display": "standalone",

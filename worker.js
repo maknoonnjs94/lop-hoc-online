@@ -42,7 +42,14 @@ export default {
     TEN_MIEN_RIENG = (env.TEN_MIEN || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null;
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) {
-      return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
+      if (!env.ASSETS) return new Response('Not found', { status: 404 });
+      /* Từ 11/9/2026 địa chỉ gốc là trang công khai; trang học nằm ở /hoc. App bản ≤ 1.0.16 vẫn mở "/"
+         → nhận ra app qua User-Agent (LopHocApp/…) và trả thẳng trang học, sinh viên không phải cập nhật. */
+      if ((url.pathname === '/' || url.pathname === '/index.html') && /LopHocApp\//.test(request.headers.get('User-Agent') || '')) {
+        const u2 = new URL(request.url); u2.pathname = '/hoc';
+        return env.ASSETS.fetch(new Request(u2.toString(), request));
+      }
+      return env.ASSETS.fetch(request);
     }
     /* GET /api/trang-thai: Worker đã thấy khoá chưa — chỉ trả có/không và TÊN các biến, không bao giờ trả giá trị */
     if (url.pathname === '/api/trang-thai') {
@@ -440,7 +447,7 @@ async function coHam(env, ten, than) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -463,7 +470,8 @@ async function kiemSchema(env) {
     coCot(env, 'cau_hoi', 'class_id,ghim,chu_de'),
     coHam(env, 'luu_faq', JSON.stringify({ p_id: null, p_class: null, p_hoi: null, p_dap: null })),
     coCot(env, 'sessions', 'deleted_at'),
-    coHam(env, 'so_khoa_hoc', JSON.stringify({ s: '1' }))
+    coHam(env, 'so_khoa_hoc', JSON.stringify({ s: '1' })),
+    coCot(env, 'trang_cong_khai', 'khoa')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -481,6 +489,7 @@ async function kiemSchema(env) {
     v22_xem_bai: v22,
     v23_hoi_dap_rieng: v23a && v23b,
     v24_thung_rac_bo_go: v24a && v24b,
+    v25_trang_cong_khai: v25,
     ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }
