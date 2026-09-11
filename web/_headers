@@ -1,4 +1,12 @@
 # Trang HTML đổi liên tục: trình duyệt phải hỏi lại máy chủ mỗi lần mở (có ETag nên vẫn nhanh: chưa đổi thì 304).
+# Mọi đường: khoá HTTPS một năm (HSTS), không cho trang nào khác nhúng (chống clickjacking), không đoán kiểu tệp,
+# không lộ địa chỉ trang khi bấm link ra ngoài, tắt camera/micro/vị trí cho mọi script.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 /*.html
   Cache-Control: no-cache, must-revalidate
 /

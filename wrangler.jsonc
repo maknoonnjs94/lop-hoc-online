@@ -18,6 +18,8 @@
     "binding": "ASSETS",
     // mặc định Cloudflare trả tệp tĩnh TRƯỚC khi chạy worker.js → đường "/" cho app (UA LopHocApp) không bao giờ tới Worker.
     // Bật để mọi yêu cầu qua Worker; Worker vẫn gọi env.ASSETS.fetch nên _headers và chuyển hướng .html giữ nguyên.
-    "run_worker_first": true
+    // chỉ ba đường cần Worker: gốc (app cũ mở / → trang học), index.html, và /api/*. Tệp tĩnh còn lại Cloudflare trả thẳng,
+    // không tính vào hạn mức yêu cầu Worker (gói free 100.000/ngày) — đỡ bị vét quota khi có kẻ spam.
+    "run_worker_first": ["/", "/index.html", "/api/*"]
   }
 }
