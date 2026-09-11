@@ -328,6 +328,12 @@
   .tck .row .xoa{ padding:6px 9px; font-size:12px }
   .tck .lh{ display:grid; gap:8px; grid-template-columns:1fr 1fr } .tck .lh label.f{ margin:0 } .tck .lh label.f.w{ grid-column:1 / -1 }
   @media (max-width:640px){ .tck .row .fs, .tck .lh{ grid-template-columns:1fr } }
+  .tck .qrbox{ grid-column:1 / -1; display:flex; gap:14px; align-items:center; flex-wrap:wrap; padding:12px; border:1px dashed var(--line-2); border-radius:var(--r-m) }
+  .tck .qrbox img{ width:112px; height:112px; border-radius:10px; background:#fff; padding:6px; border:1px solid var(--line) }
+  .tck .qrbox .khung{ width:112px; height:112px; border-radius:10px; border:1px dashed var(--line-2); display:grid; place-items:center; color:var(--muted); font-size:12px; text-align:center; padding:8px }
+  .tck .qrbox .ghi{ flex:1; min-width:200px; font-size:12.5px; color:var(--muted); line-height:1.5 }
+  .tck .qrbox .ghi b{ color:var(--ink); display:block; font-size:13px; margin-bottom:3px }
+  .tck .qrbox .nut{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px }
 </style>
 </head>
 <body>
@@ -2489,7 +2495,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + tckKhoi("cach_dung", "Cách học — các bước", "Đánh số tự động theo thứ tự.", d.cach_dung, "Thêm bước")
       + tckKhoi("hoi_dap", "Hỏi đáp nhanh", "Câu đầu tiên mở sẵn, các câu sau gấp lại.", d.hoi_dap, "Thêm câu")
       + '<div class="card" data-khoi="lien_he"><h3>Liên hệ</h3><div class="phu">Số Zalo hiện to ở mục Liên hệ; có link zalo.me thì nút Nhắn Zalo dùng link đó.</div><div class="lh">'
-        + tckF("zalo", "Số Zalo", lh.zalo) + tckF("zalo_link", "Link Zalo (zalo.me/…, tuỳ chọn)", lh.zalo_link) + tckF("email", "Email", lh.email) + tckF("facebook", "Facebook (link)", lh.facebook) + tckF("ghi_chu", "Ghi chú ngắn", lh.ghi_chu, null, true) + "</div></div>";
+        + tckF("zalo", "Số Zalo", lh.zalo) + tckF("zalo_link", "Link Zalo (zalo.me/…, tuỳ chọn)", lh.zalo_link) + tckF("email", "Email", lh.email) + tckF("facebook", "Facebook (link)", lh.facebook) + tckF("ghi_chu", "Ghi chú ngắn", lh.ghi_chu, null, true)
+        + '<div class="qrbox">' + (lh.qr_anh ? '<img id="tckQrAnh" src="' + esc(lh.qr_anh) + '" alt="">' : '<div class="khung" id="tckQrAnh">Chưa có ảnh QR</div>')
+        + '<div class="ghi"><b>Ảnh QR Zalo</b>Zalo → <i>Cá nhân</i> → <i>Mã QR của tôi</i> → <i>Lưu ảnh</i>, rồi chọn ảnh đó ở đây. Ảnh tự thu nhỏ về 480 px và nằm ngay trong trang, sinh viên quét bằng Zalo là ra bạn.'
+        + '<div class="nut"><label class="btn sm" style="cursor:pointer">📷 Chọn ảnh<input type="file" id="tckQrFile" accept="image/*" hidden></label><button type="button" class="btn sm" id="tckQrXoa"' + (lh.qr_anh ? "" : " disabled") + '>Bỏ ảnh</button></div></div>'
+        + '<input type="hidden" data-k="qr_anh" id="tckQr" value="' + esc(lh.qr_anh || "") + '"></div>'
+        + "</div></div>";
   }
   function docKhoi(el) {
     var o = {};
@@ -2532,7 +2543,35 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   $("tckLuu").addEventListener("click", luuWeb);
   $("tckReload").addEventListener("click", function () { tckDaTai = false; loadWeb(); });
+  /* ảnh QR Zalo: đọc tệp → vẽ lên canvas ≤ 480 px → PNG (QR cần nét); quá 150 KB thì JPEG */
+  function tckDatQr(dataUrl) {
+    $("tckQr").value = dataUrl || "";
+    var cu = $("tckQrAnh"), moi;
+    if (dataUrl) { moi = document.createElement("img"); moi.src = dataUrl; moi.alt = ""; }
+    else { moi = document.createElement("div"); moi.className = "khung"; moi.textContent = "Chưa có ảnh QR"; }
+    moi.id = "tckQrAnh"; cu.replaceWith(moi);
+    $("tckQrXoa").disabled = !dataUrl;
+  }
+  $("tckBox").addEventListener("change", function (e) {
+    if (e.target.id !== "tckQrFile") return;
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    if (!/^image\//.test(f.type)) { toast("Chọn một tệp ảnh (PNG/JPG)."); return; }
+    var img = new Image(), url = URL.createObjectURL(f);
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var MAX = 480, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, MAX / Math.max(w, h));
+      var c = document.createElement("canvas"); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      var d = c.toDataURL("image/png");
+      if (d.length > 150 * 1024) d = c.toDataURL("image/jpeg", 0.85);
+      tckDatQr(d); e.target.value = "";
+      toast("Đã nạp ảnh QR (" + Math.round(d.length * 3 / 4 / 1024) + " KB). Bấm Lưu và đăng để lên trang.");
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); toast("Không đọc được ảnh này."); };
+    img.src = url;
+  });
   $("tckBox").addEventListener("click", function (e) {
+    if (e.target.closest("#tckQrXoa")) { tckDatQr(""); return; }
     var t = e.target.closest(".them"); if (t) { t.parentNode.querySelector(".ds").insertAdjacentHTML("beforeend", tckRow(t.dataset.loai)); var last = t.parentNode.querySelector(".ds .row:last-child input"); if (last) last.focus(); return; }
     var x = e.target.closest(".xoa"); if (x) { x.closest(".row").remove(); }
   });

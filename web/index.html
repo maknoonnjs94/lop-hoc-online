@@ -145,6 +145,12 @@
   .lienhe{ display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:stretch }
   @media (max-width:760px){ .lienhe{ grid-template-columns:1fr } }
   .lienhe .card.zalo{ background:linear-gradient(135deg, var(--ice), var(--surface)); display:flex; flex-direction:column; gap:8px }
+  .lienhe .card.zalo.coqr{ display:grid; grid-template-columns:1fr auto; column-gap:22px; align-items:center }
+  .lienhe .card.zalo.coqr > .chu{ display:flex; flex-direction:column; gap:8px; min-width:0 }
+  .lienhe .qr{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center }
+  .lienhe .qr img{ width:168px; height:168px; border-radius:14px; background:#fff; padding:8px; border:1px solid var(--line); box-shadow:var(--shadow); image-rendering:-webkit-optimize-contrast }
+  .lienhe .qr span{ font-size:12px; color:var(--muted); font-weight:600 }
+  @media (max-width:520px){ .lienhe .card.zalo.coqr{ grid-template-columns:1fr } .lienhe .qr{ order:-1 } }
   .lienhe .so{ font-size:clamp(22px, 3vw, 30px); font-weight:900; letter-spacing:-.01em; font-variant-numeric:tabular-nums }
   .lienhe ul{ list-style:none; margin:0; padding:0; display:grid; gap:8px }
   .lienhe li{ display:flex; gap:10px; align-items:center; font-size:14.5px }
@@ -311,10 +317,14 @@
   function veLienHe(lh) {
     lh = lh || {};
     var zalo = linkZalo(lh), so = lh.zalo || '';
-    var trai = '<div class="card zalo"><span class="eyebrow">Zalo giảng viên</span>'
+    /* ảnh QR: chỉ nhận data URL ảnh do Quản trị nạp (không nhận link ngoài) */
+    var qr = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(lh.qr_anh || '')) ? lh.qr_anh : '';
+    var trai = '<div class="card zalo' + (qr ? ' coqr' : '') + '"><div class="chu"><span class="eyebrow">Zalo giảng viên</span>'
       + (so ? '<span class="so">' + esc(so) + '</span>' : '<span class="trong">Chưa ghi số Zalo — giảng viên điền ở Quản trị → Trang công khai.</span>')
       + (lh.ghi_chu ? '<p>' + esc(lh.ghi_chu) + '</p>' : '')
       + (zalo ? '<div class="cta" style="margin-top:6px"><a class="btn primary" href="' + esc(zalo) + '" target="_blank" rel="noopener">Nhắn Zalo</a></div>' : '')
+      + '</div>'
+      + (qr ? '<div class="qr"><img src="' + qr + '" alt="Mã QR Zalo của giảng viên" width="168" height="168" draggable="false"><span>Quét bằng Zalo để nhắn</span></div>' : '')
       + '</div>';
     var ds = [];
     if (lh.email) ds.push('<li><b>Email</b><a href="mailto:' + esc(lh.email) + '">' + esc(lh.email) + '</a></li>');

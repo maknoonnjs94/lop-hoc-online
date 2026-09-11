@@ -77,7 +77,9 @@ Screenshot pane ẩn hay timeout/zoom lạ → đo DOM bằng javascript_tool (g
 
 **Đổi giọng (cùng tối, theo m):** "tốt thì phô ra, rào cản che lại" — bỏ khỏi trang công khai / trang tải / màn cần app / dòng chữ nhỏ màn đăng nhập / infographic mọi câu về 1 tài khoản 1 máy, chưa ký số, chống chụp/quay, dấu chìm; SmartScreen chỉ nói cách bấm. Hỏi đáp nhanh thay bằng 4 câu tích cực (học trên máy nào, xem lại được không, hỏi ở đâu, quên mật khẩu). M đã chạy v25 với seed cũ → thêm `schema_v25b_giong_trang.sql` thay 2 mảnh cach_dung/hoi_dap khi còn chữ cũ. Quy tắc ghi vào sổ tay + memory `giong-trang-cong-khai`.
 
-**M phải làm:** chạy `schema_v25b_giong_trang.sql` (v25 đã chạy rồi — trang-thai true); vào Quản trị → Trang công khai điền số Zalo (+ sửa khoá học cho đúng);
+**QR Zalo (theo m):** tab Trang công khai có ô *Ảnh QR Zalo* — chọn tệp → canvas thu về ≤ 480 px → PNG (quá 150 KB thì JPEG) → data URL cất trong `lien_he.qr_anh` (không cần bucket, không cần SQL). Trang công khai chỉ nhận data URL ảnh (regex), hiện 168 px cạnh số Zalo (`.card.zalo.coqr` 2 cột; ≤ 520 px QR lên trước). Đã thử trong pane: 900 px → 480 px / 8 KB, giữ qua lưu + tải lại, Bỏ ảnh; bản thử landing 1280 và 400 px không tràn. v25b m đã chạy (máy chủ hết chữ cũ).
+
+**M phải làm:** vào Quản trị → Trang công khai điền số Zalo + chọn ảnh QR (+ sửa khoá học cho đúng);
 thử `/hoc` bằng trình duyệt với tài khoản SV → phải thấy màn "mở trong ứng dụng"; mở app 1.0.16 → vẫn vào lớp như cũ.
 
 ---

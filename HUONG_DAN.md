@@ -241,6 +241,9 @@ nhắc đúng tên tệp, còn trang công khai vẫn hiện bản mẫu có s�
 
 Số Zalo đang **để trống** trong bản mẫu — m điền ở tab này, trang mới hiện nút *Nhắn Zalo* và *Đăng ký qua Zalo*.
 
+**Ảnh QR Zalo:** Zalo → *Cá nhân* → *Mã QR của tôi* → *Lưu ảnh* → ở tab này bấm **📷 Chọn ảnh** → Lưu và đăng. Ảnh tự thu nhỏ về 480 px
+và nằm ngay trong bảng (không cần kho tệp), hiện cạnh số Zalo ở mục Liên hệ; điện thoại thì QR lên trước số. *Bỏ ảnh* để gỡ.
+
 **Giọng của trang công khai và trang tải app (chốt 11/9): phô cái tốt, che rào cản.** Không nêu "một tài khoản một máy", "chưa ký số",
 chống chụp/quay, dấu chìm, tự đăng xuất… ở nơi ai cũng đọc. Những điều đó sinh viên biết khi đã vào lớp (màn đăng nhập lần đầu,
 lời báo khi vướng). Hướng dẫn cài chỉ nói *cách làm* ("nếu Windows hỏi xác nhận → More info → Run anyway"), không nói *lý do*.
