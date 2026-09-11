@@ -2423,9 +2423,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.innerHTML = '<div class="mats"><div class="bar" style="margin-bottom:6px"><b style="font-size:16px">Đăng ký mới từ trang công khai</b><span class="pill on">' + choDK.length + '</span><span class="grow"></span><span class="hint" style="margin:0">Duyệt = tạo tài khoản + ghi danh + mật khẩu tạm để m gửi Zalo.</span></div>'
       + '<table class="roster"><thead><tr><th>Họ tên</th><th>Mã SV</th><th>Email</th><th>Zalo / ĐT</th><th>Khoá muốn học</th><th>Ghi chú</th><th>Lúc</th><th></th></tr></thead><tbody>'
       + choDK.map(function (d) {
-        return '<tr><td><b>' + esc(d.ho_ten) + '</b></td><td><code>' + esc(mssvCua(d) || '—') + '</code></td><td>' + esc(d.email) + '</td><td>' + esc(d.sdt || '') + '</td><td>' + esc(d.khoa || '') + '</td><td class="hint" style="margin:0;max-width:220px">' + esc(d.ghi_chu || '') + '</td><td>' + esc(new Date(d.tao_luc).toLocaleString('vi-VN')) + '</td>'
+        return '<tr><td><b>' + esc(d.ho_ten) + '</b></td><td><code>' + esc(mssvCua(d) || '—') + '</code></td><td>' + esc(d.email) + '</td><td>' + esc(d.sdt || '') + '</td><td>' + khoaDsCua(d).map(function (k) { return '<span class="pill" style="margin:0 4px 4px 0">' + esc(k) + '</span>'; }).join('') + '</td><td class="hint" style="margin:0;max-width:220px">' + esc(d.ghi_chu || '') + '</td><td>' + esc(new Date(d.tao_luc).toLocaleString('vi-VN')) + '</td>'
           + '<td style="text-align:right;white-space:nowrap"><button class="btn sm primary" data-dk="duyet" data-id="' + d.id + '">✓ Duyệt</button> <button class="btn sm" data-dk="tu_choi" data-id="' + d.id + '">Từ chối</button></td></tr>';
       }).join('') + '</tbody></table></div>';
+  }
+  function khoaDsCua(d) { if (Array.isArray(d.khoa_ds) && d.khoa_ds.length) return d.khoa_ds; return String(d.khoa || '').split(/\s*[·;|]\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
+  function lopKhopDs(ds) { var ra = []; ds.forEach(function (k) { var id = lopKhopMot(k); if (id && ra.indexOf(id) < 0) ra.push(id); }); return ra; }
+  function lopKhopMot(khoa) {
+    var k = String(khoa || '').toLowerCase(); if (!k || /khác|chưa rõ/.test(k)) return '';
+    var dung = classes.filter(function (c) { return !c.archived && c.name.toLowerCase() === k; })[0]; if (dung) return dung.id;
+    var gan = classes.filter(function (c) { return !c.archived && (c.name.toLowerCase().indexOf(k) >= 0 || k.indexOf(c.name.toLowerCase()) >= 0 || (c.subject || '').toLowerCase() === k); })[0];
+    return gan ? gan.id : '';
   }
   function mssvCua(d) { if (d.mssv) return d.mssv; var m = /MSSV\s*([A-Za-z0-9]+)/.exec(d.ghi_chu || ''); return m ? m[1] : ''; }
   function lopKhop(khoa) {
@@ -2445,24 +2453,31 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if (r0.error) toast('Lỗi: ' + r0.error.message); else { toast('Đã từ chối.'); await loadChoDangKy(); }
       return;
     }
-    var lopMac = lopKhop(d.khoa);
+    var lopMacDs = lopKhopDs(khoaDsCua(d)); if (!lopMacDs.length && curClass) lopMacDs = [curClass];
     dialog('Duyệt đăng ký · ' + d.ho_ten,
       '<p class="hint">Email <b>' + esc(d.email) + '</b> · Mã SV <b>' + esc(mssvCua(d) || '—') + '</b> · Zalo <b>' + esc(d.sdt || '—') + '</b> · muốn học <b>' + esc(d.khoa || '—') + '</b>' + (d.ghi_chu ? '<br>Ghi chú: ' + esc(d.ghi_chu) : '') + '</p>'
-      + '<label class="f">Ghi danh vào lớp<select id="fDkLop">' + classes.filter(function (c) { return !c.archived; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === lopMac ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>'
+      + '<div class="f" style="margin-bottom:12px"><div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Ghi danh vào lớp (tick nhiều được — em ấy đăng ký ' + khoaDsCua(d).length + ' khoá)</div><div id="fDkLops" style="display:grid;gap:6px">' + classes.filter(function (c) { return !c.archived; }).map(function (c) { return '<label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600"><input type="checkbox" value="' + c.id + '"' + (lopMacDs.indexOf(c.id) >= 0 ? ' checked' : '') + '>' + esc(c.name) + (Number(c.hoc_phi) > 0 ? ' <small style="color:var(--muted);font-weight:500">· học phí ' + vnd(c.hoc_phi) + '</small>' : '') + '</label>'; }).join('') + '</div></div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Họ tên<input id="fDkTen" value="' + esc(d.ho_ten) + '"></label><label class="f">Mã sinh viên<input id="fDkMssv" value="' + esc(mssvCua(d)) + '" placeholder="22001234"><small>Sinh viên tự khai trên form — kiểm lại trước khi duyệt; mã này dùng trong nội dung chuyển khoản học phí.</small></label></div>'
       + '<p class="hint">Duyệt xong hiện mật khẩu tạm để m gửi Zalo. Lần đầu đăng nhập sinh viên phải tự đổi mật khẩu. Đồng hồ học phí (nếu lớp có thu) bắt đầu từ hôm nay.</p>',
       async function () {
-        var lop = val('fDkLop'); if (!lop) { msg($('dlgMsg'), 'Chọn lớp.'); return false; }
-        var kq;
-        try { kq = await apiGoi('/api/tao-tai-khoan', { class_id: lop, students: [{ email: d.email, full_name: val('fDkTen') || d.ho_ten, student_no: val('fDkMssv') }] }); }
-        catch (err) { msg($('dlgMsg'), err.message); return false; }
-        var r = (kq.ket_qua || [])[0] || {};
-        if (!r.ok) { msg($('dlgMsg'), (LOI_API[r.reason] || r.reason || 'Không tạo được') + (r.chi_tiet ? ' — ' + r.chi_tiet : '')); return false; }
-        await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lop }).eq('id', d.id);
-        var tenLop = (classes.filter(function (c) { return c.id === lop; })[0] || {}).name || '';
+        var lops = [].map.call(document.querySelectorAll('#fDkLops input:checked'), function (i) { return i.value; });
+        if (!lops.length) { msg($('dlgMsg'), 'Tick ít nhất một lớp.'); return false; }
+        /* lớp đầu: tạo tài khoản (hoặc ghi danh nếu email đã có); các lớp sau: API thấy email đã có → chỉ ghi danh thêm */
+        var r = null, loiLop = [];
+        for (var li = 0; li < lops.length; li++) {
+          var kq;
+          try { kq = await apiGoi('/api/tao-tai-khoan', { class_id: lops[li], students: [{ email: d.email, full_name: val('fDkTen') || d.ho_ten, student_no: val('fDkMssv') }] }); }
+          catch (err) { msg($('dlgMsg'), err.message); return false; }
+          var r1 = (kq.ket_qua || [])[0] || {};
+          if (!r1.ok) { if (li === 0) { msg($('dlgMsg'), (LOI_API[r1.reason] || r1.reason || 'Không tạo được') + (r1.chi_tiet ? ' — ' + r1.chi_tiet : '')); return false; } loiLop.push(kq.lop || lops[li]); continue; }
+          if (!r) r = r1;
+        }
+        await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lops[0] }).eq('id', d.id);
+        var tenLop = lops.map(function (id) { return (classes.filter(function (c) { return c.id === id; })[0] || {}).name || ''; }).filter(Boolean).join(', ');
+        if (loiLop.length) r.canh_bao = (r.canh_bao ? r.canh_bao + ' ' : '') + 'Chưa ghi danh được vào: ' + loiLop.join(', ') + '.';
         var tin = r.da_co
-          ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào lớp ' + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập như cũ nhé.'
-          : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. Lớp: ' + tenLop + '.';
+          ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào ' + (lops.length > 1 ? 'các lớp ' : 'lớp ') + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập như cũ nhé.'
+          : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. ' + (lops.length > 1 ? 'Các lớp: ' : 'Lớp: ') + tenLop + '.';
         setTimeout(function () {
           dialog('Đã duyệt · gửi Zalo cho ' + d.ho_ten,
             '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'

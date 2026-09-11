@@ -154,6 +154,10 @@
   .dk .loi{ color:#b8532f; font-size:13.5px; font-weight:600 }
   .dk .xong{ padding:18px 20px; border-radius:var(--r); background:var(--leaf-soft); color:var(--ink); font-weight:600; line-height:1.5 }
   .dk .bay{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0 }
+  .dkKhoa{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px }
+  .dkKhoa label{ display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border:1px solid var(--line-2); border-radius:999px; background:var(--surface); color:var(--ink); font-size:14px; font-weight:600; cursor:pointer; letter-spacing:0 }
+  .dkKhoa label:has(input:checked){ border-color:var(--sea); background:var(--ice); color:var(--sea-deep) }
+  .dkKhoa input{ width:16px; height:16px; margin:0; accent-color:var(--sea) }
   .dk .buoc3{ display:grid; gap:10px }
   .dk .buoc3 .card{ display:flex; gap:12px; align-items:flex-start }
   .dk .buoc3 .n{ flex:none; width:28px; height:28px; border-radius:50%; background:var(--sea); color:var(--on-sea); display:grid; place-items:center; font-weight:900; font-size:13px }
@@ -247,7 +251,7 @@
         <label>Số Zalo / điện thoại<input name="sdt" required inputmode="tel" maxlength="20" placeholder="09xx xxx xxx" autocomplete="tel"></label>
         <label>Email (dùng để đăng nhập)<input name="email" type="email" required maxlength="160" placeholder="email@example.com" autocomplete="email"></label>
         <label>Mã sinh viên <small style="font-weight:600">(điền chính xác để cấp tài khoản đúng)</small><input name="mssv" required maxlength="40" placeholder="22001234" autocomplete="off" inputmode="text"></label>
-        <label class="w">Khoá muốn học<select name="khoa" id="dkKhoa" required></select></label>
+        <div class="w" style="grid-column:1 / -1"><label style="margin-bottom:6px">Khoá muốn học <small style="font-weight:600">(tick được nhiều khoá)</small></label><div class="dkKhoa" id="dkKhoa"></div></div>
         <label class="w">Ngành, năm, lời nhắn (tuỳ chọn)<textarea name="ghi_chu" maxlength="500" placeholder="Hóa dược năm 2, học buổi tối…"></textarea></label>
         <label class="bay" aria-hidden="true">Website<input name="web" tabindex="-1" autocomplete="off"></label>
         <div class="hang"><button class="btn primary" type="submit" id="dkGui" data-chu="dk_gui"></button><span class="loi" id="dkLoi"></span></div>
@@ -397,27 +401,31 @@
   /* ---- form đăng ký: khoá lấy từ danh sách khoá học (bỏ khoá đã kết thúc); gửi qua /api/dang-ky của Worker ---- */
   var API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://giangduonghoahoc.com' : '';
   function veKhoaChon(ds) {
-    var sel = $('dkKhoa'), cu = sel.value;
+    var box = $('dkKhoa'); if (!box) return;
+    var cu = dkKhoaDaChon();
     var ten = (ds || []).filter(function (k) { return k && k.ten && k.trang_thai !== 'ket_thuc'; }).map(function (k) { return k.ten; });
-    sel.innerHTML = '<option value="">— chọn khoá —</option>' + ten.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('') + '<option value="Khác / chưa rõ">Khác / chưa rõ</option>';
-    if (cu) sel.value = cu;
+    ten.push('Khác / chưa rõ');
+    box.innerHTML = ten.map(function (t) { return '<label><input type="checkbox" name="khoa" value="' + esc(t) + '"' + (cu.indexOf(t) >= 0 ? ' checked' : '') + '>' + esc(t) + '</label>'; }).join('');
   }
+  function dkKhoaDaChon() { return [].map.call(document.querySelectorAll('#dkKhoa input:checked'), function (i) { return i.value; }); }
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[data-dk]'); if (!a) return;
-    var sel = $('dkKhoa'); if (sel) { sel.value = a.dataset.dk; if (sel.value !== a.dataset.dk) sel.value = 'Khác / chưa rõ'; }
+    var o = document.querySelector('#dkKhoa input[value="' + String(a.dataset.dk).replace(/"/g, '') + '"]');
+    if (o) o.checked = true;
     setTimeout(function () { var f = document.querySelector('#dkForm input[name=ho_ten]'); if (f) f.focus({ preventScroll: true }); }, 400);
   });
-  var DK_LOI = { thieu_ten: 'Ghi họ tên giúp nhé.', email_sai: 'Email chưa đúng.', sdt_sai: 'Số điện thoại chưa đúng.', mssv_sai: 'Mã sinh viên chưa đúng (ít nhất 4 ký tự chữ/số).', thieu_khoa: 'Chọn khoá muốn học.', qua_nhieu: 'Bạn gửi hơi nhiều lần rồi, thử lại sau một giờ.', chua_mo_dang_ky: 'Đăng ký trực tuyến chưa mở — nhắn Zalo giảng viên nhé.' };
+  var DK_LOI = { thieu_ten: 'Ghi họ tên giúp nhé.', email_sai: 'Email chưa đúng.', sdt_sai: 'Số điện thoại chưa đúng.', mssv_sai: 'Mã sinh viên chưa đúng (ít nhất 4 ký tự chữ/số).', thieu_khoa: 'Tick ít nhất một khoá muốn học.', qua_nhieu: 'Bạn gửi hơi nhiều lần rồi, thử lại sau một giờ.', chua_mo_dang_ky: 'Đăng ký trực tuyến chưa mở — nhắn Zalo giảng viên nhé.' };
   $('dkForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var f = this, loi = $('dkLoi'), nut = $('dkGui'), o = {};
-    ['ho_ten', 'email', 'sdt', 'mssv', 'khoa', 'ghi_chu', 'web'].forEach(function (k) { o[k] = (f.elements[k] && f.elements[k].value || '').trim(); });
+    ['ho_ten', 'email', 'sdt', 'mssv', 'ghi_chu', 'web'].forEach(function (k) { o[k] = (f.elements[k] && f.elements[k].value || '').trim(); });
+    o.khoa = dkKhoaDaChon();
     loi.textContent = '';
     if (o.ho_ten.length < 2) { loi.textContent = DK_LOI.thieu_ten; f.elements.ho_ten.focus(); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email)) { loi.textContent = DK_LOI.email_sai; f.elements.email.focus(); return; }
     if (o.sdt.replace(/[^0-9]/g, '').length < 8) { loi.textContent = DK_LOI.sdt_sai; f.elements.sdt.focus(); return; }
     if (o.mssv.replace(/[^A-Za-z0-9]/g, '').length < 4) { loi.textContent = DK_LOI.mssv_sai; f.elements.mssv.focus(); return; }
-    if (!o.khoa) { loi.textContent = DK_LOI.thieu_khoa; f.elements.khoa.focus(); return; }
+    if (!o.khoa.length) { loi.textContent = DK_LOI.thieu_khoa; var k0 = document.querySelector('#dkKhoa input'); if (k0) k0.focus(); return; }
     nut.disabled = true; var chuCu = nut.textContent; nut.textContent = 'Đang gửi…';
     try {
       var r = await fetch(API_BASE + '/api/dang-ky', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) });
