@@ -2458,7 +2458,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       '<p class="hint">Email <b>' + esc(d.email) + '</b> · Mã SV <b>' + esc(mssvCua(d) || '—') + '</b> · Zalo <b>' + esc(d.sdt || '—') + '</b> · muốn học <b>' + esc(d.khoa || '—') + '</b>' + (d.ghi_chu ? '<br>Ghi chú: ' + esc(d.ghi_chu) : '') + '</p>'
       + '<div class="f" style="margin-bottom:12px"><div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Ghi danh vào lớp (tick nhiều được — em ấy đăng ký ' + khoaDsCua(d).length + ' khoá)</div><div id="fDkLops" style="display:grid;gap:6px">' + classes.filter(function (c) { return !c.archived; }).map(function (c) { return '<label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600"><input type="checkbox" value="' + c.id + '"' + (lopMacDs.indexOf(c.id) >= 0 ? ' checked' : '') + '>' + esc(c.name) + (Number(c.hoc_phi) > 0 ? ' <small style="color:var(--muted);font-weight:500">· học phí ' + vnd(c.hoc_phi) + '</small>' : '') + '</label>'; }).join('') + '</div></div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Họ tên<input id="fDkTen" value="' + esc(d.ho_ten) + '"></label><label class="f">Mã sinh viên<input id="fDkMssv" value="' + esc(mssvCua(d)) + '" placeholder="22001234"><small>Sinh viên tự khai trên form — kiểm lại trước khi duyệt; mã này dùng trong nội dung chuyển khoản học phí.</small></label></div>'
-      + '<p class="hint">Duyệt xong hiện mật khẩu tạm để m gửi Zalo. Lần đầu đăng nhập sinh viên phải tự đổi mật khẩu. Đồng hồ học phí (nếu lớp có thu) bắt đầu từ hôm nay.</p>',
+      + '<p class="hint">Mật khẩu khởi tạo <b>chính là mã sinh viên</b> ở trên (mã dưới 6 ký tự thì máy tự sinh). Lần đầu đăng nhập sinh viên phải tự đổi mật khẩu. Đồng hồ học phí (nếu lớp có thu) bắt đầu từ hôm nay.</p>',
       async function () {
         var lops = [].map.call(document.querySelectorAll('#fDkLops input:checked'), function (i) { return i.value; });
         if (!lops.length) { msg($('dlgMsg'), 'Tick ít nhất một lớp.'); return false; }
@@ -2477,7 +2477,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         if (loiLop.length) r.canh_bao = (r.canh_bao ? r.canh_bao + ' ' : '') + 'Chưa ghi danh được vào: ' + loiLop.join(', ') + '.';
         var tin = r.da_co
           ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào ' + (lops.length > 1 ? 'các lớp ' : 'lớp ') + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập như cũ nhé.'
-          : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. ' + (lops.length > 1 ? 'Các lớp: ' : 'Lớp: ') + tenLop + '.';
+          : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + (r.la_mssv ? ' (chính là mã sinh viên của bạn)' : '') + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. ' + (lops.length > 1 ? 'Các lớp: ' : 'Lớp: ') + tenLop + '.';
         setTimeout(function () {
           dialog('Đã duyệt · gửi Zalo cho ' + d.ho_ten,
             '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'
@@ -2921,7 +2921,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   function hienKetQua(lop, rows) {
     var ok = rows.filter(function (x) { return x.ok; }), hong = rows.filter(function (x) { return !x.ok; });
-    var txt = ok.filter(function (x) { return x.password; }).map(function (x) { return (x.full_name ? x.full_name + ' — ' : '') + x.email + ' — mật khẩu tạm: ' + x.password; }).join('\n');
+    var txt = ok.filter(function (x) { return x.password; }).map(function (x) { return (x.full_name ? x.full_name + ' — ' : '') + x.email + ' — mật khẩu tạm: ' + x.password + (x.la_mssv ? ' (= mã SV)' : ''); }).join('\n');
     var html = '<p style="margin:0 0 10px">' + (ok.length ? '<b>' + ok.length + '</b> tài khoản đã vào lớp <b>' + esc(lop || '') + '</b>. ' : '')
       + (hong.length ? '<span style="color:var(--danger)">' + hong.length + ' dòng không tạo được.</span>' : '') + '</p>'
       + '<div style="max-height:46vh;overflow:auto"><table class="roster" style="font-size:13px"><thead><tr><th>Email</th><th>Họ tên</th><th>Mật khẩu tạm</th></tr></thead><tbody>'

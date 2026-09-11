@@ -386,6 +386,8 @@ Cần chạy `schema_v27_dang_ky_nhan_ban.sql` một lần (`/api/trang-thai` �
 3. Bấm **✓ Duyệt** → chọn lớp (tự gợi ý theo tên khoá), sửa tên, thêm mã SV nếu có → *Tạo tài khoản & ghi danh*: tài khoản tạo qua
    `/api/tao-tai-khoan` như tạo tay; email đã có tài khoản thì chỉ ghi danh thêm. Hộp tiếp theo có **tin nhắn soạn sẵn** (email + mật khẩu tạm
    + link tải app) với nút *Chép* và *Mở Zalo <số>* — dán vào Zalo là xong. Đồng hồ học phí (nếu lớp có thu) chạy từ hôm duyệt.
+   Form đăng ký tick được **nhiều khoá**; hộp Duyệt tick nhiều lớp → lớp đầu tạo tài khoản, các lớp sau ghi danh thêm vào cùng tài khoản.
+   **Mật khẩu khởi tạo = mã sinh viên** em ấy khai trên form (mã dưới 6 ký tự thì máy tự sinh) — cả khi m tạo tay có điền mã SV; lần đầu vào vẫn phải đổi.
 4. **Từ chối** ghi lý do, đơn không hiện nữa (vẫn còn trong bảng `dang_ky` để tra).
 
 Chưa chạy v27 thì form trên trang công khai báo "Đăng ký trực tuyến chưa mở — nhắn Zalo", tab quản trị không hiện bảng.

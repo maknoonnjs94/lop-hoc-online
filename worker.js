@@ -221,7 +221,9 @@ async function taoTaiKhoan(body, ai, env, request) {
     const ten = String(sv.full_name || '').trim().slice(0, 120);
     const mssv = String(sv.student_no || '').trim().slice(0, 40);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { out.push({ email: email, ok: false, reason: 'email_sai' }); continue; }
-    const mk = sinhMatKhau();
+    /* Mật khẩu khởi tạo = mã sinh viên (dễ nhớ, sinh viên tự khai khi đăng ký); mã ngắn hơn 6 ký tự (Supabase không nhận) thì sinh ngẫu nhiên. */
+    const mkMssv = mssv.replace(/\s+/g, '');
+    const mk = mkMssv.length >= 6 ? mkMssv : sinhMatKhau();
     const r = await fetch(SUPABASE_URL + '/auth/v1/admin/users', {
       method: 'POST', headers: adminHeaders(env),
       body: JSON.stringify({ email: email, password: mk, email_confirm: true, user_metadata: { full_name: ten } })
@@ -256,7 +258,7 @@ async function taoTaiKhoan(body, ai, env, request) {
       body: JSON.stringify({ class_id: classId, student: uid })
     });
     if (!en.ok && en.status !== 409) canhBao += (canhBao ? ' ' : '') + 'Tạo được tài khoản nhưng chưa ghi danh vào lớp: ' + locLoi(await en.text());
-    out.push({ email: email, ok: true, password: mk, full_name: ten, canh_bao: canhBao || undefined });
+    out.push({ email: email, ok: true, password: mk, la_mssv: mk === mkMssv, full_name: ten, canh_bao: canhBao || undefined });
   }
   return json({ ok: true, lop: cl[0].name, ket_qua: out }, 200, request);
 }

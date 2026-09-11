@@ -369,7 +369,7 @@ const stub = `<script>
       { uid:'0123456789abcdef0123456789abcdef', ten:'Video: đường cong chuẩn độ', giay:1500, san_sang:true, pct:100, ky:'2026-09-01', ngay:'2026-09-01', kich_thuoc: 310000000, anh:'' },
       { uid:'abcdef0123456789abcdef0123456789', ten:'Buổi 1 - Nồng độ', giay:2700, san_sang:true, pct:100, ky:'2026-08-20', ngay:'2026-08-20', kich_thuoc: 520000000, anh:'' }
     ] };
-    if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, lop:'Hóa phân tích K68', email: body.email, mat_khau:'Thu1234@', da_co:false, ket_qua: (body.students || []).map(function (x) { return { email:x.email, ok:true, password:'Thu1234@', full_name:x.full_name }; }) };
+    if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, lop:'Hóa phân tích K68', email: body.email, mat_khau:'Thu1234@', da_co:false, ket_qua: (body.students || []).map(function (x) { var m = String(x.student_no || '').replace(/\s+/g, ''); return { email:x.email, ok:true, password: m.length >= 6 ? m : 'Thu1234@', la_mssv: m.length >= 6, full_name:x.full_name }; }) };
     if (s.indexOf('/api/cap-lai-mat-khau') >= 0) tra = { ok:true, mat_khau:'Moi5678@' };
     return Promise.resolve({ ok:true, status:200, json: function () { return Promise.resolve(tra); } });
   };
