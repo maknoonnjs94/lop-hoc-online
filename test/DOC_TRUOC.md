@@ -40,6 +40,7 @@ Thêm phần sau vào đuôi địa chỉ:
 | `?chuong=1` | Vừa được chấm bài và trả lời câu hỏi → thử chuông báo |
 | `?o=1` | Phiếu buổi 5 có 4 ô trả lời đặt sẵn → gõ thẳng vào phiếu, máy chấm đúng/sai |
 | `?tai=1` | Phiếu buổi 5 được bật cho tải về → hiện nút **Tải về để in** |
+| `?o=1` (đã có) | Bấm vào một ô trả lời → hiện **bộ gõ ký hiệu**; ô thứ 4 đáp án `1,74×10⁻⁵`, gõ `0,0000174` hay `1.74e-5` đều phải xanh |
 
 Ghép nhiều cái bằng `&`, ví dụ:
 `http://127.0.0.1:8765/_test_index.html?g=nam&het=1`
@@ -47,6 +48,10 @@ Ghép nhiều cái bằng `&`, ví dụ:
 ## Trang quản trị
 
 Địa chỉ: `http://127.0.0.1:8765/_test_quan-tri.html`
+
+| Tham số | Xem gì |
+| --- | --- |
+| `?rac=1` | Có sẵn 1 buổi và 1 tài liệu trong **Thùng rác** → nút 🗑 hiện trên thanh tab Buổi học; thử Khôi phục / Xoá hẳn; xoá thêm rồi bấm **Hoàn tác** trên thông báo |
 
 Bản này **ghi thật vào bộ nhớ**: bật "Nhận bài nộp" rồi Lưu, chấm điểm, trả lời câu hỏi — mở lại tab là thấy kết quả. Tắt trang là mất hết, không đụng gì tới lớp thật.
 

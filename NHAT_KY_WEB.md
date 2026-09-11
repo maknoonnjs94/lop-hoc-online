@@ -39,6 +39,56 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-11 — Thùng rác, bộ gõ công thức cho sinh viên, chuẩn bị tên miền riêng (v24)
+
+**M chọn ba việc:** 1 (hoàn tác khi lỡ xoá) · 4 (bộ gõ công thức) · 5 (tên miền riêng).
+
+### Trước đó: dọn hai nhật ký bị chèn rác
+
+Cách ghi nhật ký `h.replace(moc, moi)` dính bẫy: chuỗi thay thế có `$`+backtick (mấy mục nói về "dấu $")
+bị JS hiểu là mẫu "phần trước chỗ khớp" → chèn cả đầu tệp vào giữa câu. Nhật ký web có khối trạng thái
+nhân bản **8 lần** (1374 → 1173 dòng), nhật ký Sổ có **25 chỗ** chèn (2952 → 2752). Đã dựng lại sạch,
+viết khối "Trạng thái hiện tại" mới đúng ngày. Từ nay ghép chuỗi tay hoặc `replace(moc, function(){…})`.
+
+### 1. Thùng rác — `schema_v24_thung_rac_bo_go.sql` (phần A)
+
+Trước v24 *Xoá buổi* là `delete` thẳng, cascade: mất luôn tài liệu, bài nộp, câu hỏi, lượt xem. Giờ:
+
+- Cột `deleted_at` trên `sessions` và `materials`. Xoá = `update deleted_at = now()`.
+- **Luật đọc** `s_read` / `m_read` / `mc_read` và `duoc_xem_tai_lieu()` thêm `deleted_at is null` — sinh viên hết thấy ở tầng máy chủ, và cũng không nộp bài / hỏi bài vào thứ đã xoá được.
+- Ba bảng tổng hợp `bang_bai_nop` / `bang_cau_hoi` / `thong_ke_o` dựng lại, bỏ qua thứ trong thùng rác (khôi phục là hiện lại).
+- `don_thung_rac()` dọn thật những gì quá 30 ngày; trang quản trị gọi nền mỗi lần tải lớp.
+
+Trang quản trị: `toast(t, nhãn, hàm)` có nút **Hoàn tác**; `delSession` / `delMaterial` xoá mềm; nút **🗑 Thùng rác (N)**
+trên thanh *Buổi học* mở hộp liệt kê + Khôi phục / Xoá hẳn. Máy chủ chưa chạy v24 thì tự rơi về xoá thẳng, có báo trong hộp thoại.
+Các tab Theo dõi / Hồ sơ lọc thứ đã xoá qua `boThungRac()`.
+
+### 4. Bộ gõ công thức + máy chấm hiểu ký hiệu khoa học (phần B của v24)
+
+- Trang học: bấm vào ô `.otl` → thanh `.bogo` nổi trên ô với 17 ký hiệu + 4 cụm; `mousedown` chặn mặc định nên ô không mất tiêu điểm.
+  **Chế độ số mũ**: sau `×10` / `⁻` / `⁺` / `xⁿ`, chữ số gõ tiếp thành `⁰…⁹` cho tới khi gõ ký tự khác.
+- Máy chủ: `chuan_dap()` dịch thêm `⁻ ⁺ − × · ⋅`; `so_khoa_hoc()` đọc `a×10^b`, `a×10^(b)`, `ae-b`, `10^-b`, cả `a×10-b` (dấu mũ rơi);
+  `cham_mot_o()` so bằng số với dung sai **0,5 % tương đối** (hoặc sai số giảng viên đặt, lấy cái lớn hơn), 2 % là "gần".
+- Bản giả trong `test/tao-ban-thu.js` theo đúng luật; chạy trong Node 10/10 ca: 7 kiểu viết của `1,74×10⁻⁵` đều **đúng**, `1,7×10⁻⁵` **gần**, `2×10⁻⁵` **sai**.
+  Cuối file SQL có `select` tự kiểm — m chạy SQL xong nhìn năm cột `a_dung … e_dung` là biết máy chủ chấm đúng.
+
+### 5. Tên miền riêng — phần mã xong, phần còn lại của m
+
+- `worker.js`: biến `TEN_MIEN` (đặt trên Cloudflare) → chấp nhận tên miền đó và mọi tên con; `/api/trang-thai` báo `ten_mien_rieng`.
+- `HUONG_DAN_TEN_MIEN.md`: sáu bước — mua tên miền, trỏ nameserver, gắn vào Worker, đặt biến, khai với Supabase, đổi chỗ sinh viên nhìn thấy.
+- **Không cần phát hành app mới**: `workers.dev` vẫn chạy song song.
+
+### Bẫy khi test
+
+- Pane trình duyệt ở nền → `document.hasFocus()` = false → `el.focus()` **không bắn** `focusin`; phải `dispatchEvent(new FocusEvent('focusin'))` để thử đường xử lý. Tab nền còn bóp `setTimeout` — vòng lặp 7 lần × 0,9 s treo quá 45 s. Chuyển sang chạy bộ chấm giả trong Node.
+- `confirm()` trong pane ẩn trả về false → nộp bài bị chặn khi còn ô trống; phải điền đủ.
+- Stub trong `tao-ban-thu.js` nằm trong template literal → regex phải viết `\\` (đã dính lần nữa).
+
+**M phải làm:** chạy `schema_v24_thung_rac_bo_go.sql` rồi `curl …/api/trang-thai` phải thấy `v24_thung_rac_bo_go: true`.
+Tên miền thì theo `HUONG_DAN_TEN_MIEN.md` khi nào m có tên miền.
+
+---
+
 ## 2026-09-19 — Tên dạng bài có ngay lúc mở sổ; PDF không còn rơi xuống hộp thoại in (đợt 84–85)
 
 M: *"vẫn không hiện tên dạng bài… giãn dòng để bé thôi, hoặc cho t tự chỉnh"*. Dựng lại đúng cảnh trên bản web:

@@ -363,6 +363,7 @@
             <span class="grow"></span>
             <button class="btn sm" id="renameClsBtn">✎ Lớp &amp; thông báo</button>
             <button class="btn sm danger" id="delClsBtn">Xoá lớp</button>
+            <button class="btn sm" id="thungRacBtn" hidden title="Buổi và tài liệu đã xoá — khôi phục được trong 30 ngày">🗑 Thùng rác <span class="pill" id="thungRacN">0</span></button>
             <button class="btn primary" id="addSesBtn">＋ Buổi mới</button>
           </div>
           <div class="flow" id="flowBar"></div>
@@ -519,9 +520,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     });
   }
   var toastT = null;
-  function toast(t) {
+  /* toast(t) như cũ; toast(t, nhãn, hàm) thêm một nút — dùng cho "Hoàn tác" sau khi xoá. */
+  function toast(t, nhan, ham) {
     var el = $('toast'); el.textContent = t; el.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, 3200);
+    if (nhan && ham) {
+      var b = document.createElement('button');
+      b.textContent = nhan;
+      b.style.cssText = 'margin-left:12px;padding:3px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.5);'
+        + 'background:transparent;color:#fff;font:inherit;font-size:12px;cursor:pointer';
+      b.addEventListener('click', function () { el.hidden = true; clearTimeout(toastT); ham(); });
+      el.appendChild(b);
+    }
+    clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, nhan ? 7000 : 3200);
   }
   function msg(box, text, kind) {
     box.textContent = text || '';
@@ -727,13 +737,28 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
 
   /* ---------------- buổi học ---------------- */
+  /* Bỏ buổi/tài liệu đã vào thùng rác khỏi một danh sách sessions(materials) */
+  function boThungRac(ds) {
+    return (ds || []).filter(function (s) { return !s.deleted_at; }).map(function (s) {
+      s.materials = (s.materials || []).filter(function (m) { return !m.deleted_at; });
+      return s;
+    });
+  }
   async function loadSessions() {
     var box = $('sesList');
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     /* gioi_han_giay phải nạp cùng, nếu không hộp Sửa sẽ hiện 'Không giới hạn' rồi ghi đè mất quỹ xem. */
+    /* Thùng rác (schema_v24): buổi/tài liệu có deleted_at thì tách ra, không hiện trong danh sách. */
+    coThungRac = true;
     var r = await sb.from('sessions')
-      .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay, nhan_bai, han_nop, cho_tai)')
+      .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay, nhan_bai, han_nop, cho_tai, deleted_at)')
       .eq('class_id', curClass).order('no', { ascending: false });
+    if (r.error && /deleted_at/.test(r.error.message || '')) {
+      coThungRac = false;
+      r = await sb.from('sessions')
+        .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay, nhan_bai, han_nop, cho_tai)')
+        .eq('class_id', curClass).order('no', { ascending: false });
+    }
     if (r.error && /nhan_bai|han_nop|cho_tai/.test(r.error.message || '')) {
       coNopBai = false;
       r = await sb.from('sessions')
@@ -746,7 +771,19 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         .eq('class_id', curClass).order('no', { ascending: false });
     }
     if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; return; }
-    sessions = r.data || [];
+    var tatCa = r.data || [];
+    thungRac = { buoi: [], tai_lieu: [] };
+    if (coThungRac) {
+      tatCa.forEach(function (s) {
+        if (s.deleted_at) { thungRac.buoi.push(s); return; }
+        (s.materials || []).forEach(function (m) { if (m.deleted_at) thungRac.tai_lieu.push({ m: m, s: s }); });
+      });
+      /* dọn thật những gì nằm trong thùng rác quá 30 ngày — chạy nền, không chờ */
+      sb.rpc('don_thung_rac').then(function () {}, function () {});
+    }
+    sessions = tatCa.filter(function (s) { return !s.deleted_at; });
+    sessions.forEach(function (s) { s.materials = (s.materials || []).filter(function (m) { return !m.deleted_at; }); });
+    capNhatNutThungRac();
     (function () {
       var hasSes = sessions.length > 0;
       var hasMat = sessions.some(function (x) { return (x.materials || []).length > 0; });
@@ -877,17 +914,90 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         await loadSessions();
       });
   }
+  /* =====================================================================
+     THÙNG RÁC (schema_v24) — xoá là đánh dấu deleted_at, không xoá thẳng.
+     Sinh viên hết thấy ngay (luật đọc ở máy chủ), giảng viên khôi phục được trong 30 ngày.
+     Máy chủ chưa chạy v24 thì rơi về xoá thẳng như cũ, có báo trước.
+     ===================================================================== */
+  var coThungRac = true, thungRac = { buoi: [], tai_lieu: [] };
+  function capNhatNutThungRac() {
+    var b = $('thungRacBtn'); if (!b) return;
+    var n = thungRac.buoi.length + thungRac.tai_lieu.length;
+    b.hidden = !coThungRac;
+    $('thungRacN').textContent = n; $('thungRacN').hidden = !n;
+  }
+  async function xoaMem(bang, id, ten, ve) {
+    var r = await sb.from(bang).update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    if (r.error) return r.error.message;
+    toast('Đã chuyển ' + ten + ' vào thùng rác.', 'Hoàn tác', async function () {
+      var k = await sb.from(bang).update({ deleted_at: null }).eq('id', id);
+      toast(k.error ? 'Không khôi phục được: ' + k.error.message : 'Đã khôi phục.');
+      await ve();
+    });
+    await ve();
+    return null;
+  }
   function delSession(id) {
     var s = sessions.filter(function (x) { return x.id === id; })[0]; if (!s) return;
     dialog('Xoá buổi ' + (s.no || '') + '?',
-      '<p class="hint">Mọi tài liệu trong buổi cũng bị xoá. Tệp đã tải lên kho thì xoá riêng ở Supabase → Storage.</p>',
+      coThungRac
+        ? '<p class="hint">Buổi và mọi tài liệu trong đó vào <b>Thùng rác</b>: sinh viên hết thấy ngay, m khôi phục được trong 30 ngày.</p>'
+        : '<p class="hint">Máy chủ chưa chạy <b>schema_v24</b> nên xoá là mất luôn. Mọi tài liệu trong buổi cũng bị xoá.</p>',
       async function () {
+        if (coThungRac) {
+          var loi = await xoaMem('sessions', id, 'buổi', loadSessions);
+          if (loi) { msg($('dlgMsg'), loi); return false; }
+          return;
+        }
         var r = await sb.from('sessions').delete().eq('id', id);
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
         toast('Đã xoá buổi.');
         await loadSessions();
-      }, 'Xoá');
+      }, coThungRac ? 'Vào thùng rác' : 'Xoá');
   }
+
+  /* Hộp Thùng rác: liệt kê, khôi phục, xoá hẳn */
+  function moThungRac() {
+    var o = '';
+    if (!thungRac.buoi.length && !thungRac.tai_lieu.length) {
+      o = '<div class="empty">Thùng rác trống.</div>';
+    } else {
+      if (thungRac.buoi.length) o += '<div class="hint" style="margin:0 0 6px;font-weight:700">Buổi học</div>' + thungRac.buoi.map(function (s) {
+        return '<div class="card" data-tr="sessions" data-id="' + s.id + '" style="padding:10px 12px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+          + '<b>Buổi ' + esc(String(s.no == null ? '' : s.no)) + (s.title ? ' · ' + esc(s.title) : '') + '</b>'
+          + '<small style="color:var(--muted)">' + (s.materials || []).length + ' tài liệu · xoá ' + fmtWhen(s.deleted_at) + '</small>'
+          + '<span class="grow"></span>'
+          + '<button type="button" class="btn sm primary trKhoi">Khôi phục</button>'
+          + '<button type="button" class="btn sm danger trXoa">Xoá hẳn</button></div>';
+      }).join('');
+      if (thungRac.tai_lieu.length) o += '<div class="hint" style="margin:10px 0 6px;font-weight:700">Tài liệu</div>' + thungRac.tai_lieu.map(function (x) {
+        return '<div class="card" data-tr="materials" data-id="' + x.m.id + '" style="padding:10px 12px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+          + '<b>' + esc(x.m.title || '') + '</b>'
+          + '<small style="color:var(--muted)">thuộc Buổi ' + esc(String(x.s.no == null ? '' : x.s.no)) + ' · xoá ' + fmtWhen(x.m.deleted_at) + '</small>'
+          + '<span class="grow"></span>'
+          + '<button type="button" class="btn sm primary trKhoi">Khôi phục</button>'
+          + '<button type="button" class="btn sm danger trXoa">Xoá hẳn</button></div>';
+      }).join('');
+      o += '<p class="hint" style="margin-top:10px">Quá 30 ngày thì tự dọn thật. Xoá hẳn là mất luôn cả bài nộp, câu hỏi, lượt xem kèm theo.</p>';
+    }
+    dialog('🗑 Thùng rác', o, async function () { return true; }, 'Đóng');
+  }
+  $('thungRacBtn').addEventListener('click', moThungRac);
+  $('dlgBody').addEventListener('click', async function (e) {
+    var card = e.target.closest('[data-tr]'); if (!card) return;
+    var khoi = e.target.closest('.trKhoi'), xoa = e.target.closest('.trXoa');
+    if (!khoi && !xoa) return;
+    var bang = card.dataset.tr, id = card.dataset.id;
+    if (khoi) {
+      var r = await sb.from(bang).update({ deleted_at: null }).eq('id', id);
+      if (r.error) { msg($('dlgMsg'), r.error.message); return; }
+      toast('Đã khôi phục.'); await loadSessions(); moThungRac(); return;
+    }
+    if (!confirm('Xoá hẳn? Mất luôn cả bài nộp, câu hỏi, lượt xem kèm theo — không lấy lại được.')) return;
+    var k = await sb.from(bang).delete().eq('id', id);
+    if (k.error) { msg($('dlgMsg'), k.error.message); return; }
+    toast('Đã xoá hẳn.'); await loadSessions(); moThungRac();
+  });
 
   /* ---------------- tài liệu ---------------- */
   function matById(id) {
@@ -1309,13 +1419,21 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   function delMaterial(id) {
     var m = matById(id); if (!m) return;
-    dialog('Xoá “' + (m.title || '') + '”?', '<p class="hint">Chỉ xoá khỏi buổi học. Tệp trong kho xoá riêng ở Supabase → Storage nếu cần.</p>',
+    dialog('Xoá “' + (m.title || '') + '”?',
+      coThungRac
+        ? '<p class="hint">Tài liệu vào <b>Thùng rác</b>: sinh viên hết thấy ngay, m khôi phục được trong 30 ngày. Bài nộp, câu hỏi kèm theo vẫn còn nguyên.</p>'
+        : '<p class="hint">Máy chủ chưa chạy <b>schema_v24</b> nên xoá là mất luôn. Tệp trong kho xoá riêng ở Supabase → Storage nếu cần.</p>',
       async function () {
+        if (coThungRac) {
+          var loi = await xoaMem('materials', id, 'tài liệu', loadSessions);
+          if (loi) { msg($('dlgMsg'), loi); return false; }
+          return;
+        }
         var r = await sb.from('materials').delete().eq('id', id);
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
         toast('Đã xoá.');
         await loadSessions();
-      }, 'Xoá');
+      }, coThungRac ? 'Vào thùng rác' : 'Xoá');
   }
 
   async function moveMaterial(id, dir) {
@@ -2004,7 +2122,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.innerHTML = '<div class="empty">Đang tải…</div>';
     /* Cột quỹ xem (schema_v16) và phần nới riêng (schema_v17) có thể chưa có — thiếu thì vẫn xem được phần còn lại. */
     coQuyXem = true;
-    var rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no, gioi_han_giay)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
+    var rs = await sb.from('sessions').select('id, no, title, published' + (coThungRac ? ', deleted_at' : '') + ', materials(id, kind, title, open_at, order_no, gioi_han_giay' + (coThungRac ? ', deleted_at' : '') + ')').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
+    if (!rs.error && coThungRac) { rs.data = boThungRac(rs.data); }
     if (rs.error && /gioi_han_giay/.test(rs.error.message || '')) {
       coQuyXem = false;
       rs = await sb.from('sessions').select('id, no, title, published, materials(id, kind, title, open_at, order_no)').eq('class_id', curClass).eq('published', true).order('no', { ascending: false });
@@ -2139,7 +2258,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   async function moHoSoSV(uid, ten) {
     dialog('Hồ sơ · ' + ten, '<div class="hs"><div class="trong">Đang gom dữ liệu…</div></div>', async function () { return true; }, 'Đóng');
     var rs = await Promise.all([
-      sb.from('sessions').select('id, no, title, materials(id, kind, title, nhan_bai)').eq('class_id', curClass).eq('published', true),
+      sb.from('sessions').select('id, no, title, materials(id, kind, title, nhan_bai' + (coThungRac ? ', deleted_at' : '') + ')' + (coThungRac ? ', deleted_at' : '')).eq('class_id', curClass).eq('published', true).then(function (x) { if (!x.error && coThungRac) x.data = boThungRac(x.data); return x; }),
       sb.from('view_events').select('material_id, opens, last_at, progress, tong_giay').eq('class_id', curClass).eq('user_id', uid),
       sb.from('bai_nop').select('material_id, nop_luc, cham_luc, diem, nhan_xet, tep').eq('user_id', uid),
       sb.from('cau_hoi').select('material_id, noi_dung, tao_luc, tra_loi').eq('user_id', uid).order('tao_luc', { ascending: false }),

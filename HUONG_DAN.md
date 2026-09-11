@@ -315,6 +315,28 @@ Hiện ra một bảng gom hết: đã mở bao nhiêu tài liệu trên tổng 
 
 Dùng trước buổi phụ đạo để biết em nào đang hổng chỗ nào, khỏi phải mở bốn tab.
 
+## Thùng rác — xoá nhầm buổi hay tài liệu thì lấy lại được
+
+Cần chạy một lần `schema_v24_thung_rac_bo_go.sql`. Chưa chạy thì nút Xoá vẫn xoá thẳng như trước, có báo trước trong hộp thoại.
+
+Từ v24, **Xoá buổi** / **×** ở tài liệu không xoá thẳng nữa mà đưa vào **Thùng rác**: sinh viên hết thấy ngay (chặn ở luật đọc của máy chủ, không phải chỉ giấu trên trang), còn bài nộp, câu hỏi, lượt xem kèm theo vẫn nguyên.
+
+- Ngay sau khi xoá có nút **Hoàn tác** trên thông báo — bấm là về như cũ.
+- Nút **🗑 Thùng rác** trên thanh tab *Buổi học* (chỉ hiện khi có gì trong đó) liệt kê buổi và tài liệu đã xoá, mỗi dòng có **Khôi phục** và **Xoá hẳn**.
+- Quá **30 ngày** thì tự dọn thật. Muốn mất luôn ngay thì bấm *Xoá hẳn* — cái này không lấy lại được.
+
+Tệp đã tải lên kho (Storage) không bị đụng tới trong mọi trường hợp; muốn dọn thì vào Supabase → Storage.
+
+## Sinh viên gõ công thức vào ô đáp án
+
+Bấm vào một ô trên phiếu là hiện **bộ gõ ký hiệu** nổi ngay trên ô: `⁻ ² ³ ⁺ ₂ ₃ ₄ × · √ → ⇌ ≈ ≤ ≥ ° Δ` và mấy cụm hay dùng (`×10`, `mol/L`, `[H⁺]`). Sau khi bấm `×10` hoặc `⁻`, **gõ chữ số là tự lên số mũ** cho tới khi gõ ký tự khác.
+
+Máy chấm (v24) hiểu mọi kiểu viết là **cùng một số**: `1,74×10⁻⁵` = `1.74e-5` = `1,74*10^-5` = `0,0000174`. Sai lệch dưới **0,5 %** tính là đúng (làm tròn chữ số có nghĩa thứ ba), dưới 2 % là "gần" — hoặc theo sai số m đặt riêng cho ô nếu lớn hơn. Nên đáp án m ghi kiểu nào cũng được, sinh viên gõ kiểu nào cũng được.
+
+## Tên miền riêng
+
+Xem `HUONG_DAN_TEN_MIEN.md` — sáu bước, phần lớn bấm trên Cloudflare. Địa chỉ `workers.dev` vẫn chạy song song nên app máy tính không phải cập nhật.
+
 ## Hỏi bài và mục Hỏi đáp
 
 Cần chạy một lần `schema_v23_hoi_dap_rieng.sql` (chưa chạy thì ô hỏi dưới tài liệu vẫn chạy, chỉ thiếu mục riêng).

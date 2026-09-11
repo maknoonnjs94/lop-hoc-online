@@ -408,6 +408,16 @@
   .otl.sai{ border-color:#c0392b; background:#fdecea }
   .otl.gan{ border-color:#c98a2a; background:#fdf5e4 }
   .odau{ position:absolute; font:800 15px/1 system-ui; pointer-events:none; z-index:2 }
+  /* Bộ gõ ký hiệu: nổi ngay trên ô đáp án đang chọn; trình xem luôn nền sáng nên màu đặt cứng. */
+  .bogo{ position:fixed; z-index:60; display:flex; gap:4px; flex-wrap:wrap; max-width:min(560px, calc(100vw - 24px));
+    padding:6px 8px; background:#fff; border:1px solid #cfdceb; border-radius:12px; box-shadow:0 8px 26px rgba(10,41,66,.16) }
+  .bogo button{ min-width:34px; height:32px; padding:0 9px; border:1px solid #dbe6f1; border-radius:8px; background:#f6f9fc;
+    font:600 15px/1 "Times New Roman", Times, serif; color:#12314f; cursor:pointer }
+  .bogo button:hover{ background:#e8f2fb; border-color:#9cc0e0 }
+  .bogo button.nho{ font:600 11.5px/1 system-ui; color:#5b7488; letter-spacing:.02em }
+  .bogo button.on{ background:#2f86c9; border-color:#2f86c9; color:#fff }
+  .bogo .ghi{ flex-basis:100%; font:11.5px/1.4 system-ui; color:#7d92a6; margin-top:2px }
+  @media (max-width:560px){ .bogo{ max-width:calc(100vw - 16px) } }
   .odau.dung{ color:#3f8b4f } .odau.sai{ color:#c0392b } .odau.gan{ color:#c98a2a }
   .oket{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#f1f6fb;
     border-radius:11px; padding:11px 14px; margin-bottom:10px }
@@ -2643,6 +2653,78 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       }
     });
   }
+  /* =================================================================
+     BỘ GÕ KÝ HIỆU cho ô đáp án — số mũ, chỉ số, dấu nhân, mũi tên…
+     Máy chấm (schema_v24) hiểu 1,74×10⁻⁵ = 1.74e-5 = 0,0000174, nên gõ kiểu nào cũng được;
+     bộ gõ chỉ để trình bày cho đúng và khỏi phải nhớ tổ hợp phím.
+     ================================================================= */
+  var BOGO_PHIM = [
+    ['⁻', 'số mũ âm'], ['²', 'bình phương'], ['³', 'lập phương'], ['⁺', 'điện tích dương'],
+    ['₂', 'chỉ số 2'], ['₃', 'chỉ số 3'], ['₄', 'chỉ số 4'],
+    ['×', 'nhân'], ['·', 'chấm nhân'], ['√', 'căn'], ['→', 'mũi tên'], ['⇌', 'cân bằng'],
+    ['≈', 'xấp xỉ'], ['≤', 'nhỏ hơn hoặc bằng'], ['≥', 'lớn hơn hoặc bằng'], ['°', 'độ'], ['Δ', 'delta']
+  ];
+  var BOGO_CUM = [['×10', 'nhân 10 mũ… (gõ số tiếp là lên mũ)'], ['xⁿ', 'số mũ: gõ số tiếp theo lên trên'], ['mol/L', ''], ['[H⁺]', '']];
+  var BOGO_MU = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  var bogoCheMu = false;   /* đang ở chế độ số mũ: chữ số gõ tiếp sẽ lên trên */
+  var bogoEl = null, bogoO = null;
+  function bogoTao() {
+    if (bogoEl) return bogoEl;
+    bogoEl = document.createElement('div');
+    bogoEl.className = 'bogo'; bogoEl.hidden = true;
+    bogoEl.innerHTML = BOGO_PHIM.map(function (p) { return '<button type="button" data-ky="' + p[0] + '" title="' + p[1] + '">' + p[0] + '</button>'; }).join('')
+      + BOGO_CUM.map(function (p) { return '<button type="button" class="nho" data-ky="' + p[0] + '" title="' + p[1] + '">' + p[0] + '</button>'; }).join('')
+      + '<div class="ghi">Bấm để chèn tại chỗ con trỏ. Sau ×10 hoặc ⁻ thì gõ số là tự lên mũ. Gõ 10^-5 hay 10⁻⁵, 1,74 hay 1.74 đều được chấm như nhau.</div>';
+    /* mousedown chặn mặc định để ô đáp án KHÔNG mất tiêu điểm khi bấm nút */
+    bogoEl.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    bogoEl.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-ky]'); if (!b || !bogoO) return;
+      var o = bogoO, ky = b.dataset.ky;
+      var a = o.selectionStart == null ? o.value.length : o.selectionStart, z = o.selectionEnd == null ? a : o.selectionEnd;
+      /* xⁿ chỉ bật chế độ, không chèn gì; ×10 / ⁻ / ⁺ chèn rồi bật chế độ — gõ số tiếp là lên mũ */
+      if (ky !== 'xⁿ') o.setRangeText(ky, a, z, 'end');
+      bogoCheMu = (ky === 'xⁿ' || ky === '×10' || ky === '⁻' || ky === '⁺');
+      b.classList.toggle('on', bogoCheMu && ky === 'xⁿ');
+      o.dispatchEvent(new Event('input', { bubbles: true }));
+      o.focus();
+    });
+    document.body.appendChild(bogoEl);
+    return bogoEl;
+  }
+  function bogoDat() {
+    if (!bogoO || !bogoEl || bogoEl.hidden) return;
+    var r = bogoO.getBoundingClientRect(), w = bogoEl.offsetWidth, hh = bogoEl.offsetHeight;
+    var x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left));
+    var y = r.top - hh - 8; if (y < 8) y = r.bottom + 8;
+    bogoEl.style.left = x + 'px'; bogoEl.style.top = y + 'px';
+  }
+  function bogoHien(o) { bogoO = o; var el = bogoTao(); el.hidden = false; bogoDat(); }
+  function bogoAn() { if (bogoEl) bogoEl.hidden = true; bogoO = null; bogoCheMu = false; }
+  /* Chế độ số mũ: chữ số gõ vào ô → ký tự mũ tương ứng; gõ gì khác là thoát chế độ */
+  document.addEventListener('keydown', function (e) {
+    var t = e.target; if (!bogoCheMu || !t || t !== bogoO) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      var a = t.selectionStart == null ? t.value.length : t.selectionStart, z = t.selectionEnd == null ? a : t.selectionEnd;
+      t.setRangeText(BOGO_MU.charAt(Number(e.key)), a, z, 'end');
+      t.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+    if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape') {
+      bogoCheMu = false;
+      var bx = bogoEl && bogoEl.querySelector('button[data-ky="xⁿ"]'); if (bx) bx.classList.remove('on');
+    }
+  });
+  document.addEventListener('focusin', function (e) {
+    var t = e.target; if (t && t.classList && t.classList.contains('otl') && !t.readOnly) bogoHien(t);
+  });
+  document.addEventListener('focusout', function (e) {
+    var t = e.target; if (t && t.classList && t.classList.contains('otl')) setTimeout(function () { if (document.activeElement !== t) bogoAn(); }, 0);
+  });
+  window.addEventListener('scroll', bogoDat, true);
+  window.addEventListener('resize', bogoDat);
+
   /* Vẽ một trang ra ảnh.
      intent 'print' là mẹo mượn của Sổ Bài Tập: kiểu vẽ này KHÔNG dùng requestAnimationFrame
      nên vẫn chạy khi thẻ trình duyệt bị ẩn. Không có nó thì sinh viên mở phiếu rồi chuyển

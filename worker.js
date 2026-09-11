@@ -18,9 +18,21 @@
 const SUPABASE_URL = 'https://euyrrodppbpnkmificbs.supabase.co';
 const ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 const ORIGINS = ['https://lop-hoc-online.giangduonghoahoc.workers.dev', 'http://localhost:8765', 'http://127.0.0.1:8765'];
+/* Tên miền riêng: đặt biến TEN_MIEN trên Cloudflare (Settings → Variables), ví dụ "hoc.giangduonghoahoc.vn".
+   Nhận cả tên miền đó lẫn mọi tên con của nó. Không đặt thì chỉ nhận danh sách trên. */
+let TEN_MIEN_RIENG = null;
+function nguonHopLe(o) {
+  if (ORIGINS.indexOf(o) >= 0) return true;
+  if (!TEN_MIEN_RIENG || !o) return false;
+  try {
+    const u = new URL(o);
+    return u.protocol === 'https:' && (u.hostname === TEN_MIEN_RIENG || u.hostname.endsWith('.' + TEN_MIEN_RIENG));
+  } catch (e) { return false; }
+}
 
 export default {
   async fetch(request, env) {
+    TEN_MIEN_RIENG = (env.TEN_MIEN || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null;
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) {
       return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
@@ -83,7 +95,7 @@ export default {
 function cors(request) {
   const o = request.headers.get('Origin') || '';
   return {
-    'Access-Control-Allow-Origin': ORIGINS.indexOf(o) >= 0 ? o : ORIGINS[0],
+    'Access-Control-Allow-Origin': nguonHopLe(o) ? o : ORIGINS[0],
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '600',
@@ -409,7 +421,7 @@ async function coHam(env, ten, than) {
   } catch (e) { return false; }
 }
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -430,7 +442,9 @@ async function kiemSchema(env) {
     coCot(env, 'materials', 'cho_tai'),
     coHam(env, 'thong_ke_o', JSON.stringify({ p_class: null })),
     coCot(env, 'cau_hoi', 'class_id,ghim,chu_de'),
-    coHam(env, 'luu_faq', JSON.stringify({ p_id: null, p_class: null, p_hoi: null, p_dap: null }))
+    coHam(env, 'luu_faq', JSON.stringify({ p_id: null, p_class: null, p_hoi: null, p_dap: null })),
+    coCot(env, 'sessions', 'deleted_at'),
+    coHam(env, 'so_khoa_hoc', JSON.stringify({ s: '1' }))
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -446,7 +460,9 @@ async function kiemSchema(env) {
     v20_o_tra_loi: v20a && v20b,
     v21_cho_tai: v21,
     v22_xem_bai: v22,
-    v23_hoi_dap_rieng: v23a && v23b
+    v23_hoi_dap_rieng: v23a && v23b,
+    v24_thung_rac_bo_go: v24a && v24b,
+    ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }
 

@@ -11,6 +11,7 @@ let h = fs.readFileSync(path.join(web, 'quan-tri.html'), 'utf8');
 const stub = `<script>
 (function(){
   var now = Date.now(), d = function(ms){ return new Date(now + ms).toISOString(); };
+  var P = new URLSearchParams(location.search);   /* tham số thử trên địa chỉ, như bản sinh viên */
   var ID = 0, moiId = function(p){ return p + (++ID); };
 
   /* ---------------- kho dữ liệu giả, có thật trong bộ nhớ ---------------- */
@@ -85,6 +86,11 @@ const stub = `<script>
       { id:'q3', material_id:'m1', class_id:'c1', user_id:'u3', ghim:false, noi_dung:'Vì sao phải tráng buret bằng chính dung dịch chuẩn ạ?', tao_luc:d(-2*864e5), tra_loi:'Để nước còn đọng không pha loãng dung dịch chuẩn.', tra_luc:d(-1*864e5), an:false }
     ]
   };
+  /* ?rac=1 — một buổi và một tài liệu đang nằm trong thùng rác (schema_v24) */
+  if (P.get('rac') === '1') {
+    var sRac = DB.sessions[DB.sessions.length - 1]; if (sRac) sRac.deleted_at = d(-2 * 864e5);
+    var mRac = DB.materials.filter(function (m) { return m.session_id !== (sRac && sRac.id); })[1]; if (mRac) mRac.deleted_at = d(-36e5);
+  }
   var TEN = {}; DB.profiles.forEach(function (p) { TEN[p.id] = p; });
 
   /* ---------------- máy truy vấn giả ---------------- */

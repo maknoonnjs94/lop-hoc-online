@@ -17,22 +17,32 @@ const stub = `<script>
   /* toạ độ khoanh trên phiếu mẫu web/_test_phieu.png (794×1123) */
   /* Đo thẳng trên trang PDF đã vẽ: quét các nét gạch chân rồi quy ra phần trăm. */
   var O_PHIEU = [{ id:'oa', trang:1, x:29.3, y:18.0, w:18.2, h:2.4 },{ id:'ob', trang:1, x:15.0, y:25.9, w:18.2, h:2.4 },{ id:'oc', trang:1, x:15.0, y:33.8, w:11.4, h:2.4 },{ id:'od', trang:1, x:15.0, y:41.7, w:11.4, h:2.4 }];
-  var DAP_AN = { oa:{ dap_an:'0,08', sai_so:0.001 }, ob:{ dap_an:'phenolphtalein|phenolphthalein' }, oc:{ dap_an:'H2SO4' }, od:{ dap_an:'2' } };
+  /* od: đáp án dạng khoa học — gõ 1,74×10⁻⁵ hay 1.74e-5 hay 0,0000174 đều phải 'dung' */
+  var DAP_AN = { oa:{ dap_an:'0,08', sai_so:0.001 }, ob:{ dap_an:'phenolphtalein|phenolphthalein' }, oc:{ dap_an:'H2SO4' }, od:{ dap_an:'1,74×10⁻⁵' } };
+  /* Bản giả của chuan_dap / so_khoa_hoc (schema_v24): hiểu ⁻ ⁺ × · và mọi kiểu viết a×10^b */
   function chuanDap(s) {
     return String(s == null ? '' : s).toLowerCase()
       .replace(/[₀-₉]/g, function (c) { return String('₀₁₂₃₄₅₆₇₈₉'.indexOf(c)); })
       .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, function (c) { return String('⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c)); })
-      .replace(/,/g, '.').replace(/\s+/g, '');
+      .replace(/,/g, '.').replace(/[⁻−]/g, '-').replace(/⁺/g, '+').replace(/[×·⋅]/g, '*').replace(/\\s+/g, '');
+  }
+  function soKhoaHoc(s) {
+    if (!s) return null;
+    if (/^-?[0-9]+(\\.[0-9]+)?$/.test(s)) return parseFloat(s);
+    var m = /^(-?[0-9]+(?:\\.[0-9]+)?)?\\*?(?:10\\^?\\(?(-?[0-9]+)\\)?|e(-?[0-9]+))$/.exec(s);
+    if (!m) return null;
+    return (m[1] ? parseFloat(m[1]) : 1) * Math.pow(10, parseInt(m[2] != null ? m[2] : m[3], 10));
   }
   function chamMotO(sv, dung, ss) {
     var a = chuanDap(sv), b = chuanDap(dung);
     if (!a) return 'sai';
     if (String(dung).indexOf('|') >= 0 && String(dung).split('|').some(function (t) { return chuanDap(t) === a; })) return 'dung';
     if (a === b) return 'dung';
-    var x = parseFloat(a), y = parseFloat(b);
-    if (/^-?[0-9.]+$/.test(a) && /^-?[0-9.]+$/.test(b) && isFinite(x) && isFinite(y)) {
-      if (Math.abs(x - y) <= (ss || 0)) return 'dung';
-      if (y !== 0 && Math.abs(x - y) <= Math.max((ss || 0) * 5, Math.abs(y) * 0.02)) return 'gan';
+    var x = soKhoaHoc(a), y = soKhoaHoc(b);
+    if (x != null && y != null) {
+      var s2 = Math.max(ss || 0, Math.abs(y) * 0.005);
+      if (Math.abs(x - y) <= s2) return 'dung';
+      if (y !== 0 && Math.abs(x - y) <= Math.max(s2 * 5, Math.abs(y) * 0.02)) return 'gan';
       return 'sai';
     }
     return a.replace(/[^a-z0-9]/g, '') === b.replace(/[^a-z0-9]/g, '') ? 'gan' : 'sai';
