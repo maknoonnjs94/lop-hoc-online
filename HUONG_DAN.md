@@ -241,6 +241,11 @@ nhắc đúng tên tệp, còn trang công khai vẫn hiện bản mẫu có s�
 
 Số Zalo đang **để trống** trong bản mẫu — m điền ở tab này, trang mới hiện nút *Nhắn Zalo* và *Đăng ký qua Zalo*.
 
+**Giọng của trang công khai và trang tải app (chốt 11/9): phô cái tốt, che rào cản.** Không nêu "một tài khoản một máy", "chưa ký số",
+chống chụp/quay, dấu chìm, tự đăng xuất… ở nơi ai cũng đọc. Những điều đó sinh viên biết khi đã vào lớp (màn đăng nhập lần đầu,
+lời báo khi vướng). Hướng dẫn cài chỉ nói *cách làm* ("nếu Windows hỏi xác nhận → More info → Run anyway"), không nói *lý do*.
+M đã chạy v25 trước khi đổi giọng → chạy thêm `schema_v25b_giong_trang.sql` (chỉ thay hai mảnh còn chữ cũ; đã sửa tay thì không đụng).
+
 ## Video: chọn nơi đặt
 
 > **Đã có cách chặn tải:** đưa video lên Cloudflare Stream với link ký — làm theo `HUONG_DAN_VIDEO.md` (từng bước). Bảng dưới là so sánh các lựa chọn.

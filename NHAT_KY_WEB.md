@@ -75,7 +75,9 @@ Làm:
 **Bẫy gặp:** heredoc Bash nuốt `\\n` thành `\n` trong script vá → anchor có `\n\n` literal không khớp; chuyển sang Write.
 Screenshot pane ẩn hay timeout/zoom lạ → đo DOM bằng javascript_tool (grid columns, chiều cao thẻ, scrollWidth).
 
-**M phải làm:** chạy `schema_v25_trang_cong_khai.sql`; vào Quản trị → Trang công khai điền số Zalo (+ sửa khoá học cho đúng);
+**Đổi giọng (cùng tối, theo m):** "tốt thì phô ra, rào cản che lại" — bỏ khỏi trang công khai / trang tải / màn cần app / dòng chữ nhỏ màn đăng nhập / infographic mọi câu về 1 tài khoản 1 máy, chưa ký số, chống chụp/quay, dấu chìm; SmartScreen chỉ nói cách bấm. Hỏi đáp nhanh thay bằng 4 câu tích cực (học trên máy nào, xem lại được không, hỏi ở đâu, quên mật khẩu). M đã chạy v25 với seed cũ → thêm `schema_v25b_giong_trang.sql` thay 2 mảnh cach_dung/hoi_dap khi còn chữ cũ. Quy tắc ghi vào sổ tay + memory `giong-trang-cong-khai`.
+
+**M phải làm:** chạy `schema_v25b_giong_trang.sql` (v25 đã chạy rồi — trang-thai true); vào Quản trị → Trang công khai điền số Zalo (+ sửa khoá học cho đúng);
 thử `/hoc` bằng trình duyệt với tài khoản SV → phải thấy màn "mở trong ứng dụng"; mở app 1.0.16 → vẫn vào lớp như cũ.
 
 ---
