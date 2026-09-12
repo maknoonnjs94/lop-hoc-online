@@ -2541,7 +2541,12 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           try { kq = await apiGoi('/api/tao-tai-khoan', { class_id: lops[li], students: [{ email: d.email, full_name: val('fDkTen') || d.ho_ten, student_no: val('fDkMssv') }] }); }
           catch (err) { msg($('dlgMsg'), err.message); return false; }
           var r1 = (kq.ket_qua || [])[0] || {};
-          if (!r1.ok) { if (li === 0) { msg($('dlgMsg'), (LOI_API[r1.reason] || r1.reason || 'Không tạo được') + (r1.chi_tiet ? ' — ' + r1.chi_tiet : '')); return false; } loiLop.push(kq.lop || lops[li]); continue; }
+          if (!r1.ok) {
+            var ct = String(r1.chi_tiet || '');
+            if (/chỉ thuộc một khóa|một khóa|one_class/i.test(ct)) ct = 'Máy chủ còn luật cũ "một tài khoản một khoá" (schema_v4). Chạy schema_v29_nhieu_khoa.sql rồi duyệt lại.';
+            if (li === 0) { msg($('dlgMsg'), (LOI_API[r1.reason] || r1.reason || 'Không tạo được') + (ct ? ' — ' + ct : '')); return false; }
+            loiLop.push((kq.lop || lops[li]) + (ct ? ' (' + ct + ')' : '')); continue;
+          }
           if (!r) r = r1;
         }
         /* ghi khoá đã duyệt; còn khoá chưa duyệt thì đơn ở lại hàng chờ */
@@ -3072,7 +3077,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     khong_phai_giang_vien: 'Chỉ giảng viên mới làm được việc này.', tai_khoan_da_tat: 'Tài khoản của bạn đang bị khoá.',
     khong_thay_lop: 'Không thấy lớp này.', trong: 'Chưa có sinh viên nào trong danh sách.', thieu_lop: 'Chưa chọn lớp.',
     chi_sinh_vien: 'Chỉ cấp lại mật khẩu cho sinh viên.', tu_doi_o_menu: 'Mật khẩu của chính mình thì đổi ở menu tài khoản.',
-    khong_thay: 'Không thấy tài khoản.', loi_may_chu: 'Máy chủ gặp lỗi.'
+    khong_thay: 'Không thấy tài khoản.', loi_may_chu: 'Máy chủ gặp lỗi.',
+    da_co_tai_khoan: 'Email này đã có tài khoản nhưng chưa ghi danh được'
   };
   var LOI_TAO = { email_sai: 'Email không đúng dạng', da_co_tai_khoan: 'Đã có tài khoản nhưng không ghi danh được', khong_tao_duoc: 'Không tạo được' };
   async function apiGoi(path, body) {

@@ -41,6 +41,17 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Duyệt đăng ký không ghi danh được: vướng trigger "một tài khoản một khoá" (v29)
+
+M thử duyệt một tài khoản test → không thấy ghi danh. Nguyên nhân: `trg_one_class` từ `schema_v4_mot_khoa.sql` (8/9) chặn insert
+enrollments thứ hai của một sinh viên → `taoTaiKhoan`/`enroll_by_email` ném lỗi → hộp Duyệt báo `da_co_tai_khoan — Tài khoản này đang
+học khóa …` (hoặc cảnh báo "chưa ghi danh vào lớp"). Luật này mâu thuẫn thiết kế mới (một tài khoản nhiều khoá, học phí từng khoá).
+Sửa: `schema_v29_nhieu_khoa.sql` drop trigger + hàm `nhieu_khoa_ok()`; Worker cờ `v29_nhieu_khoa` qua `goiRpcTrue`; quản trị dịch
+lỗi thành lời chỉ đúng tệp SQL; `LOI_API.da_co_tai_khoan`. Trang công khai nới 1320px/chữ to; Bỏ khỏi lớp + Hạ về SV hỏi trước (memory
+`hoi-truoc-khi-xoa`).
+
+---
+
 ## 2026-09-12 — Rà bảo mật cơ bản
 
 M sợ "bị đánh sập tên miền và app". Kiểm từ ngoài: 16 bảng đọc bằng khoá anon → 14 rỗng, 2 bị từ chối (`cau_hinh_he_thong`, `dang_ky`);

@@ -507,6 +507,13 @@ Sinh viên đăng nhập lần đầu, hệ thống ghi nhớ chiếc máy đó;
 - **Đổi máy thật / cài lại Windows**: vào Quản trị → tab **Sinh viên** → dòng của người đó → **Gỡ**. Xong là họ đăng nhập được ở máy mới.
 - Cột *Thiết bị* ghi rõ "đã gắn máy (app)" hay "đã gắn máy" (trình duyệt), rê chuột lên xem giờ gắn.
 
+## Một tài khoản, nhiều khoá — luật cũ phải bỏ
+
+Ngày 8/9 có `schema_v4_mot_khoa.sql` chặn sinh viên vào lớp thứ hai (chống mua một cho mượn cả nhóm). Từ 12/9 hệ thống tính học phí
+và khoá theo **từng khoá**, tài khoản gắn một máy — nên luật đó thành vật cản: duyệt đăng ký nhiều khoá báo "Tài khoản này đang học
+khóa …", không ghi danh được. Chạy `schema_v29_nhieu_khoa.sql` để bỏ (`/api/trang-thai` → `v29_nhieu_khoa: true`). Chống cho mượn giờ
+dựa vào: mỗi tài khoản một máy thật + học phí từng khoá + dấu chìm tên.
+
 ## Bảo mật cơ bản — rà 12/9/2026
 
 **Đã có sẵn trong mã (kiểm từ ngoài):** mọi bảng dữ liệu đọc bằng khoá công khai đều trả rỗng hoặc bị từ chối (RLS); không chèn được

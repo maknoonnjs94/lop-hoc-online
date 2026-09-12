@@ -577,8 +577,16 @@ async function coHam(env, ten, than) {
     return r.status !== 404;
   } catch (e) { return false; }
 }
+/* hàm RPC không tham số trả boolean: có và trả true mới tính */
+async function goiRpcTrue(env, ten) {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + ten, { method: 'POST', headers: adminHeaders(env), body: '{}' });
+    if (!r.ok) return false;
+    return (await r.json()) === true;
+  } catch (e) { return false; }
+}
 async function kiemSchema(env) {
-  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27, v27b, v27c, v27d, v28a, v28b] = await Promise.all([
+  const [v9a, v9b, v9c, v10, v11, v12, v14, v16a, v16b, v17, v18, v19a, v19b, v19c, v19d, v20a, v20b, v21, v22, v23a, v23b, v24a, v24b, v25, v26, v27, v27b, v27c, v27d, v28a, v28b, v29] = await Promise.all([
     coCot(env, 'sessions', 'pinned,starts_at'),
     coCot(env, 'classes', 'notice'),
     coCot(env, 'view_events', 'progress'),
@@ -609,7 +617,8 @@ async function kiemSchema(env) {
     coCot(env, 'dang_ky', 'khoa_ds'),
     coCot(env, 'dang_ky', 'khoa_da_duyet'),
     coKho(env, 'sao-luu'),
-    coCot(env, 'loi_khach', 'thong_diep')
+    coCot(env, 'loi_khach', 'thong_diep'),
+    goiRpcTrue(env, 'nhieu_khoa_ok')
   ]);
   return {
     v9_hom_nay: v9a && v9b && v9c,
@@ -634,6 +643,7 @@ async function kiemSchema(env) {
     v27c_khoa_ds: v27c,
     v27d_duyet_tung_khoa: v27d,
     v28_sao_luu_loi_khach: v28a && v28b,
+    v29_nhieu_khoa: v29,
     ten_mien_rieng: TEN_MIEN_RIENG || null
   };
 }
