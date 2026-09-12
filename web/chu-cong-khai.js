@@ -43,6 +43,7 @@ window.CHU_CONG_KHAI = [
     ['dk_h2', 'Tiêu đề mục', 'Đăng ký khoá học'],
     ['dk_p', 'Câu dẫn', 'Điền vài dòng. Giảng viên nhắn Zalo gửi tài khoản trong ngày, sau đó bạn tải app và vào lớp.'],
     ['dk_gui', 'Chữ trên nút gửi', 'Gửi đăng ký'],
+    ['dk_hd', 'Nút mở ảnh hướng dẫn đăng ký', 'Cách đăng ký từng bước'],
     ['dk_xong', 'Lời cảm ơn sau khi gửi', 'Đã nhận đăng ký của bạn! Giảng viên sẽ nhắn Zalo trong ngày để gửi tài khoản. Trong lúc chờ, bạn tải app trước cho sẵn.'],
     ['dk_da_gui', 'Khi đã gửi trước đó', 'Bạn đã gửi đăng ký cho khoá này rồi — giảng viên sẽ liên hệ sớm.']
   ]},

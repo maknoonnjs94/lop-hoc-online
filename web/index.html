@@ -254,7 +254,7 @@
 
 <section class="khoi" id="dang-ky">
   <div class="wrap">
-    <div class="head"><div><span class="eyebrow" data-chu="dk_eyebrow"></span><h2 data-chu="dk_h2"></h2><p data-chu="dk_p"></p></div></div>
+    <div class="head"><div><span class="eyebrow" data-chu="dk_eyebrow"></span><h2 data-chu="dk_h2"></h2><p data-chu="dk_p"></p></div><button type="button" class="btn" id="hdMoDk" data-chu="dk_hd"></button></div>
     <div class="dk">
       <form id="dkForm" autocomplete="on" novalidate>
         <label>Họ và tên<input name="ho_ten" required maxlength="120" placeholder="Nguyễn Văn An" autocomplete="name"></label>
@@ -304,14 +304,15 @@
   </div>
 </footer>
 
-<div class="hdbox" id="hdBox" hidden role="dialog" aria-modal="true" aria-label="Hướng dẫn tải và cài ứng dụng">
+<div class="hdbox" id="hdBox" hidden role="dialog" aria-modal="true" aria-label="Hướng dẫn từng bước">
   <div class="khung">
-    <div class="thanh"><b>Tải &amp; cài ứng dụng — Windows và macOS</b>
-      <a class="btn primary tai" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-win.exe">Tải cho Windows</a>
-      <a class="btn tai" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-mac.dmg">Tải cho macOS</a>
+    <div class="thanh"><b id="hdTieuDe">Tải &amp; cài ứng dụng — Windows và macOS</b>
+      <a class="btn primary tai" data-hd="app" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-win.exe">Tải cho Windows</a>
+      <a class="btn tai" data-hd="app" href="https://pub-71167ada316449cd94a3685600d7ad69.r2.dev/LopHoc-mac.dmg">Tải cho macOS</a>
+      <a class="btn primary tai" data-hd="dk" href="#dang-ky" id="hdToiForm">Tới form đăng ký</a>
       <button type="button" class="dong" id="hdDong" aria-label="Đóng">×</button></div>
-    <img id="hdAnh" alt="Hướng dẫn 4 bước: tải app, cài trên Windows hoặc macOS, đăng nhập lần đầu, vào lớp học" loading="lazy">
-    <div class="chan">Kẹt ở bước nào, nhắn Zalo giảng viên ở mục Liên hệ. <a href="img/huong-dan-app.jpg" target="_blank" rel="noopener">Mở ảnh cỡ lớn</a> · <a href="tai-app.html">Trang tải app</a></div>
+    <img id="hdAnh" alt="Hướng dẫn từng bước" loading="lazy">
+    <div class="chan">Kẹt ở bước nào, nhắn Zalo giảng viên ở mục Liên hệ. <a id="hdLon" href="img/huong-dan-app.jpg" target="_blank" rel="noopener">Mở ảnh cỡ lớn</a> · <a href="tai-app.html">Trang tải app</a></div>
   </div>
 </div>
 
@@ -325,13 +326,27 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   $('nam').textContent = new Date().getFullYear();
   /* hộp hướng dẫn cài: ảnh chỉ tải khi mở lần đầu */
-  function hdMo() { var b = $('hdBox'), a = $('hdAnh'); if (!a.getAttribute('src')) a.src = 'img/huong-dan-app.jpg'; b.hidden = false; document.body.style.overflow = 'hidden'; $('hdDong').focus(); }
+  /* hai ảnh hướng dẫn dùng chung một hộp: 'app' (tải & cài) và 'dk' (đăng ký tài khoản, học nhiều khoá, đăng nhập lần đầu) */
+  var HD = {
+    app: { anh: 'img/huong-dan-app.jpg', tieu: 'Tải & cài ứng dụng — Windows và macOS', alt: 'Hướng dẫn 4 bước: tải app, cài trên Windows hoặc macOS, đăng nhập lần đầu, vào lớp học' },
+    dk: { anh: 'img/huong-dan-dang-ky.jpg', tieu: 'Đăng ký tài khoản — một tài khoản học mọi khoá', alt: 'Hướng dẫn 4 bước: điền form đăng ký, học nhiều khoá dùng một tài khoản, chờ duyệt qua Zalo, đăng nhập lần đầu bằng mã sinh viên rồi đặt mật khẩu mới' }
+  };
+  function hdMo(kieu) {
+    var k = HD[kieu] || HD.app, b = $('hdBox'), a = $('hdAnh');
+    if (a.getAttribute('src') !== k.anh) a.src = k.anh;
+    a.alt = k.alt; $('hdTieuDe').textContent = k.tieu; $('hdLon').href = k.anh;
+    [].forEach.call(b.querySelectorAll('[data-hd]'), function (el) { el.hidden = el.dataset.hd !== (HD[kieu] ? kieu : 'app'); });
+    b.hidden = false; b.scrollTop = 0; document.body.style.overflow = 'hidden'; $('hdDong').focus();
+  }
   function hdDong() { $('hdBox').hidden = true; document.body.style.overflow = ''; }
-  $('hdMo').addEventListener('click', hdMo);
+  $('hdMo').addEventListener('click', function () { hdMo('app'); });
+  $('hdMoDk').addEventListener('click', function () { hdMo('dk'); });
+  $('hdToiForm').addEventListener('click', function () { hdDong(); });
   $('hdDong').addEventListener('click', hdDong);
   $('hdBox').addEventListener('click', function (e) { if (e.target === this) hdDong(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('hdBox').hidden) hdDong(); });
-  if (location.hash === '#huong-dan') hdMo();
+  if (location.hash === '#huong-dan') hdMo('app');
+  if (location.hash === '#huong-dan-dang-ky') hdMo('dk');
 
   /* Bản mẫu — trùng với phần seed trong schema_v25_trang_cong_khai.sql. Dùng khi chưa chạy SQL hay mất mạng. */
   var MAU = {

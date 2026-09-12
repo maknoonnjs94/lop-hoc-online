@@ -41,6 +41,19 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Infographic số 3: Đăng ký tài khoản (một tài khoản học mọi khoá, mật khẩu = mã SV)
+
+M hỏi đã có ảnh hướng dẫn đăng ký chưa — chưa. `pr/infographic-dang-ky.html` → `.png` 2160×2700 (cùng công thức Chrome headless),
+`web/img/huong-dan-dang-ky.jpg` 1620×2025 (~470 KB). 4 bước: 1 form mô phỏng (vòng cam ở ô Mã sinh viên và ô tick nhiều khoá) + 4
+lưu ý (email = tên đăng nhập, mã SV = mật khẩu lần đầu + mã đối chiếu học phí, học 2–3 môn tick hết một lần, số Zalo) · 2 bốn thẻ
+"Học nhiều khoá: một tài khoản là đủ" (Đúng/Đừng/học thêm khoá sau = đăng ký lại đúng email cũ, mật khẩu giữ nguyên/duyệt từng khoá)
+· 3 chờ duyệt + tin Zalo mô phỏng · 4 đăng nhập lần đầu + luật mật khẩu mới + quên thì nhắn Zalo · dải học phí QR / Đóng gộp.
+Không nói khoá máy, dấu chìm, hạn nợ. Lần chụp đầu dải chân bị cắt → bớt gap/padding.
+- Trang công khai: nút **Cách đăng ký từng bước** (`#hdMoDk`, chữ `dk_hd` sửa được ở Quản trị) ở đầu mục Đăng ký; hộp `#hdBox` dùng
+  chung: `hdMo(kieu)` đổi ảnh/tiêu đề/nút (`data-hd`: app → 2 nút tải, dk → *Tới form đăng ký*); hash `#huong-dan-dang-ky`.
+
+---
+
 ## 2026-09-12 — Hộp kết quả duyệt / cấp mật khẩu tắt sau vài trăm ms (m không đọc kịp)
 
 Nguyên nhân: `dlgOk` gọi `await dlgOnOk()` rồi `closeDlg()`; onOk của hộp Duyệt mở hộp kết quả bằng `setTimeout(…, 50)` rồi còn

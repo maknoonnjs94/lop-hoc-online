@@ -414,6 +414,13 @@ Cần chạy `schema_v27_dang_ky_nhan_ban.sql` một lần (`/api/trang-thai` �
    *Đóng* — để m đọc kỹ mật khẩu và biết chắc bước nào hỏng. Hộp *Mật khẩu tạm mới* (Cấp lại) và *Kết quả tạo tài khoản* (tạo hàng loạt) cũng vậy.
 4. **Từ chối** ghi lý do, đơn không hiện nữa (vẫn còn trong bảng `dang_ky` để tra).
 
+**Ảnh hướng dẫn cho sinh viên (3 infographic, thư mục `pr/`):** `infographic-gioi-thieu` (quảng bá), `infographic-huong-dan-app` (tải & cài),
+`infographic-dang-ky` (đăng ký tài khoản · học nhiều khoá dùng một tài khoản · chờ duyệt qua Zalo · đăng nhập lần đầu bằng mã SV rồi đặt
+mật khẩu mới · học phí QR / Đóng gộp). Bản `.png` 2160×2700 để gửi Zalo/đăng Facebook; bản `.jpg` nhẹ nằm ở `web/img/` hiện trong hộp
+trên trang công khai: nút **Cách cài từng bước** (mục Tải app) và **Cách đăng ký từng bước** (mục Đăng ký); link thẳng
+`giangduonghoahoc.com/#huong-dan` và `/#huong-dan-dang-ky`. Sửa ảnh: sửa tệp `.html` trong `pr/` → chụp lại bằng Chrome headless
+(công thức trong nhật ký 11/9) → xuất `.jpg` 1,5× bằng PowerShell GDI+ → ghi đè `web/img/…jpg`.
+
 Chưa chạy v27 thì form trên trang công khai báo "Đăng ký trực tuyến chưa mở — nhắn Zalo", tab quản trị không hiện bảng.
 
 ## Mật khẩu — ai đặt, ai đổi, quên thì sao
