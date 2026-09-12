@@ -103,6 +103,10 @@
   .msg.show{ display:block }
   .msg.err{ background:var(--danger-soft); color:var(--danger) }
   .msg.ok{ background:var(--ok-soft); color:var(--ok) }
+  /* kết quả từng bước trong hộp thoại (duyệt, cấp mật khẩu): mỗi dòng một dấu ✓/✗, không tự tắt */
+  .kq{ list-style:none; margin:0 0 12px; padding:10px 12px; border-radius:var(--r-s); background:var(--tint, #f5f5f5); font-size:13.5px; line-height:1.5 }
+  .kq li{ display:flex; gap:8px; align-items:flex-start } .kq li+li{ margin-top:4px } .kq b{ font-weight:800; flex:none; width:16px }
+  .kq li.ok b{ color:var(--ok) } .kq li.loi{ color:var(--danger) } .kq li.loi b{ color:var(--danger) }
 
   /* ---- thanh đầu ---- */
   .top{ position:sticky; top:0; z-index:30; padding:10px 24px; background:color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter:saturate(1.4) blur(10px); -webkit-backdrop-filter:saturate(1.4) blur(10px); border-bottom:1px solid var(--line) }
@@ -597,7 +601,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       b.addEventListener('click', function () { el.hidden = true; clearTimeout(toastT); ham(); });
       el.appendChild(b);
     }
-    clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, nhan ? 7000 : 3200);
+    clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, nhan ? 8000 : 4500);
   }
   function msg(box, text, kind) {
     box.textContent = text || '';
@@ -641,7 +645,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- hộp thoại chung ---------------- */
   var dlgOnOk = null;
-  function dialog(title, bodyHtml, onOk, okLabel) {
+  var dlgGen = 0, dlgGiu = false;
+  /* opts.giu: hộp kết quả — không đóng khi bấm ra ngoài hay Esc, ẩn nút Huỷ; m tự bấm Đóng khi đọc xong */
+  function dialog(title, bodyHtml, onOk, okLabel, opts) {
+    dlgGen++; dlgGiu = !!(opts && opts.giu);
+    $('dlgCancel').hidden = dlgGiu;
     $('dlgTitle').textContent = title;
     $('dlgBody').innerHTML = bodyHtml;
     $('dlgOk').textContent = okLabel || 'Lưu';
@@ -651,17 +659,19 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var first = $('dlgBody').querySelector('input,select,textarea');
     if (first) setTimeout(function () { first.focus(); }, 50);
   }
-  function closeDlg() { if (typeof dangTai !== 'undefined' && dangTai) { try { dangTai.abort(); } catch (x) {} dangTai = null; } $('dlg').hidden = true; dlgOnOk = null; }
+  function closeDlg() { if (typeof dangTai !== 'undefined' && dangTai) { try { dangTai.abort(); } catch (x) {} dangTai = null; } $('dlg').hidden = true; dlgOnOk = null; dlgGiu = false; $('dlgCancel').hidden = false; }
   $('dlgCancel').addEventListener('click', closeDlg);
-  $('dlg').addEventListener('click', function (e) { if (e.target === this) closeDlg(); });
+  $('dlg').addEventListener('click', function (e) { if (e.target === this && !dlgGiu) closeDlg(); });
   $('dlgOk').addEventListener('click', async function () {
     if (!dlgOnOk) return;
     this.disabled = true;
-    try { var ok = await dlgOnOk(); if (ok !== false) closeDlg(); }
+    var gen = dlgGen;
+    /* onOk có thể mở hộp mới (kết quả) trong lúc chạy → chỉ đóng nếu vẫn là hộp cũ */
+    try { var ok = await dlgOnOk(); if (ok !== false && gen === dlgGen) closeDlg(); }
     catch (err) { msg($('dlgMsg'), 'Lỗi: ' + (err && err.message || err)); }
     this.disabled = false;
   });
-  window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dlg').hidden) closeDlg(); });
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dlg').hidden && !dlgGiu) closeDlg(); });
   function val(id) { var el = $(id); return el ? el.value.trim() : ''; }
 
   /* ---------------- đăng nhập ---------------- */
@@ -2549,19 +2559,27 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         if (!chon.length) { msg($('dlgMsg'), 'Tick ít nhất một khoá để duyệt.'); return false; }
         if (chon.some(function (x) { return !x.lop; })) { msg($('dlgMsg'), 'Khoá đã tick phải chọn lớp.'); return false; }
         var lops = chon.map(function (x) { return x.lop; }).filter(function (x, i, a) { return a.indexOf(x) === i; });
-        /* lớp đầu: tạo tài khoản (hoặc ghi danh nếu email đã có); các lớp sau: API thấy email đã có → chỉ ghi danh thêm */
-        var r = null, loiLop = [];
+        /* lớp đầu: tạo tài khoản (hoặc ghi danh nếu email đã có); các lớp sau: API thấy email đã có → chỉ ghi danh thêm.
+           kq[]: từng bước ✓/✗ để hiện trong hộp kết quả — hộp này giữ tới khi m bấm Đóng. */
+        var r = null, loiLop = [], kq = [];
+        function tenLopId(id) { return (classes.filter(function (c) { return c.id === id; })[0] || {}).name || id; }
         for (var li = 0; li < lops.length; li++) {
-          var kq;
-          try { kq = await apiGoi('/api/tao-tai-khoan', { class_id: lops[li], students: [{ email: d.email, full_name: val('fDkTen') || d.ho_ten, student_no: val('fDkMssv') }] }); }
+          var kq1;
+          try { kq1 = await apiGoi('/api/tao-tai-khoan', { class_id: lops[li], students: [{ email: d.email, full_name: val('fDkTen') || d.ho_ten, student_no: val('fDkMssv') }] }); }
           catch (err) { msg($('dlgMsg'), err.message); return false; }
-          var r1 = (kq.ket_qua || [])[0] || {};
+          var r1 = (kq1.ket_qua || [])[0] || {};
           if (!r1.ok) {
             var ct = String(r1.chi_tiet || '');
             if (/chỉ thuộc một khóa|một khóa|one_class/i.test(ct)) ct = 'Máy chủ còn luật cũ "một tài khoản một khoá" (schema_v4). Chạy schema_v29_nhieu_khoa.sql rồi duyệt lại.';
             if (li === 0) { msg($('dlgMsg'), (LOI_API[r1.reason] || r1.reason || 'Không tạo được') + (ct ? ' — ' + ct : '')); return false; }
-            loiLop.push((kq.lop || lops[li]) + (ct ? ' (' + ct + ')' : '')); continue;
+            loiLop.push((kq1.lop || lops[li]) + (ct ? ' (' + ct + ')' : ''));
+            kq.push({ ok: false, chu: 'Ghi danh vào ' + (kq1.lop || tenLopId(lops[li])) + ': ' + (LOI_API[r1.reason] || r1.reason || 'lỗi') + (ct ? ' — ' + ct : '') });
+            continue;
           }
+          if (li === 0) kq.push(r1.da_co ? { ok: true, chu: 'Email đã có tài khoản từ trước → giữ nguyên mật khẩu cũ' + (r1.chua_vao ? ' (em chưa đăng nhập lần nào)' : '') }
+            : { ok: true, chu: 'Đã tạo tài khoản mới · mật khẩu tạm ' + (r1.la_mssv ? '= mã sinh viên' : 'ngẫu nhiên (hồ sơ không có mã SV ≥ 6 ký tự)') });
+          if (r1.canh_bao) kq.push({ ok: false, chu: r1.canh_bao });
+          else kq.push({ ok: true, chu: 'Đã ghi danh vào ' + (kq1.lop || tenLopId(lops[li])) });
           if (!r) r = r1;
         }
         /* ghi khoá đã duyệt; còn khoá chưa duyệt thì đơn ở lại hàng chờ */
@@ -2571,24 +2589,28 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         if (xongHet) { capNhat.trang_thai = 'da_duyet'; capNhat.duyet_luc = new Date().toISOString(); }
         var ru = await sb.from('dang_ky').update(capNhat).eq('id', d.id);
         if (ru.error && /khoa_da_duyet/.test(ru.error.message || '')) {   /* chưa chạy v27d: không nhớ được từng khoá → coi như xong cả đơn */
-          await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lops[0], ghi_chu_gv: 'Đã duyệt: ' + chon.map(function (x) { return x.khoa; }).join(', ') }).eq('id', d.id);
+          ru = await sb.from('dang_ky').update({ trang_thai: 'da_duyet', duyet_luc: new Date().toISOString(), class_id: lops[0], ghi_chu_gv: 'Đã duyệt: ' + chon.map(function (x) { return x.khoa; }).join(', ') }).eq('id', d.id);
         }
+        kq.push(ru.error ? { ok: false, chu: 'Không ghi được trạng thái đơn đăng ký: ' + (ru.error.message || 'lỗi') + ' — đơn vẫn nằm ở hàng chờ' }
+          : { ok: true, chu: xongHet ? 'Đơn đăng ký đã chuyển sang "đã duyệt"' : 'Đơn ghi nhận đã duyệt ' + chon.map(function (x) { return x.khoa; }).join(', ') + ' — còn chờ khoá khác' });
         var tenLop = lops.map(function (id) { return (classes.filter(function (c) { return c.id === id; })[0] || {}).name || ''; }).filter(Boolean).join(', ');
         if (loiLop.length) r.canh_bao = (r.canh_bao ? r.canh_bao + ' ' : '') + 'Chưa ghi danh được vào: ' + loiLop.join(', ') + '.';
         var tin = r.da_co
           ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào ' + (lops.length > 1 ? 'các lớp ' : 'lớp ') + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập bằng mật khẩu đang dùng nhé.'
           : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + (r.la_mssv ? ' (chính là mã sinh viên của bạn)' : '') + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. ' + (lops.length > 1 ? 'Các lớp: ' : 'Lớp: ') + tenLop + '.';
-        setTimeout(function () {
-          dialog('Đã duyệt · gửi Zalo cho ' + d.ho_ten,
-            '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'
-            + '<div class="bar"><button type="button" class="btn sm primary" id="fDkChep">📋 Chép tin nhắn</button>' + (d.sdt ? '<a class="btn sm" target="_blank" rel="noopener" href="https://zalo.me/' + esc(String(d.sdt).replace(/[^0-9]/g, '')) + '">Mở Zalo ' + esc(d.sdt) + '</a>' : '')
-            + (r.da_co && r.user_id ? '<button type="button" class="btn sm" id="fDkPwMssv" data-uid="' + esc(r.user_id) + '" data-ten="' + esc(d.ho_ten) + '" data-email="' + esc(d.email) + '" data-lop="' + esc(tenLop) + '">🔑 Đặt lại mật khẩu = mã SV</button>' : '') + '</div>'
-            + (r.da_co ? '<p class="hint">Email này <b>đã có tài khoản từ trước</b>' + (r.chua_vao ? ' (chưa đăng nhập lần nào)' : ' (em đã từng đăng nhập)') + ' nên máy <b>giữ nguyên mật khẩu cũ</b>, không đặt lại bằng mã sinh viên. Em quên mật khẩu thì bấm nút 🔑 — tin nhắn sẽ được viết lại kèm mật khẩu mới.</p>' : '')
-            + (xongHet ? '' : '<p class="hint">Đơn vẫn ở hàng chờ với khoá chưa duyệt: <b>' + esc(dsKhoa.filter(function (k) { return daXong.indexOf(k) < 0; }).join(', ')) + '</b>.</p>')
-            + (r.canh_bao ? '<p class="hint" style="color:var(--danger)">' + esc(r.canh_bao) + '</p>' : ''),
-            async function () { return true; }, 'Xong');
-        }, 50);
-        await loadChoDangKy(); await loadRoster();
+        /* tải lại bảng trước, rồi mới mở hộp kết quả — hộp giữ nguyên tới khi m bấm Đóng */
+        msg($('dlgMsg'), 'Đang cập nhật bảng…', 'ok');
+        try { await loadChoDangKy(); await loadRoster(); } catch (x) { kq.push({ ok: false, chu: 'Không tải lại được bảng: ' + (x && x.message || x) }); }
+        var coLoi = kq.some(function (k) { return !k.ok; });
+        dialog((coLoi ? 'Duyệt xong nhưng có chỗ lỗi · ' : 'Đã duyệt · gửi Zalo cho ') + d.ho_ten,
+          '<ul class="kq">' + kq.map(function (k) { return '<li class="' + (k.ok ? 'ok' : 'loi') + '"><b>' + (k.ok ? '✓' : '✗') + '</b><span>' + esc(k.chu) + '</span></li>'; }).join('') + '</ul>'
+          + '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'
+          + '<div class="bar"><button type="button" class="btn sm primary" id="fDkChep">📋 Chép tin nhắn</button>' + (d.sdt ? '<a class="btn sm" target="_blank" rel="noopener" href="https://zalo.me/' + esc(String(d.sdt).replace(/[^0-9]/g, '')) + '">Mở Zalo ' + esc(d.sdt) + '</a>' : '')
+          + (r.da_co && r.user_id ? '<button type="button" class="btn sm" id="fDkPwMssv" data-uid="' + esc(r.user_id) + '" data-ten="' + esc(d.ho_ten) + '" data-email="' + esc(d.email) + '" data-lop="' + esc(tenLop) + '">🔑 Đặt lại mật khẩu = mã SV</button>' : '') + '</div>'
+          + (r.da_co ? '<p class="hint">Email này <b>đã có tài khoản từ trước</b>' + (r.chua_vao ? ' (chưa đăng nhập lần nào)' : ' (em đã từng đăng nhập)') + ' nên máy <b>giữ nguyên mật khẩu cũ</b>, không đặt lại bằng mã sinh viên. Em quên mật khẩu thì bấm nút 🔑 — tin nhắn sẽ được viết lại kèm mật khẩu mới.</p>' : '')
+          + (xongHet ? '' : '<p class="hint">Đơn vẫn ở hàng chờ với khoá chưa duyệt: <b>' + esc(dsKhoa.filter(function (k) { return daXong.indexOf(k) < 0; }).join(', ')) + '</b>.</p>'),
+          function () { return true; }, 'Đóng', { giu: true });
+        return false;   /* hộp Duyệt đã được thay bằng hộp kết quả */
       }, 'Duyệt khoá đã tick');
   });
   $('dlgBody').addEventListener('click', async function (e) {
@@ -2599,9 +2621,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       try {
         var kqPw = await apiGoi('/api/cap-lai-mat-khau', { user_id: nutPw.dataset.uid, dung_mssv: true });
         $('fDkTin').value = 'Chào ' + nutPw.dataset.ten + ', tài khoản lớp học của bạn:\nEmail: ' + nutPw.dataset.email + '\nMật khẩu tạm: ' + kqPw.password + (kqPw.la_mssv ? ' (chính là mã sinh viên của bạn)' : '') + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. Lớp: ' + nutPw.dataset.lop + '.';
-        toast(kqPw.la_mssv ? 'Đã đặt lại = mã sinh viên; tin nhắn đã viết lại.' : 'Hồ sơ không có mã SV hợp lệ → đã sinh mật khẩu ngẫu nhiên; xem trong tin nhắn.');
+        msg($('dlgMsg'), kqPw.la_mssv ? '✓ Máy chủ đã đặt lại mật khẩu = mã sinh viên (' + kqPw.password + '). Tin nhắn bên trên đã viết lại — chép gửi em.' : '✓ Hồ sơ không có mã SV hợp lệ nên máy sinh mật khẩu ngẫu nhiên: ' + kqPw.password + '. Tin nhắn bên trên đã viết lại.', 'ok');
         nutPw.textContent = '✓ Đã đặt lại';
-      } catch (err) { nutPw.disabled = false; toast('Lỗi: ' + (err && err.message || err)); }
+      } catch (err) { nutPw.disabled = false; msg($('dlgMsg'), '✗ Không đặt lại được: ' + (err && err.message || err)); }
       return;
     }
     if (!e.target.closest('#fDkChep')) return;
@@ -2958,14 +2980,20 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           var d2;
           try { d2 = await apiGoi('/api/cap-lai-mat-khau', { user_id: pw2.dataset.pw2, dung_mssv: val('fPwKieu') === 'mssv' }); }
           catch (err) { msg($('dlgMsg'), err && err.message || String(err)); return false; }
-          setTimeout(function () {
-            dialog('Mật khẩu tạm mới',
-              '<p style="margin:0 0 8px"><b>' + esc(d2.full_name || hs2.full_name || '') + '</b> · ' + esc(hs2.email || '') + '</p>'
-              + '<p style="margin:0"><code style="font-size:20px;letter-spacing:.04em">' + esc(d2.password) + '</code>' + (d2.la_mssv ? ' <span class="pill">= mã sinh viên</span>' : '') + '</p>'
-              + '<p class="hint" style="margin-top:10px">Gửi cho sinh viên. Chỉ hiện lần này; lần đăng nhập tới sinh viên phải tự đặt mật khẩu mới.</p>',
-              function () { return true; }, 'Đóng');
-          }, 50);
-          await loadRoster();
+          msg($('dlgMsg'), 'Đang cập nhật bảng…', 'ok');
+          try { await loadRoster(); } catch (x) {}
+          dialog('Mật khẩu tạm mới · ' + (d2.full_name || hs2.full_name || ''),
+            '<ul class="kq"><li class="ok"><b>✓</b><span>Máy chủ đã đổi mật khẩu' + (d2.la_mssv ? ' = mã sinh viên' : ' (ngẫu nhiên)') + '; mật khẩu cũ hết tác dụng, lần đăng nhập tới em phải tự đặt mật khẩu mới.</span></li></ul>'
+            + '<p style="margin:0 0 8px"><b>' + esc(d2.full_name || hs2.full_name || '') + '</b> · ' + esc(hs2.email || '') + '</p>'
+            + '<p style="margin:0"><code style="font-size:22px;letter-spacing:.04em;user-select:all">' + esc(d2.password) + '</code>' + (d2.la_mssv ? ' <span class="pill">= mã sinh viên</span>' : '') + '</p>'
+            + '<div class="bar" style="margin-top:10px"><button type="button" class="btn sm primary" id="fPwChep">📋 Chép tin nhắn</button></div>'
+            + '<p class="hint" style="margin-top:10px">Mật khẩu chỉ hiện lần này — hộp này không tự tắt, bấm Đóng khi đã gửi cho em.</p>',
+            function () { return true; }, 'Đóng', { giu: true });
+          $('fPwChep').onclick = function () {
+            var tinPw = 'Chào ' + (d2.full_name || hs2.full_name || 'bạn') + ', mật khẩu tạm mới của tài khoản ' + (hs2.email || '') + ' là: ' + d2.password + (d2.la_mssv ? ' (chính là mã sinh viên của bạn)' : '') + '. Mở app Giảng đường Hóa học → đăng nhập → đặt mật khẩu mới nhé.';
+            navigator.clipboard.writeText(tinPw).then(function () { msg($('dlgMsg'), 'Đã chép tin nhắn — dán vào Zalo.', 'ok'); }, function () { msg($('dlgMsg'), 'Không chép được — bôi đen mật khẩu rồi Ctrl+C.'); });
+          };
+          return false;   /* hộp Cấp lại đã được thay bằng hộp kết quả */
         }, 'Cấp lại');
       return;
     }
@@ -3170,7 +3198,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       }).join('') + '</tbody></table></div>'
       + (txt ? '<p style="margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" id="kqCopy">Sao chép danh sách</button><a class="btn sm" id="kqTai" download="tai-khoan-lop.txt">Tải .txt</a></p>' : '')
       + '<p class="hint" style="margin-top:10px">Mật khẩu tạm chỉ hiện lần này. Sinh viên đăng nhập lần đầu phải tự đặt mật khẩu mới rồi khai hồ sơ.</p>';
-    dialog('Kết quả tạo tài khoản', html, function () { return true; }, 'Đóng');
+    dialog('Kết quả tạo tài khoản', html, function () { return true; }, 'Đóng', { giu: true });
     if (txt) {
       $('kqCopy').onclick = function () { navigator.clipboard.writeText(txt).then(function () { toast('Đã chép danh sách.'); }, function () { toast('Không chép được — bôi đen rồi Ctrl+C.'); }); };
       $('kqTai').href = URL.createObjectURL(new Blob([txt + '\n'], { type: 'text/plain;charset=utf-8' }));

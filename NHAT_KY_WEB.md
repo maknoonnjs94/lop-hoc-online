@@ -41,6 +41,19 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Hộp kết quả duyệt / cấp mật khẩu tắt sau vài trăm ms (m không đọc kịp)
+
+Nguyên nhân: `dlgOk` gọi `await dlgOnOk()` rồi `closeDlg()`; onOk của hộp Duyệt mở hộp kết quả bằng `setTimeout(…, 50)` rồi còn
+`await loadRoster()` → khi xong, `closeDlg()` đóng luôn **hộp kết quả** vừa mở. Hộp Cấp lại mật khẩu (viết sáng nay) cùng lỗi.
+- `dialog()` có `dlgGen` (thế hệ) — `dlgOk` chỉ đóng nếu `gen` chưa đổi; tham số `opts.giu` = hộp kết quả: không đóng khi bấm nền / Esc,
+  ẩn nút Huỷ, chỉ đóng bằng *Đóng*.
+- Duyệt: mảng `kq[]` ✓/✗ từng bước (tài khoản mới/có sẵn, ghi danh từng lớp, ghi đơn `dang_ky`, tải lại bảng); tải lại bảng **trước**,
+  mở hộp kết quả sau, `return false`. Tiêu đề đổi "Duyệt xong nhưng có chỗ lỗi" khi có ✗. Nút 🔑 báo trong `dlgMsg` thay vì toast.
+- Cấp lại mật khẩu: hộp kết quả giữ, thêm dòng ✓ máy chủ đã đổi + nút *Chép tin nhắn*. Tạo hàng loạt: hộp kết quả cũng `giu`.
+- Toast 3,2 s → 4,5 s. Stub QT: thử duyệt → hộp còn sau 2,5 s; bấm nền/Esc không đóng; Đóng mới tắt.
+
+---
+
 ## 2026-09-12 — Trang chủ 7 khoá vỡ khung ảnh → thẻ Tổng quan + lưới chip; học phí dời xuống mục Khoá học
 
 M chụp máy thật: học 7 khoá, cột phải "Bạn đang học 7 khoá" liệt kê 7 dòng → grid kéo hero cao 733 px, ảnh nhân vật crop nát.

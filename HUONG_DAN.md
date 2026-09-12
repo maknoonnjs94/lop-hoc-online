@@ -409,6 +409,9 @@ Cần chạy `schema_v27_dang_ky_nhan_ban.sql` một lần (`/api/trang-thai` �
    **Email đã có tài khoản từ trước** (tạo tay hồi trước, hoặc lần duyệt đầu tạo được tài khoản mà chưa ghi danh được) thì máy **giữ nguyên mật khẩu cũ**,
    không đặt lại bằng mã SV — hộp *Đã duyệt* nói rõ (kèm "chưa đăng nhập lần nào" / "đã từng đăng nhập") và có nút **🔑 Đặt lại mật khẩu = mã SV**:
    bấm → hỏi lại → tin nhắn Zalo được viết lại kèm mật khẩu. Mã SV trong hồ sơ đang trống thì máy điền từ đơn đăng ký.
+   **Hộp kết quả** (sau khi bấm Duyệt) liệt kê từng bước máy chủ đã làm, mỗi dòng ✓ hoặc ✗: tạo tài khoản (mật khẩu = mã SV / ngẫu nhiên /
+   tài khoản có sẵn), ghi danh từng lớp, ghi trạng thái đơn. Hộp **không tự tắt** — không đóng khi bấm ra ngoài hay Esc, chỉ đóng bằng nút
+   *Đóng* — để m đọc kỹ mật khẩu và biết chắc bước nào hỏng. Hộp *Mật khẩu tạm mới* (Cấp lại) và *Kết quả tạo tài khoản* (tạo hàng loạt) cũng vậy.
 4. **Từ chối** ghi lý do, đơn không hiện nữa (vẫn còn trong bảng `dang_ky` để tra).
 
 Chưa chạy v27 thì form trên trang công khai báo "Đăng ký trực tuyến chưa mở — nhắn Zalo", tab quản trị không hiện bảng.
