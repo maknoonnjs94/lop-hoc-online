@@ -132,7 +132,7 @@ const stub = `<script>
     rpc: function(name, a){ if (name === 'hoan_tat_ho_so') { Object.assign(profile, { full_name:a.p_full_name, gender:a.p_gender, birth_year:a.p_birth_year, major:a.p_major, onboarded_at:new Date().toISOString(), theme: a.p_gender === 'nu' ? 'peach' : 'mint' }); } if (name === 'da_doi_mat_khau') profile.must_change_pw = false; if (name === 'dat_anh_dai_dien') profile.avatar_path = a.p_path;
       if (name === 'nop_bai') { baiNop = [{ material_id:a.p_material, nop_luc:new Date().toISOString(), loi_nhan:a.p_loi_nhan, tep:a.p_tep, cham_luc:null, diem:null, nhan_xet:'' }]; }
       if (name === 'rut_bai') baiNop = [];
-      if (name === 'hoc_phi_cua_toi') return Promise.resolve({ data: hpKieu ? [hpDong].concat(P.get('lop2') === '1' ? [{ class_id:'c2', ten:'Hóa hữu cơ K68', hoc_phi:0, han:null, trang_thai:'mien', mssv:'23001234', ngan_hang:null }] : []) : [], error:null });
+      if (name === 'hoc_phi_cua_toi') return Promise.resolve({ data: hpKieu ? [hpDong].concat(P.get('lop2') === '1' ? [P.get('hp2') === '1' ? { class_id:'c2', ten:'Hóa hữu cơ K68', hoc_phi:1200000, han:ngayCong(9), da_dong_at:null, mien:false, bao_chuyen_at:null, trang_thai:'chua_han', mssv:'23001234', ngan_hang:hpDong.ngan_hang } : { class_id:'c2', ten:'Hóa hữu cơ K68', hoc_phi:0, han:null, trang_thai:'mien', mssv:'23001234', ngan_hang:null }] : []) : [], error:null });
       if (name === 'bao_da_chuyen') { hpDong.bao_chuyen_at = new Date().toISOString(); return Promise.resolve({ data:null, error:null }); }
       if (name === 'anh_qr_hoc_phi') return Promise.resolve({ data:'', error:null });
       if (name === 'nop_bai_o') {

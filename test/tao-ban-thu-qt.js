@@ -42,7 +42,7 @@ const stub = `<script>
       { id:'u3', full_name:'Lê Thu Hà', email:'thuha@vnu.edu.vn', role:'student', active:true, student_no:'23001236', gender:'nu', major:'Hóa dược', birth_year:2004, onboarded_at:null, must_change_pw:true, avatar_path:'' }
     ],
     classes: [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9).', owner:'gv1', created_at:d(-60*864e5), hoc_phi: P.get('hp') === '0' ? undefined : 1500000, han_ngay: 14, hoc_phi_tu: d(-20*864e5) },
-      { id:'c2', name:'Hóa hữu cơ K68', subject:'Hóa hữu cơ', archived:false, notice:'', owner:'gv1', created_at:d(-10*864e5), hoc_phi:0, han_ngay:14 }],
+      { id:'c2', name:'Hóa hữu cơ K68', subject:'Hóa hữu cơ', archived:false, notice:'', owner:'gv1', created_at:d(-10*864e5), hoc_phi:1200000, han_ngay:14 }],
     sessions: [
       { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2.', created_at:d(-2*864e5) },
       { id:'s2', class_id:'c1', no:4, title:'Cân bằng tạo phức', published:true, pinned:false, starts_at:null, held_on:'2026-09-01', note:'', created_at:d(-7*864e5) },
@@ -66,7 +66,9 @@ const stub = `<script>
       /* v26: u1 quá hạn + đã báo chuyển, u2 đã đóng, u3 còn hạn */
       { class_id:'c1', student:'u1', joined_at:d(-30*864e5), han_dong:null, da_dong_at:null, so_tien:null, mien:false, bao_chuyen_at:d(-2*36e5) },
       { class_id:'c1', student:'u2', joined_at:d(-30*864e5), han_dong:null, da_dong_at:d(-10*864e5), so_tien:1500000, mien:false, bao_chuyen_at:null },
-      { class_id:'c1', student:'u3', joined_at:d(-5*864e5), han_dong:null, da_dong_at:null, so_tien:null, mien:false, bao_chuyen_at:null }
+      { class_id:'c1', student:'u3', joined_at:d(-5*864e5), han_dong:null, da_dong_at:null, so_tien:null, mien:false, bao_chuyen_at:null },
+      /* u1 học thêm c2 (chưa đóng) để thử ghi nhận gộp + hồ sơ nhiều lớp */
+      { class_id:'c2', student:'u1', joined_at:d(-3*864e5), han_dong:null, da_dong_at:null, so_tien:null, mien:false, bao_chuyen_at:null }
     ],
     view_events: [
       { user_id:'u1', class_id:'c1', material_id:'m2', session_id:'s1', last_at:d(-36e5), opens:2, progress:{ seconds:900, duration:1500 }, tong_giay:2100, quy_them:0 },

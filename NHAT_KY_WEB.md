@@ -41,6 +41,17 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Đóng học phí GỘP nhiều khoá + hồ sơ liệt kê lớp
+
+- SV: `hpChuaDong()/hpTongChuaDong()`, cờ `hpGop`; thẻ Học phí có dòng tổng + nút Đóng gộp (`data-gop`); màn học phí có thanh
+  `.che` riêng/gộp; `veHocPhiGop()` QR tổng, nội dung `HP <mã SV> GOP`, bảng khoá, *Tôi đã chuyển cả N khoá* = rpc bao_da_chuyen từng lớp.
+- QT: `xacNhanHocPhi` tải các ghi danh khác chưa đóng của em → tick ghi nhận cùng lần (ô tiền tự cộng; khoá chính nhận phần còn lại,
+  khoá gộp ghi đúng học phí, ghi chú "gộp N khoá, tổng"); sao kê: `GOP` sau mã SV → `k.gop`, ứng viên = mọi khoá chưa đóng, khớp khi
+  tiền = tổng, duyệt ghi từng khoá; hộp Hồ sơ SV thêm mục *Đang học N lớp* (trạng thái học phí mỗi lớp).
+- Stub: `?hp2=1` cho c2 có học phí; QT u1 học thêm c2. Thử: gộp 2.700.000 ₫, báo chuyển, sao kê GOP khớp/lệch, ghi nhận 2 khoá.
+
+---
+
 ## 2026-09-12 — Duyệt đăng ký không ghi danh được: vướng trigger "một tài khoản một khoá" (v29)
 
 M thử duyệt một tài khoản test → không thấy ghi danh. Nguyên nhân: `trg_one_class` từ `schema_v4_mot_khoa.sql` (8/9) chặn insert

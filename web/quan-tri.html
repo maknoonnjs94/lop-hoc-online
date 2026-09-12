@@ -2447,15 +2447,30 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       '<label class="f">Số tiền đã nhận (VND)<input id="fHpTien" type="number" min="0" step="1000" value="' + mac + '"><small>Mặc định là học phí lớp ' + vnd(mac) + '. Thu khác (giảm, chia đợt) thì sửa số.</small></label>'
       + '<label class="f">Hình thức<select id="fHpKieu"><option value="Chuyển khoản theo QR">Chuyển khoản theo mã QR của app</option><option value="Chuyển khoản ngoài hệ thống">Chuyển khoản ngoài hệ thống (không có nội dung HP…)</option><option value="Tiền mặt">Tiền mặt</option><option value="Khác">Khác</option></select></label>'
       + '<label class="f">Ghi chú (tuỳ chọn)<input id="fHpGhi" placeholder="vd: mẹ chuyển hộ, tên trên sao kê khác"></label>'
+      + '<div id="fHpKhac"></div>'
       + '<p class="hint">Xác nhận xong, khoá này mở lại cho sinh viên ngay (nếu đang bị tạm đóng).</p>',
       async function () {
         var tien = Math.max(0, Math.round(Number(val('fHpTien')) || 0));
-        var ghi = [val('fHpKieu'), val('fHpGhi')].filter(Boolean).join(' — ');
-        var r = await sb.from('enrollments').update({ da_dong_at: new Date().toISOString(), so_tien: tien, ghi_chu_hp: ghi }).eq('class_id', classId).eq('student', sv);
+        var them = [].map.call(document.querySelectorAll('#fHpKhac input:checked'), function (i) { return { class_id: i.value, hoc_phi: Number(i.dataset.hp) || 0, ten: i.dataset.ten }; });
+        var ghi = [val('fHpKieu'), val('fHpGhi'), them.length ? 'gộp ' + (them.length + 1) + ' khoá, tổng ' + vnd(tien) : ''].filter(Boolean).join(' — ');
+        var luc = new Date().toISOString(), tongThem = them.reduce(function (t, x) { return t + x.hoc_phi; }, 0);
+        /* khoá đang xác nhận nhận phần còn lại sau khi trừ các khoá gộp (mỗi khoá gộp ghi đúng học phí của nó) */
+        var r = await sb.from('enrollments').update({ da_dong_at: luc, so_tien: them.length ? Math.max(0, tien - tongThem) : tien, ghi_chu_hp: ghi }).eq('class_id', classId).eq('student', sv);
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
-        toast('Đã ghi nhận ' + vnd(tien) + ' của ' + ten + '.');
+        for (var ti = 0; ti < them.length; ti++) { var r2 = await sb.from('enrollments').update({ da_dong_at: luc, so_tien: them[ti].hoc_phi, ghi_chu_hp: ghi }).eq('class_id', them[ti].class_id).eq('student', sv); if (r2.error) toast('Lớp ' + them[ti].ten + ': ' + r2.error.message); }
+        toast('Đã ghi nhận ' + vnd(tien) + ' của ' + ten + (them.length ? ' cho ' + (them.length + 1) + ' khoá' : '') + '.');
         await loadRoster();
       }, 'Xác nhận đã nhận');
+    /* các khoá khác của em còn chưa đóng → tick để ghi nhận cùng lần chuyển (sinh viên đóng gộp) */
+    sb.from('enrollments').select('class_id, da_dong_at, mien, classes(name, hoc_phi)').eq('student', sv).then(function (rk) {
+      var box = $('fHpKhac'); if (!box) return;
+      var khac = (rk.data || []).filter(function (e) { return e.class_id !== classId && !e.da_dong_at && !e.mien && e.classes && Number(e.classes.hoc_phi) > 0; });
+      if (!khac.length) return;
+      box.innerHTML = '<div class="f" style="margin-bottom:12px"><div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Em còn ' + khac.length + ' khoá chưa đóng — nếu lần chuyển này là <b>đóng gộp</b>, tick để ghi nhận luôn:</div>'
+        + khac.map(function (e) { return '<label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;margin:4px 0"><input type="checkbox" value="' + e.class_id + '" data-hp="' + Math.round(Number(e.classes.hoc_phi)) + '" data-ten="' + esc(e.classes.name) + '">' + esc(e.classes.name) + ' <small style="color:var(--muted);font-weight:500">· ' + vnd(e.classes.hoc_phi) + '</small></label>'; }).join('')
+        + '<small id="fHpTong" style="display:block;margin-top:6px;color:var(--muted)">Tổng nếu tick hết: ' + vnd(mac + khac.reduce(function (t, e) { return t + Number(e.classes.hoc_phi); }, 0)) + ' — số tiền ở ô trên là tổng đã nhận.</small></div>';
+      box.addEventListener('change', function () { var s = mac; [].forEach.call(box.querySelectorAll('input:checked'), function (i) { s += Number(i.dataset.hp) || 0; }); $('fHpTien').value = s; });
+    });
   }
   var soChoHP = 0, soChoDK = 0;
   function capNhatDuyetN() { var n = soChoHP + soChoDK; $('duyetN').textContent = n; $('duyetN').hidden = !n; }
@@ -2695,8 +2710,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     String(text || '').split(/\r?\n/).forEach(function (dong, i) {
       var m = /\bHP\s*[:\-]?\s*([A-Za-z0-9]{4,20})(?:\s+([A-Za-z]{2,8}))?/i.exec(dong);
       if (!m) return;
-      var tat = (m[2] || '').toUpperCase(); if (!classes.some(function (x) { return skVietTat(x.name) === tat; })) tat = '';   /* chữ sau mã SV mà không phải viết tắt lớp nào (tên người…) thì bỏ */
-      ra.push({ dong: i + 1, mssv: m[1].toUpperCase(), tat: tat, tien: skTien(dong), goc: dong.trim().slice(0, 120) });
+      var tat = (m[2] || '').toUpperCase(); var gop = tat === 'GOP'; if (gop || !classes.some(function (x) { return skVietTat(x.name) === tat; })) tat = '';   /* chữ sau mã SV mà không phải viết tắt lớp nào (tên người…) thì bỏ */
+      ra.push({ dong: i + 1, mssv: m[1].toUpperCase(), tat: tat, gop: gop, tien: skTien(dong), goc: dong.trim().slice(0, 120) });
     });
     return ra;
   }
@@ -2712,10 +2727,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         for (var i = 0; i < chon.length; i++) {
           var k = skKetQua[Number(chon[i].dataset.sk)]; if (!k) continue;
           var sel = document.querySelector('#skKq select[data-sk="' + chon[i].dataset.sk + '"]');
-          var e = sel ? k.ung.filter(function (x) { return x.class_id === sel.value; })[0] : k.ung[0];
-          if (!e) continue;
-          var r = await sb.from('enrollments').update({ da_dong_at: luc, so_tien: k.tien || Number(e.classes.hoc_phi) || 0, ghi_chu_hp: 'Sao kê ' + new Date().toLocaleDateString('vi-VN') + ' — ' + k.goc.slice(0, 80) }).eq('class_id', e.class_id).eq('student', e.student);
-          if (r.error) loi.push(k.mssv + ': ' + r.error.message); else ok++;
+          var dsE = k.gop && k.ung.length > 1 ? k.ung : [sel ? k.ung.filter(function (x) { return x.class_id === sel.value; })[0] : k.ung[0]];
+          for (var ei = 0; ei < dsE.length; ei++) {
+            var e = dsE[ei]; if (!e) continue;
+            var soTien = dsE.length > 1 ? Number(e.classes.hoc_phi) || 0 : (k.tien || Number(e.classes.hoc_phi) || 0);
+            var r = await sb.from('enrollments').update({ da_dong_at: luc, so_tien: soTien, ghi_chu_hp: 'Sao kê ' + new Date().toLocaleDateString('vi-VN') + (dsE.length > 1 ? ' (gộp ' + dsE.length + ' khoá, ' + vnd(k.tien) + ')' : '') + ' — ' + k.goc.slice(0, 80) }).eq('class_id', e.class_id).eq('student', e.student);
+            if (r.error) loi.push(k.mssv + ': ' + r.error.message); else ok++;
+          }
         }
         toast('Đã ghi nhận ' + ok + ' khoản' + (loi.length ? ' — lỗi ' + loi.length + ': ' + loi.join('; ') : '') + '.');
         await loadRoster();
@@ -2731,9 +2749,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     skKetQua = ds.map(function (d) {
       var cua = skCandidates.filter(function (e) { return String((e.profiles || {}).student_no || '').replace(/\s+/g, '').toUpperCase() === d.mssv; });
       var chua = cua.filter(function (e) { return !e.da_dong_at && !e.mien; });
-      var k = { mssv: d.mssv, tat: d.tat, tien: d.tien, goc: d.goc, dong: d.dong, ten: cua[0] ? (cua[0].profiles.full_name || cua[0].profiles.email) : '', ung: chua, tt: '' };
+      var k = { mssv: d.mssv, tat: d.tat, gop: d.gop, tien: d.tien, goc: d.goc, dong: d.dong, ten: cua[0] ? (cua[0].profiles.full_name || cua[0].profiles.email) : '', ung: chua, tt: '' };
       if (!cua.length) k.tt = 'khong_thay';
       else if (!chua.length) k.tt = 'da_dong';
+      else if (d.gop && chua.length > 1) {
+        /* đóng gộp: một dòng sao kê cho MỌI khoá chưa đóng của em; khớp khi tiền = tổng */
+        var tongGop = chua.reduce(function (t, e) { return t + Math.round(Number(e.classes.hoc_phi)); }, 0);
+        k.tt = d.tien === tongGop ? 'khop' : (d.tien ? 'lech' : 'khong_tien');
+      }
       else {
         if (chua.length > 1 && d.tat) { var kh = chua.filter(function (e) { return skVietTat(e.classes.name) === d.tat; }); if (kh.length === 1) k.ung = kh; }
         k.tt = k.ung.length === 1 ? (d.tien === Math.round(Number(k.ung[0].classes.hoc_phi)) ? 'khop' : (d.tien ? 'lech' : 'khong_tien')) : 'nhieu_lop';
@@ -2747,9 +2770,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     box.innerHTML = '<div class="mats"><table class="roster"><thead><tr><th></th><th>Mã SV</th><th>Sinh viên</th><th>Lớp</th><th>Sao kê</th><th>Học phí</th><th>Kết quả</th></tr></thead><tbody>'
       + skKetQua.map(function (k, i) {
         var duoc = k.tt === 'khop' || k.tt === 'lech' || k.tt === 'nhieu_lop' || k.tt === 'khong_tien';
-        var lop = k.tt === 'nhieu_lop' ? '<select data-sk="' + i + '">' + k.ung.map(function (e) { return '<option value="' + e.class_id + '">' + esc(e.classes.name) + '</option>'; }).join('') + '</select>' : (k.ung[0] ? esc(k.ung[0].classes.name) : '—');
+        var lop = k.tt === 'nhieu_lop' ? '<select data-sk="' + i + '">' + k.ung.map(function (e) { return '<option value="' + e.class_id + '">' + esc(e.classes.name) + '</option>'; }).join('') + '</select>' : (k.gop && k.ung.length > 1 ? '<b>Gộp ' + k.ung.length + ' khoá:</b> ' + k.ung.map(function (e) { return esc(e.classes.name); }).join(', ') : (k.ung[0] ? esc(k.ung[0].classes.name) : '—'));
         return '<tr title="' + esc(k.goc) + '"><td><input type="checkbox" data-sk="' + i + '"' + (k.tt === 'khop' ? ' checked' : '') + (duoc ? '' : ' disabled') + '></td><td><code>' + esc(k.mssv) + '</code>' + (k.tat ? ' <small class="hint" style="margin:0">' + esc(k.tat) + '</small>' : '') + '</td><td>' + esc(k.ten || '—') + '</td><td>' + lop + '</td>'
-          + '<td>' + (k.tien ? vnd(k.tien) : '—') + '</td><td>' + (k.ung[0] ? vnd(k.ung[0].classes.hoc_phi) : '—') + '</td><td><span class="' + NHAN[k.tt][0] + '">' + NHAN[k.tt][1] + '</span></td></tr>';
+          + '<td>' + (k.tien ? vnd(k.tien) : '—') + '</td><td>' + (k.gop && k.ung.length > 1 ? vnd(k.ung.reduce(function (t, e) { return t + Number(e.classes.hoc_phi); }, 0)) : (k.ung[0] ? vnd(k.ung[0].classes.hoc_phi) : '—')) + '</td><td><span class="' + NHAN[k.tt][0] + '">' + NHAN[k.tt][1] + '</span></td></tr>';
       }).join('') + '</tbody></table></div>'
       + '<p class="hint" style="margin:8px 0 0">Tick sẵn các dòng <b>Khớp</b>. Dòng <b>Lệch tiền</b> vẫn duyệt được (ghi đúng số trên sao kê). <b>Chọn lớp</b>: em ấy học nhiều khoá mà nội dung không có viết tắt lớp — chọn tay.</p>';
   }
@@ -2774,7 +2797,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       sb.from('view_events').select('material_id, opens, last_at, progress, tong_giay').eq('class_id', curClass).eq('user_id', uid),
       sb.from('bai_nop').select('material_id, nop_luc, cham_luc, diem, nhan_xet, tep').eq('user_id', uid),
       sb.from('cau_hoi').select('material_id, noi_dung, tao_luc, tra_loi').eq('user_id', uid).order('tao_luc', { ascending: false }),
-      sb.from('screenshot_events').select('kind, material_title, at').eq('user_id', uid).order('at', { ascending: false }).limit(5)
+      sb.from('screenshot_events').select('kind, material_title, at').eq('user_id', uid).order('at', { ascending: false }).limit(5),
+      sb.from('enrollments').select('class_id, joined_at, da_dong_at, so_tien, mien, han_dong, classes(name, hoc_phi, han_ngay, hoc_phi_tu)').eq('student', uid)
     ]);
     var ses = (rs[0].data) || [], xem = (rs[1].data) || [], nop = (rs[2].data) || [], hoi = (rs[3].data) || [], bao = (rs[4].data) || [];
     var mat = {}, tongMat = 0;
@@ -2788,6 +2812,13 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     daCham.forEach(function (b) { var v = soDiem(b.diem); if (v != null) { tong += v; dem++; } });
 
     var o = '<div class="hs">';
+    /* v29: một tài khoản nhiều khoá — liệt kê để kiểm ngay đã ghi danh đủ chưa */
+    var ghiDanh = (rs[5] && rs[5].data) || [];
+    o += '<h4>Đang học ' + ghiDanh.length + ' lớp</h4>' + (ghiDanh.length ? '<ul>' + ghiDanh.map(function (e) {
+      var c = e.classes || {}, tt = coHocPhi && Number(c.hoc_phi) > 0 ? ttHocPhi(e, c) : 'mien';
+      var nhan = tt === 'mien' ? (Number(c.hoc_phi) > 0 ? 'miễn học phí' : 'không thu') : tt === 'da_dong' ? 'đã đóng ' + ngayD(e.da_dong_at) : tt === 'qua_han' ? 'quá hạn học phí — đang tạm đóng' : 'còn ' + conNgayHP(e, c) + ' ngày để đóng';
+      return '<li><b>' + esc(c.name || e.class_id) + '</b> · vào lớp ' + esc(ngayD(e.joined_at)) + ' · ' + nhan + '</li>';
+    }).join('') + '</ul>' : '<p class="trong">Chưa ở trong lớp nào.</p>');
     o += '<div class="so">'
       + '<div><b>' + xem.length + '/' + tongMat + '</b><span>tài liệu đã mở</span></div>'
       + '<div><b>' + luot + '</b><span>lượt mở</span></div>'

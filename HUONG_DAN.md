@@ -442,6 +442,12 @@ thì vào cột Học phí của em đó bấm **✓ Đã nhận** và chọn h�
 khi em đó bấm nút. Nút **✓ Đã nhận** (hỏi số tiền, mặc định = học phí lớp) · **Gia hạn** (+N ngày từ hôm nay hoặc từ hạn hiện tại) ·
 **Miễn** / **Thu lại** · **Hoàn tác**. Thanh trên tab tóm tắt: `1.500.000 ₫ · 3 đã đóng · 2 còn hạn · 1 quá hạn · 1 báo đã chuyển`.
 
+**Đóng gộp nhiều khoá (SV học 2–3 khoá):** trên trang chủ app, thẻ *Học phí của bạn* có dòng *Tổng còn phải đóng · N khoá* + nút **Đóng gộp**;
+trong màn học phí có thanh *Đóng riêng khoá này / Đóng gộp N khoá*. Chế độ gộp: một mã QR với **tổng** tiền, nội dung `HP <mã SV> GOP`,
+bảng liệt kê từng khoá, nút *Tôi đã chuyển cả N khoá*. Phía m: hộp **✓ Đã nhận** liệt kê các khoá khác của em còn chưa đóng → tick là ghi nhận
+luôn (số tiền tự cộng thành tổng; mỗi khoá ghi đúng học phí của nó). Sao kê có chữ `GOP` → máy khớp với **mọi** khoá chưa đóng của em, đúng tổng
+là *Khớp*. Hộp **Hồ sơ** của sinh viên giờ liệt kê *Đang học N lớp* kèm trạng thái học phí từng lớp — chỗ kiểm nhanh "đã ghi danh đủ chưa".
+
 **Đối chiếu sao kê (tab Sinh viên → 📋 Đối chiếu sao kê):** mở app ngân hàng → Lịch sử giao dịch → sao chép (hoặc xuất CSV, hoặc SMS) → dán vào ô
 → *Đối chiếu*. Máy tìm trên từng dòng chữ **HP + mã sinh viên** (+ viết tắt lớp nếu em ấy học nhiều khoá) và số tiền (ưu tiên số có dấu nghìn
 hoặc dấu +; bỏ số tài khoản, mã giao dịch, ngày giờ). Bảng kết quả: **Khớp** (tick sẵn) · *Lệch tiền* (duyệt được, ghi đúng số trên sao kê) ·

@@ -357,6 +357,12 @@
   .hpthe .pill{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800; background:var(--accent-soft); color:var(--accent) }
   .hpthe .pill.ok{ background:var(--ok-soft); color:var(--ok) } .hpthe .pill.khoa{ background:var(--danger-soft); color:var(--danger) }
   .hpthe .btn{ min-height:36px; padding:6px 14px; font-size:13.5px }
+  .hp .che{ display:inline-flex; gap:4px; padding:4px; border-radius:999px; background:var(--tint); margin-bottom:14px }
+  .hp .che button{ border:0; background:transparent; color:var(--muted); font:700 13.5px/1 inherit; font-family:inherit; padding:9px 14px; border-radius:999px; cursor:pointer }
+  .hp .che button.on{ background:var(--surface); color:var(--primary); box-shadow:var(--shadow-1) }
+  .hp table.gop{ width:100%; border-collapse:collapse; margin:6px 0 10px; font-size:14.5px }
+  .hp table.gop td{ padding:7px 0; border-bottom:1px solid var(--line) } .hp table.gop td:last-child{ text-align:right; font-variant-numeric:tabular-nums; font-weight:700 }
+  .hp table.gop tr.tong td{ border-bottom:0; font-weight:800; color:var(--primary); font-size:16px }
   .hpnhac{ grid-column:1/-1; display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px; border-radius:var(--r-m); background:var(--accent-soft); border-left:3px solid var(--accent); font-size:14px; color:var(--ink-2) }
   .hpnhac b{ color:var(--ink) } .hpnhac .grow{ flex:1 } .hpnhac .btn{ min-height:36px; padding:6px 14px; font-size:13.5px }
   #classBar button.khoa::after{ content:" 🔒"; font-size:12px }
@@ -1618,10 +1624,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
           : x.bao_chuyen_at ? '<span class="pill">Đã báo chuyển · chờ xác nhận</span>' : '<span class="pill">Hạn ' + esc(ngayVN(x.han)) + (n > 0 ? ' · còn ' + n + ' ngày' : ' · hôm nay') + '</span>';
         return '<div class="hang"><span class="ten"><b>' + esc(x.ten) + '</b></span><span class="tien">' + vnd(x.hoc_phi) + '</span>' + pill
           + (x.trang_thai === 'da_dong' ? '' : '<button type="button" class="btn' + (x.trang_thai === 'qua_han' ? '' : ' sec') + '" data-hp="' + x.class_id + '">' + (x.bao_chuyen_at ? 'Xem lại' : 'Chuyển khoản') + '</button>') + '</div>';
-      }).join('') + '</div>';
+      }).join('')
+      + (hpChuaDong().length >= 2 ? '<div class="hang" style="border-top:2px solid var(--line)"><span class="ten"><b>Tổng còn phải đóng · ' + hpChuaDong().length + ' khoá</b></span><span class="tien">' + vnd(hpTongChuaDong()) + '</span><span class="pill">Chuyển một lần cho đủ các khoá</span><button type="button" class="btn" data-hp="' + hpChuaDong()[0].class_id + '" data-gop="1">Đóng gộp</button></div>' : '')
+      + '</div>';
   }
+  /* các khoá còn phải đóng (chưa đóng, chưa miễn) và tổng tiền — cho chế độ đóng gộp */
+  var hpGop = false;
+  function hpChuaDong() { return classes.map(function (c) { return hpCua(c.id); }).filter(function (x) { return x && Number(x.hoc_phi) > 0 && (x.trang_thai === 'chua_han' || x.trang_thai === 'qua_han'); }); }
+  function hpTongChuaDong() { return hpChuaDong().reduce(function (t, x) { return t + (Number(x.hoc_phi) || 0); }, 0); }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-hp]'); if (!b) return;
+    hpGop = b.dataset.gop === '1';
     var cid = b.dataset.hp;
     if (cid && cid !== curClass && classes.some(function (c) { return c.id === cid; })) {
       /* khoá khác khoá đang mở → chuyển lớp rồi vào màn học phí của lớp đó */
@@ -1632,6 +1645,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     goView('hocphi');
   });
   async function veHocPhi() {
+    if (hpGop && hpChuaDong().length >= 2) return veHocPhiGop();
+    hpGop = false;
     var box = $('hpBox'), x = hpCua(curClass);
     if (!x) { box.innerHTML = '<div class="pcard"><h1>Không có học phí phải đóng</h1><p class="lead">Khoá này không thu học phí hoặc bạn đã đóng.</p><div class="acts"><button type="button" class="btn" id="hpVe">← Về trang chủ</button></div></div>'; return; }
     var khoa = x.trang_thai === 'qua_han', nd = hpNoiDung(x), nh = x.ngan_hang || {}, url = hpQrUrl(x, nd), n = conNgay(x.han);
@@ -1643,7 +1658,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       : khoa ? 'Quá hạn ' + ngayVN(x.han) + ' mà chưa nhận được học phí nên bài giảng, tài liệu và bài tập của khoá này tạm đóng. Chuyển xong, giảng viên xác nhận là mở lại ngay — các khoá khác của bạn không ảnh hưởng.'
       : 'Hạn đóng ' + ngayVN(x.han) + '. Quét mã bằng app ngân hàng, số tiền và nội dung đã điền sẵn.';
     var coBank = !!(nh.bin && nh.stk) || !!anh;
-    box.innerHTML = '<div class="pcard"><div class="tt">' + pill + '</div><h1>Học phí · ' + esc(x.ten) + '</h1><p class="lead">' + esc(lead) + '</p>'
+    box.innerHTML = '<div class="pcard">' + hpThanhChe(false) + '<div class="tt">' + pill + '</div><h1>Học phí · ' + esc(x.ten) + '</h1><p class="lead">' + esc(lead) + '</p>'
       + (x.trang_thai === 'da_dong' || x.trang_thai === 'mien' ? '' :
         '<div class="grid2">'
         + '<div class="qr">' + (anh ? '<img src="' + esc(anh) + '" alt="Mã QR chuyển khoản" draggable="false">' : '<div style="width:232px;height:232px;border:1px dashed var(--line);border-radius:16px;display:grid;place-items:center;color:var(--muted);font-size:13px;text-align:center;padding:16px">Giảng viên chưa đặt thông tin nhận tiền — nhắn Zalo để được hướng dẫn</div>')
@@ -1666,6 +1681,32 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     clearInterval(hpTimer);
     if (khoa) hpTimer = setInterval(function () { if (view === 'hocphi' && bKhoaHP(curClass)) hpKiemTra(true); else clearInterval(hpTimer); }, 60000);
   }
+  function hpThanhChe(dangGop) {
+    var ds = hpChuaDong(); if (ds.length < 2) return '';
+    return '<div class="che"><button type="button" class="' + (dangGop ? '' : 'on') + '" data-che="rieng">Đóng riêng khoá này</button><button type="button" class="' + (dangGop ? 'on' : '') + '" data-che="gop">Đóng gộp ' + ds.length + ' khoá · ' + vnd(hpTongChuaDong()) + '</button></div>';
+  }
+  /* Đóng gộp: một mã QR với TỔNG tiền các khoá chưa đóng, nội dung HP <mã SV> GOP — giảng viên ghi nhận một lần cho cả các khoá */
+  async function veHocPhiGop() {
+    var box = $('hpBox'), ds = hpChuaDong(), x0 = ds[0], nh = x0.ngan_hang || {}, tong = hpTongChuaDong();
+    var nd = ('HP ' + khongDau(x0.mssv || '').replace(/\s+/g, '') + ' GOP').slice(0, 25);
+    var url = (nh.bin && nh.stk) ? 'https://img.vietqr.io/image/' + encodeURIComponent(nh.bin) + '-' + encodeURIComponent(nh.stk) + '-compact2.png?amount=' + Math.round(tong) + '&addInfo=' + encodeURIComponent(nd) + (nh.ten_tk ? '&accountName=' + encodeURIComponent(nh.ten_tk) : '') : '';
+    if (!url && nh.co_qr_anh && hpQrAnh == null) { try { var ra = await sb.rpc('anh_qr_hoc_phi'); hpQrAnh = (ra && ra.data) || ''; } catch (e) { hpQrAnh = ''; } }
+    var anh = url || (hpQrAnh && /^data:image\//.test(hpQrAnh) ? hpQrAnh : '');
+    if (hpZalo == null) { try { var rz = await sb.from('trang_cong_khai').select('noi_dung').eq('khoa', 'lien_he').maybeSingle(); var lh = (rz && rz.data && rz.data.noi_dung) || {}; hpZalo = lh.zalo_link || (lh.zalo ? 'https://zalo.me/' + String(lh.zalo).replace(/[^0-9]/g, '') : ''); } catch (e) { hpZalo = ''; } }
+    var daBao = ds.every(function (x) { return x.bao_chuyen_at; }), coKhoa = ds.some(function (x) { return x.trang_thai === 'qua_han' && x.class_id === curClass; });
+    box.innerHTML = '<div class="pcard">' + hpThanhChe(true) + '<div class="tt"><span class="pill">Đóng gộp ' + ds.length + ' khoá</span></div><h1>Học phí · chuyển một lần</h1>'
+      + '<p class="lead">Một lần chuyển đúng tổng dưới đây, giữ nguyên nội dung — giảng viên ghi nhận cho cả ' + ds.length + ' khoá. Khoá nào đang tạm đóng sẽ mở lại khi giảng viên xác nhận.</p>'
+      + '<div class="grid2"><div class="qr">' + (anh ? '<img src="' + esc(anh) + '" alt="Mã QR chuyển khoản gộp" draggable="false">' : '<div style="width:232px;height:232px;border:1px dashed var(--line);border-radius:16px;display:grid;place-items:center;color:var(--muted);font-size:13px;text-align:center;padding:16px">Giảng viên chưa đặt thông tin nhận tiền — nhắn Zalo</div>')
+      + '<small>' + (url ? 'Quét mã: tổng tiền và nội dung đã có sẵn.' : (anh ? 'Quét mã rồi nhập đúng tổng tiền và nội dung bên cạnh.' : '')) + '</small></div>'
+      + '<div><table class="gop">' + ds.map(function (x) { return '<tr><td>' + esc(x.ten) + (x.trang_thai === 'qua_han' ? ' <span class="pill khoa" style="font-size:11px">tạm đóng</span>' : '') + '</td><td>' + vnd(x.hoc_phi) + '</td></tr>'; }).join('') + '<tr class="tong"><td>Tổng</td><td>' + vnd(tong) + '</td></tr></table>'
+      + '<dl>' + (nh.ten_nh ? '<dt>Ngân hàng</dt><dd>' + esc(nh.ten_nh) + '</dd>' : '') + (nh.stk ? '<dt>Số tài khoản</dt><dd><code>' + esc(nh.stk) + '</code><button type="button" class="btn chep" data-chep="' + esc(nh.stk) + '">Chép</button></dd>' : '') + (nh.ten_tk ? '<dt>Chủ tài khoản</dt><dd>' + esc(nh.ten_tk) + '</dd>' : '')
+      + '<dt>Nội dung</dt><dd><code>' + esc(nd) + '</code><button type="button" class="btn chep" data-chep="' + esc(nd) + '">Chép</button></dd></dl>'
+      + '<div class="acts">' + (daBao ? '' : '<button type="button" class="btn" id="hpBaoGop"' + (anh ? '' : ' disabled') + '>Tôi đã chuyển cả ' + ds.length + ' khoá</button>')
+      + '<button type="button" class="btn sec" id="hpKiem">Kiểm tra lại</button>' + (hpZalo ? '<a class="btn sec" href="' + esc(hpZalo) + '" target="_blank" rel="noopener">Nhắn Zalo giảng viên</a>' : '') + (coKhoa ? '' : '<button type="button" class="btn sec" id="hpVe">← Về trang chủ</button>') + '</div>'
+      + (daBao ? '<p class="ghi"><b>Đã báo chuyển</b> — chờ giảng viên xác nhận.</p>' : '') + '</div></div></div>';
+    clearInterval(hpTimer);
+    if (coKhoa) hpTimer = setInterval(function () { if (view === 'hocphi' && bKhoaHP(curClass)) hpKiemTra(true); else clearInterval(hpTimer); }, 60000);
+  }
   async function hpKiemTra(lang) {
     var truoc = bKhoaHP(curClass);
     await taiHocPhi();
@@ -1675,6 +1716,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('hpBox').addEventListener('click', async function (e) {
     var c = e.target.closest('[data-chep]'); if (c) { try { await navigator.clipboard.writeText(c.dataset.chep); c.textContent = 'Đã chép'; setTimeout(function () { c.textContent = 'Chép'; }, 1500); } catch (x) {} return; }
     if (e.target.closest('#hpVe')) { goView('home'); return; }
+    var che = e.target.closest('[data-che]'); if (che) { hpGop = che.dataset.che === 'gop'; veHocPhi(); return; }
+    if (e.target.closest('#hpBaoGop')) {
+      var bg = e.target.closest('#hpBaoGop'); bg.disabled = true;
+      try {
+        var ds = hpChuaDong();
+        for (var i = 0; i < ds.length; i++) { var rg = await sb.rpc('bao_da_chuyen', { p_class: ds[i].class_id }); if (rg.error) throw rg.error; ds[i].bao_chuyen_at = new Date().toISOString(); }
+        baoChup('Đã báo cho giảng viên', 'Giảng viên xác nhận là cả ' + ds.length + ' khoá được ghi nhận.', 'ok'); veHocPhi();
+      } catch (err) { bg.disabled = false; baoChup('Chưa gửi được', String(err.message || err), 'err'); }
+      return;
+    }
     if (e.target.closest('#hpKiem')) { hpKiemTra(false); return; }
     if (e.target.closest('#hpBao')) {
       var b = e.target.closest('#hpBao'); b.disabled = true;
