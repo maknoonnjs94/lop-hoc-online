@@ -537,6 +537,17 @@ và khoá theo **từng khoá**, tài khoản gắn một máy — nên luật �
 khóa …", không ghi danh được. Chạy `schema_v29_nhieu_khoa.sql` để bỏ (`/api/trang-thai` → `v29_nhieu_khoa: true`). Chống cho mượn giờ
 dựa vào: mỗi tài khoản một máy thật + học phí từng khoá + dấu chìm tên.
 
+## Trang chủ app khi học nhiều khoá — bố cục giữ dáng
+
+Trang chủ app: hàng đầu là **thẻ "Tiếp tục học"** (ảnh nhân vật) bên trái và **thẻ Tổng quan** bên phải — Tổng quan cao gần cố định
+(3 ô số: khoá · buổi · tài liệu, thanh % đã xong, dòng *tạm đóng vì quá hạn* nếu có, một dòng học phí gộp: *N khoá chưa đóng · tổng …*
+với nút **Đóng gộp** / một khoá thì *Chuyển khoản* / đủ rồi thì *Đã đóng đủ*). Nhờ vậy ảnh không bị kéo dài dù học 1 hay 9 khoá
+(trước 12/9 cột phải liệt kê từng khoá nên 7 khoá kéo ảnh cao 700 px, vỡ khung). Học ≥ 2 khoá thì ngay dưới có thẻ **Khoá học của bạn**:
+lưới chip tự xuống dòng (tên dài cắt ba chấm, nhãn *Tạm đóng* / *N mới* / *HP N ngày*), bấm là vào khoá.
+
+Mục **Khoá học** (menu trái) là nơi xem chi tiết: dải Tổng quan nằm ngang, rồi **thẻ Học phí của bạn** đầy đủ từng khoá (+ dòng tổng,
+Đóng gộp) — thẻ này dời từ trang chủ xuống đây — rồi thẻ từng khoá. Thử nhanh: `_test_hoc.html?nlop=7` (7 khoá tên dài, đủ kiểu học phí).
+
 ## Bảo mật cơ bản — rà 12/9/2026
 
 **Đã có sẵn trong mã (kiểm từ ngoài):** mọi bảng dữ liệu đọc bằng khoá công khai đều trả rỗng hoặc bị từ chối (RLS); không chèn được

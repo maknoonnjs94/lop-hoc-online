@@ -55,6 +55,10 @@ const stub = `<script>
   /* ?hp=chua_han|qua_han|da_dong|bao — học phí lớp c1 (v26); ?lop2=1 thêm lớp c2 không thu để thấy khoá theo từng lớp */
   var hpKieu = P.get('hp') || '';
   if (P.get('lop2') === '1') classes.push({ id:'c2', name:'Hóa hữu cơ K68', subject:'Hóa hữu cơ', archived:false, notice:'' });
+  /* ?nlop=7 — nhiều khoá tên dài như máy thật, học phí đủ kiểu (không cần hp=) */
+  var NLOP = Math.min(9, Number(P.get('nlop')) || 0), themLop = [];
+  var TEN_LOP = ['Hóa hữu cơ (C ngoài) – Kì 1 – 2027', 'Hóa hữu cơ 1 – Kì 1 – 2027', 'Hóa kĩ thuật – Kì 1 – 2027', 'Hóa lí 2 – Kì 1 – 2027', 'Hóa lí CNKTHH – Kì 1 – 2027', 'Hóa phân tích – Kì 1 – 2027', 'Hóa vô cơ 1 – Kì 1 – 2027', 'Hóa sinh – Kì 1 – 2027'];
+  for (var li = 0; li + 1 < NLOP; li++) { var lc = { id:'cx' + li, name:TEN_LOP[li], subject:TEN_LOP[li].split(' – ')[0], archived:false, notice: li === 1 ? 'Lớp học bù chiều thứ 5 tuần này.' : '' }; classes.push(lc); themLop.push(lc); }
   function ngayCong(n){ var t = new Date(); t.setDate(t.getDate() + n); return t.toISOString().slice(0, 10); }
   var hpDong = { class_id:'c1', ten:'Hóa phân tích K68', hoc_phi:1500000, han: hpKieu === 'qua_han' ? ngayCong(-3) : ngayCong(5), da_dong_at: hpKieu === 'da_dong' ? d(-864e5) : null, so_tien: hpKieu === 'da_dong' ? 1500000 : null, mien:false, bao_chuyen_at: hpKieu === 'bao' ? d(-36e5) : null, trang_thai: hpKieu === 'da_dong' ? 'da_dong' : (hpKieu === 'qua_han' ? 'qua_han' : 'chua_han'), mssv:'23001234', ngan_hang:{ bin:'970422', ma:'MB', ten_nh:'MB Bank', stk:'0123456789', ten_tk:'PHAM ANH NGOC', co_qr_anh:false } };
   var sessions = [
@@ -132,6 +136,9 @@ const stub = `<script>
     rpc: function(name, a){ if (name === 'hoan_tat_ho_so') { Object.assign(profile, { full_name:a.p_full_name, gender:a.p_gender, birth_year:a.p_birth_year, major:a.p_major, onboarded_at:new Date().toISOString(), theme: a.p_gender === 'nu' ? 'peach' : 'mint' }); } if (name === 'da_doi_mat_khau') profile.must_change_pw = false; if (name === 'dat_anh_dai_dien') profile.avatar_path = a.p_path;
       if (name === 'nop_bai') { baiNop = [{ material_id:a.p_material, nop_luc:new Date().toISOString(), loi_nhan:a.p_loi_nhan, tep:a.p_tep, cham_luc:null, diem:null, nhan_xet:'' }]; }
       if (name === 'rut_bai') baiNop = [];
+      if (name === 'hoc_phi_cua_toi' && NLOP) { var KIEU = ['chua_han', 'qua_han', 'da_dong', 'mien', 'chua_han', 'bao', 'mien', 'chua_han'];
+        return Promise.resolve({ data: [hpDong].concat(themLop.map(function (lc, i) { var k = KIEU[i], tt = k === 'bao' ? 'chua_han' : k;
+          return { class_id:lc.id, ten:lc.name, hoc_phi: k === 'mien' ? 0 : 1200000 + 100000 * i, han: k === 'mien' ? null : ngayCong(k === 'qua_han' ? -2 : 4 + i), da_dong_at: k === 'da_dong' ? d(-2 * 864e5) : null, so_tien: k === 'da_dong' ? 1300000 : null, mien: k === 'mien', bao_chuyen_at: k === 'bao' ? d(-36e5) : null, trang_thai: tt, mssv:'23001234', ngan_hang: k === 'mien' ? null : hpDong.ngan_hang }; })), error:null }); }
       if (name === 'hoc_phi_cua_toi') return Promise.resolve({ data: hpKieu ? [hpDong].concat(P.get('lop2') === '1' ? [P.get('hp2') === '1' ? { class_id:'c2', ten:'Hóa hữu cơ K68', hoc_phi:1200000, han:ngayCong(9), da_dong_at:null, mien:false, bao_chuyen_at:null, trang_thai:'chua_han', mssv:'23001234', ngan_hang:hpDong.ngan_hang } : { class_id:'c2', ten:'Hóa hữu cơ K68', hoc_phi:0, han:null, trang_thai:'mien', mssv:'23001234', ngan_hang:null }] : []) : [], error:null });
       if (name === 'bao_da_chuyen') { hpDong.bao_chuyen_at = new Date().toISOString(); return Promise.resolve({ data:null, error:null }); }
       if (name === 'anh_qr_hoc_phi') return Promise.resolve({ data:'', error:null });

@@ -41,6 +41,18 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Trang chủ 7 khoá vỡ khung ảnh → thẻ Tổng quan + lưới chip; học phí dời xuống mục Khoá học
+
+M chụp máy thật: học 7 khoá, cột phải "Bạn đang học 7 khoá" liệt kê 7 dòng → grid kéo hero cao 733 px, ảnh nhân vật crop nát.
+- `tongQuanHtml(kieu)`: thẻ Tổng quan cao gần cố định (3 ô số gộp, thanh %, dòng tạm đóng, dòng học phí gộp/đơn/đủ với nút
+  Đóng gộp · Chuyển khoản · Xem lại); một khoá thì kèm chip khoá đó. `khChipHtml` chip một dòng; nhiều khoá → thẻ `.khchips`
+  full-width lưới `auto-fill minmax(250px)`. Bỏ `.khoatom`; bỏ `hpThe()` ở đầu trang chủ.
+- Mục Khoá học: `#khoaTong` = Tổng quan `.ngang` + `hpThe()` trên lưới thẻ khoá. `.home` cột phải min 310 px, `.more` nowrap.
+- Stub: `?nlop=7` sinh 7 khoá tên dài + học phí đủ kiểu (chua_han/qua_han/da_dong/mien/bao). Thử 1366 px: hero 383 px (1 khoá),
+  ~330 px (7 khoá); mục Khoá học hàng học phí không gãy dòng.
+
+---
+
 ## 2026-09-12 — Rà trình quản lý mật khẩu; email đã có tài khoản thì mật khẩu không = mã SV
 
 M báo mật khẩu khởi tạo của maknoonnjs@gmail.com không trùng mã SV. Nguyên nhân trong mã: `taoTaiKhoan` gặp email **đã có tài khoản**
