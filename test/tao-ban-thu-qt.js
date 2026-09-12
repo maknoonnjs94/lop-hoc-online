@@ -378,8 +378,8 @@ const stub = `<script>
       { uid:'0123456789abcdef0123456789abcdef', ten:'Video: đường cong chuẩn độ', giay:1500, san_sang:true, pct:100, ky:'2026-09-01', ngay:'2026-09-01', kich_thuoc: 310000000, anh:'' },
       { uid:'abcdef0123456789abcdef0123456789', ten:'Buổi 1 - Nồng độ', giay:2700, san_sang:true, pct:100, ky:'2026-08-20', ngay:'2026-08-20', kich_thuoc: 520000000, anh:'' }
     ] };
-    if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, lop:'Hóa phân tích K68', email: body.email, mat_khau:'Thu1234@', da_co:false, ket_qua: (body.students || []).map(function (x) { var m = String(x.student_no || '').replace(/\s+/g, ''); return { email:x.email, ok:true, password: m.length >= 6 ? m : 'Thu1234@', la_mssv: m.length >= 6, full_name:x.full_name }; }) };
-    if (s.indexOf('/api/cap-lai-mat-khau') >= 0) tra = { ok:true, mat_khau:'Moi5678@' };
+    if (s.indexOf('/api/tao-tai-khoan') >= 0) tra = { ok:true, lop:'Hóa phân tích K68', email: body.email, mat_khau:'Thu1234@', da_co:false, ket_qua: (body.students || []).map(function (x) { var m = String(x.student_no || '').replace(/\s+/g, ''); return P.get('daco') === '1' ? { email:x.email, ok:true, da_co:true, user_id:'u9', chua_vao:true, full_name:x.full_name } : { email:x.email, ok:true, password: m.length >= 6 ? m : 'Thu1234@', la_mssv: m.length >= 6, full_name:x.full_name }; }) };
+    if (s.indexOf('/api/cap-lai-mat-khau') >= 0) tra = body.dung_mssv ? { ok:true, password:'23001234', la_mssv:true, full_name:'Nguyễn Minh Anh' } : { ok:true, password:'Moi5678@', la_mssv:false, full_name:'Nguyễn Minh Anh' };
     if (s.indexOf('/api/sao-luu/danh-sach') >= 0) tra = P.get('sl') === '0' ? { ok:false, reason:'chua_co_kho' } : { ok:true, co_r2:false, ban: SAO_LUU_THU.slice() };
     else if (s.indexOf('/api/sao-luu') >= 0) { var tenSl = 'sao-luu-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json'; SAO_LUU_THU.unshift({ ten: tenSl, luc: new Date().toISOString(), kich_thuoc: 48213 }); tra = { ok:true, ten: tenSl, kich_thuoc: 48213, so_dong: {}, loi: [] }; }
     return Promise.resolve({ ok:true, status:200, json: function () { return Promise.resolve(tra); } });

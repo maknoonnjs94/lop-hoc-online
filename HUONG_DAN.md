@@ -406,9 +406,26 @@ Cần chạy `schema_v27_dang_ky_nhan_ban.sql` một lần (`/api/trang-thai` �
    (máy gợi ý lớp trùng tên). Khoá chưa tick **ở lại hàng chờ** (chip ✓ cho khoá đã duyệt), duyệt sau lúc nào cũng được — tránh một cú bấm ghi danh nhầm.
    Lớp đầu tạo tài khoản, các lớp sau ghi danh thêm vào cùng tài khoản. Cần `schema_v27d_duyet_tung_khoa.sql` để nhớ từng khoá.
    **Mật khẩu khởi tạo = mã sinh viên** em ấy khai trên form (mã dưới 6 ký tự thì máy tự sinh) — cả khi m tạo tay có điền mã SV; lần đầu vào vẫn phải đổi.
+   **Email đã có tài khoản từ trước** (tạo tay hồi trước, hoặc lần duyệt đầu tạo được tài khoản mà chưa ghi danh được) thì máy **giữ nguyên mật khẩu cũ**,
+   không đặt lại bằng mã SV — hộp *Đã duyệt* nói rõ (kèm "chưa đăng nhập lần nào" / "đã từng đăng nhập") và có nút **🔑 Đặt lại mật khẩu = mã SV**:
+   bấm → hỏi lại → tin nhắn Zalo được viết lại kèm mật khẩu. Mã SV trong hồ sơ đang trống thì máy điền từ đơn đăng ký.
 4. **Từ chối** ghi lý do, đơn không hiện nữa (vẫn còn trong bảng `dang_ky` để tra).
 
 Chưa chạy v27 thì form trên trang công khai báo "Đăng ký trực tuyến chưa mở — nhắn Zalo", tab quản trị không hiện bảng.
+
+## Mật khẩu — ai đặt, ai đổi, quên thì sao
+
+- **Khởi tạo:** duyệt đăng ký hoặc tạo tay có mã SV → mật khẩu tạm **= mã sinh viên** (≥ 6 ký tự; ngắn hơn thì 10 ký tự ngẫu nhiên).
+  Tài khoản đang có sẵn thì **không bị đổi** (xem mục duyệt ở trên).
+- **Lần đầu đăng nhập:** bắt buộc đặt mật khẩu mới (`must_change_pw`). Luật chung cho mọi chỗ đặt mật khẩu: **≥ 8 ký tự, có cả chữ và số,
+  không trùng mã SV, không trùng phần trước @ của email** — và Supabase từ chối trùng mật khẩu đang dùng.
+- **Sinh viên tự đổi:** menu tài khoản → *Đổi mật khẩu* — hộp riêng (nhập 2 lần, nút hiện mật khẩu), không còn hộp `prompt()` của trình duyệt.
+- **Quên mật khẩu:** không có "quên mật khẩu" tự phục vụ (không gửi email) — m vào tab Sinh viên → dòng của em → **Cấp lại mật khẩu** → chọn
+  *Bằng mã sinh viên* (khi hồ sơ có mã ≥ 6 ký tự) hay *Sinh ngẫu nhiên*; mật khẩu hiện một lần, gửi Zalo; lần vào tới em phải tự đổi.
+  Cấp lại không đụng máy đã gắn — cùng máy cũ vào bình thường; đổi máy thì cần *Gỡ máy* ở dòng đó.
+- **Mã SV làm mật khẩu tạm** là chỗ mềm có chủ ý (ai biết mã là thử được) — bù lại: phải đổi ngay lần đầu, tài khoản gắn một máy,
+  và học phí khoá theo khoá. Muốn chặt hơn: chọn *Sinh ngẫu nhiên* khi cấp lại. Cài thêm ở Supabase → Authentication → Providers → Email →
+  *Minimum password length* = 8 (mặc định 6) để máy chủ cũng chặn mật khẩu ngắn.
 
 ## Sao chép buổi sang lớp khác
 

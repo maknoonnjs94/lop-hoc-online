@@ -310,7 +310,15 @@ async function taoTaiKhoan(body, ai, env, request) {
           body: JSON.stringify({ p_class: classId, p_email: email })
         });
         const et = await e.text();
-        out.push(e.ok ? { email: email, ok: true, da_co: true } : { email: email, ok: false, reason: 'da_co_tai_khoan', chi_tiet: locLoi(et) });
+        if (!e.ok) { out.push({ email: email, ok: false, reason: 'da_co_tai_khoan', chi_tiet: locLoi(et) }); continue; }
+        /* Tài khoản có từ trước: mật khẩu giữ nguyên (không được tự đổi của người đang học). Trả user_id để quản trị
+           có thể bấm "Đặt lại = mã SV" nếu em quên; mã SV trong hồ sơ còn trống thì điền luôn cho khớp nội dung chuyển khoản. */
+        const hp = await fetch(SUPABASE_URL + '/rest/v1/profiles?email=eq.' + encodeURIComponent(email) + '&select=id,student_no,onboarded_at', { headers: adminHeaders(env) });
+        const ho = hp.ok ? (await hp.json())[0] : null;
+        if (ho && !String(ho.student_no || '').trim() && mssv) {
+          await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + ho.id, { method: 'PATCH', headers: adminHeaders(env, { Prefer: 'return=minimal' }), body: JSON.stringify({ student_no: mssv }) });
+        }
+        out.push({ email: email, ok: true, da_co: true, user_id: ho ? ho.id : undefined, chua_vao: !!(ho && !ho.onboarded_at), full_name: ten });
       } else {
         out.push({ email: email, ok: false, reason: 'khong_tao_duoc', chi_tiet: m.slice(0, 200) || ('HTTP ' + r.status) });
       }
@@ -339,18 +347,21 @@ async function taoTaiKhoan(body, ai, env, request) {
 async function capLaiMatKhau(body, ai, env, request) {
   const uid = String(body.user_id || '');
   if (!UUID.test(uid)) return json({ ok: false, reason: 'thieu_id' }, 400, request);
-  const p = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + uid + '&select=role,full_name', { headers: adminHeaders(env) });
+  const p = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + uid + '&select=role,full_name,student_no', { headers: adminHeaders(env) });
   const rows = p.ok ? await p.json() : [];
   if (!rows[0]) return json({ ok: false, reason: 'khong_thay' }, 404, request);
   if (rows[0].role !== 'student' && ai.role !== 'admin') return json({ ok: false, reason: 'chi_sinh_vien' }, 403, request);
   if (uid === ai.id) return json({ ok: false, reason: 'tu_doi_o_menu' }, 400, request);
-  const mk = sinhMatKhau();
+  /* dung_mssv: đặt mật khẩu tạm = mã sinh viên trong hồ sơ (≥ 6 ký tự); không thì sinh ngẫu nhiên */
+  const mssvHoSo = String(rows[0].student_no || '').replace(/\s+/g, '');
+  const laMssv = !!body.dung_mssv && mssvHoSo.length >= 6;
+  const mk = laMssv ? mssvHoSo : sinhMatKhau();
   const r = await fetch(SUPABASE_URL + '/auth/v1/admin/users/' + uid, { method: 'PUT', headers: adminHeaders(env), body: JSON.stringify({ password: mk }) });
   if (!r.ok) return json({ ok: false, reason: 'khong_doi_duoc', chi_tiet: locLoi(await r.text()) }, 502, request);
   await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + uid, {
     method: 'PATCH', headers: adminHeaders(env, { Prefer: 'return=minimal' }), body: JSON.stringify({ must_change_pw: true })
   });
-  return json({ ok: true, password: mk, full_name: rows[0].full_name || '' }, 200, request);
+  return json({ ok: true, password: mk, la_mssv: laMssv, full_name: rows[0].full_name || '' }, 200, request);
 }
 
 /* =====================================================================

@@ -2576,12 +2576,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         var tenLop = lops.map(function (id) { return (classes.filter(function (c) { return c.id === id; })[0] || {}).name || ''; }).filter(Boolean).join(', ');
         if (loiLop.length) r.canh_bao = (r.canh_bao ? r.canh_bao + ' ' : '') + 'Chưa ghi danh được vào: ' + loiLop.join(', ') + '.';
         var tin = r.da_co
-          ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào ' + (lops.length > 1 ? 'các lớp ' : 'lớp ') + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập như cũ nhé.'
+          ? 'Chào ' + d.ho_ten + ', tài khoản ' + d.email + ' của bạn đã được ghi danh vào ' + (lops.length > 1 ? 'các lớp ' : 'lớp ') + tenLop + '. Mở app Giảng đường Hóa học và đăng nhập bằng mật khẩu đang dùng nhé.'
           : 'Chào ' + d.ho_ten + ', tài khoản lớp học của bạn:\nEmail: ' + d.email + '\nMật khẩu tạm: ' + r.password + (r.la_mssv ? ' (chính là mã sinh viên của bạn)' : '') + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. ' + (lops.length > 1 ? 'Các lớp: ' : 'Lớp: ') + tenLop + '.';
         setTimeout(function () {
           dialog('Đã duyệt · gửi Zalo cho ' + d.ho_ten,
             '<label class="f">Tin nhắn gửi sinh viên<textarea id="fDkTin" style="min-height:150px">' + esc(tin) + '</textarea></label>'
-            + '<div class="bar"><button type="button" class="btn sm primary" id="fDkChep">📋 Chép tin nhắn</button>' + (d.sdt ? '<a class="btn sm" target="_blank" rel="noopener" href="https://zalo.me/' + esc(String(d.sdt).replace(/[^0-9]/g, '')) + '">Mở Zalo ' + esc(d.sdt) + '</a>' : '') + '</div>'
+            + '<div class="bar"><button type="button" class="btn sm primary" id="fDkChep">📋 Chép tin nhắn</button>' + (d.sdt ? '<a class="btn sm" target="_blank" rel="noopener" href="https://zalo.me/' + esc(String(d.sdt).replace(/[^0-9]/g, '')) + '">Mở Zalo ' + esc(d.sdt) + '</a>' : '')
+            + (r.da_co && r.user_id ? '<button type="button" class="btn sm" id="fDkPwMssv" data-uid="' + esc(r.user_id) + '" data-ten="' + esc(d.ho_ten) + '" data-email="' + esc(d.email) + '" data-lop="' + esc(tenLop) + '">🔑 Đặt lại mật khẩu = mã SV</button>' : '') + '</div>'
+            + (r.da_co ? '<p class="hint">Email này <b>đã có tài khoản từ trước</b>' + (r.chua_vao ? ' (chưa đăng nhập lần nào)' : ' (em đã từng đăng nhập)') + ' nên máy <b>giữ nguyên mật khẩu cũ</b>, không đặt lại bằng mã sinh viên. Em quên mật khẩu thì bấm nút 🔑 — tin nhắn sẽ được viết lại kèm mật khẩu mới.</p>' : '')
             + (xongHet ? '' : '<p class="hint">Đơn vẫn ở hàng chờ với khoá chưa duyệt: <b>' + esc(dsKhoa.filter(function (k) { return daXong.indexOf(k) < 0; }).join(', ')) + '</b>.</p>')
             + (r.canh_bao ? '<p class="hint" style="color:var(--danger)">' + esc(r.canh_bao) + '</p>' : ''),
             async function () { return true; }, 'Xong');
@@ -2590,6 +2592,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       }, 'Duyệt khoá đã tick');
   });
   $('dlgBody').addEventListener('click', async function (e) {
+    var nutPw = e.target.closest('#fDkPwMssv');
+    if (nutPw) {
+      if (!confirm('Đặt lại mật khẩu của ' + nutPw.dataset.ten + ' (' + nutPw.dataset.email + ') bằng mã sinh viên?\n\nMật khẩu em đang dùng hết tác dụng ngay; lần đăng nhập tới phải tự đổi.')) return;
+      nutPw.disabled = true;
+      try {
+        var kqPw = await apiGoi('/api/cap-lai-mat-khau', { user_id: nutPw.dataset.uid, dung_mssv: true });
+        $('fDkTin').value = 'Chào ' + nutPw.dataset.ten + ', tài khoản lớp học của bạn:\nEmail: ' + nutPw.dataset.email + '\nMật khẩu tạm: ' + kqPw.password + (kqPw.la_mssv ? ' (chính là mã sinh viên của bạn)' : '') + '\nTải app tại giangduonghoahoc.com → đăng nhập → đặt mật khẩu mới. Lớp: ' + nutPw.dataset.lop + '.';
+        toast(kqPw.la_mssv ? 'Đã đặt lại = mã sinh viên; tin nhắn đã viết lại.' : 'Hồ sơ không có mã SV hợp lệ → đã sinh mật khẩu ngẫu nhiên; xem trong tin nhắn.');
+        nutPw.textContent = '✓ Đã đặt lại';
+      } catch (err) { nutPw.disabled = false; toast('Lỗi: ' + (err && err.message || err)); }
+      return;
+    }
     if (!e.target.closest('#fDkChep')) return;
     try { await navigator.clipboard.writeText($('fDkTin').value); toast('Đã chép — dán vào Zalo.'); } catch (x) { $('fDkTin').select(); }
   });
@@ -2935,16 +2949,24 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var pw2 = e.target.closest('button[data-pw2]');
     if (pw2) {
       var hs2 = (roster.filter(function (x) { return x.student === pw2.dataset.pw2; })[0] || {}).profiles || {};
-      if (!confirm('Cấp mật khẩu tạm mới cho ' + (hs2.full_name || hs2.email || 'sinh viên này') + '?\n\nMật khẩu cũ hết tác dụng ngay. Lần đăng nhập tới sinh viên phải tự đổi.')) return;
-      try {
-        var d2 = await apiGoi('/api/cap-lai-mat-khau', { user_id: pw2.dataset.pw2 });
-        dialog('Mật khẩu tạm mới',
-          '<p style="margin:0 0 8px"><b>' + esc(d2.full_name || hs2.full_name || '') + '</b> · ' + esc(hs2.email || '') + '</p>'
-          + '<p style="margin:0"><code style="font-size:20px;letter-spacing:.04em">' + esc(d2.password) + '</code></p>'
-          + '<p class="hint" style="margin-top:10px">Gửi cho sinh viên. Chỉ hiện lần này; lần đăng nhập tới sinh viên phải tự đặt mật khẩu mới.</p>',
-          function () { return true; }, 'Đóng');
-        await loadRoster();
-      } catch (err) { toast('Lỗi: ' + (err && err.message || err)); }
+      var mssv2 = String(hs2.student_no || '').replace(/\s+/g, ''), coMssv = mssv2.length >= 6, ten2 = hs2.full_name || hs2.email || 'sinh viên này';
+      dialog('Cấp lại mật khẩu · ' + ten2,
+        '<p class="hint" style="margin:0 0 10px">Mật khẩu cũ hết tác dụng ngay. Lần đăng nhập tới sinh viên phải tự đặt mật khẩu mới.</p>'
+        + '<label class="f">Mật khẩu tạm<select id="fPwKieu">' + (coMssv ? '<option value="mssv">Bằng mã sinh viên: ' + esc(mssv2) + '</option>' : '') + '<option value="ngau_nhien">Sinh ngẫu nhiên (10 ký tự)</option></select>'
+        + (coMssv ? '' : '<small>Hồ sơ chưa có mã sinh viên (hoặc ngắn hơn 6 ký tự) nên chỉ sinh ngẫu nhiên được — điền mã ở Hồ sơ trước nếu muốn dùng mã.</small>') + '</label>',
+        async function () {
+          var d2;
+          try { d2 = await apiGoi('/api/cap-lai-mat-khau', { user_id: pw2.dataset.pw2, dung_mssv: val('fPwKieu') === 'mssv' }); }
+          catch (err) { msg($('dlgMsg'), err && err.message || String(err)); return false; }
+          setTimeout(function () {
+            dialog('Mật khẩu tạm mới',
+              '<p style="margin:0 0 8px"><b>' + esc(d2.full_name || hs2.full_name || '') + '</b> · ' + esc(hs2.email || '') + '</p>'
+              + '<p style="margin:0"><code style="font-size:20px;letter-spacing:.04em">' + esc(d2.password) + '</code>' + (d2.la_mssv ? ' <span class="pill">= mã sinh viên</span>' : '') + '</p>'
+              + '<p class="hint" style="margin-top:10px">Gửi cho sinh viên. Chỉ hiện lần này; lần đăng nhập tới sinh viên phải tự đặt mật khẩu mới.</p>',
+              function () { return true; }, 'Đóng');
+          }, 50);
+          await loadRoster();
+        }, 'Cấp lại');
       return;
     }
     var dv = e.target.closest('button[data-dev]');

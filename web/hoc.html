@@ -736,7 +736,7 @@
       <h2>Đặt mật khẩu của riêng bạn<img class="lic" data-lic="settings" alt="" draggable="false"></h2>
       <p class="lead">Mật khẩu giảng viên cấp chỉ dùng cho lần đầu. Đặt mật khẩu mới để tài khoản là của bạn.</p>
       <form id="pwForm">
-        <label class="f">Mật khẩu mới<input type="password" id="pw1" autocomplete="new-password" required minlength="8" placeholder="Ít nhất 8 ký tự"></label>
+        <label class="f">Mật khẩu mới<input type="password" id="pw1" autocomplete="new-password" required minlength="8" placeholder="Ít nhất 8 ký tự, có chữ và số"></label>
         <label class="f">Nhập lại<input type="password" id="pw2" autocomplete="new-password" required minlength="8" placeholder="Gõ lại đúng như trên"></label>
         <button class="btn block" type="submit" id="pwBtnGo">Lưu mật khẩu và tiếp tục</button>
         <div class="msg" id="pwMsg"></div>
@@ -894,6 +894,18 @@
 </div>
 
 <!-- ================= TRỢ GIÚP ================= -->
+<div class="helpbox" id="pwBox" hidden>
+  <div class="card">
+    <h3>Đổi mật khẩu<img class="lic" data-lic="settings" alt="" draggable="false"></h3>
+    <form id="pwDoiForm">
+      <label class="f">Mật khẩu mới<input type="password" id="pwMoi1" autocomplete="new-password" required minlength="8" placeholder="Ít nhất 8 ký tự, có chữ và số"></label>
+      <label class="f">Nhập lại<input type="password" id="pwMoi2" autocomplete="new-password" required minlength="8" placeholder="Gõ lại đúng như trên"></label>
+      <label class="f" style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" id="pwHien" style="width:auto;margin:0"> Hiện mật khẩu</label>
+      <div class="msg" id="pwDoiMsg"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px"><button type="button" class="btn sec" id="pwDoiHuy">Huỷ</button><button type="submit" class="btn" id="pwDoiLuu">Đổi mật khẩu</button></div>
+    </form>
+  </div>
+</div>
 <div class="helpbox" id="helpBox" hidden>
   <div class="card">
     <h3>Dùng Giảng đường Hóa học thế nào<img class="lic" data-lic="help" alt="" draggable="false"></h3>
@@ -1314,13 +1326,34 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   $('brandBtn').addEventListener('click', function (e) { e.preventDefault(); goView('home'); });
   $('appNoteX').addEventListener('click', function () { $('appNote').hidden = true; });
   $('outBtn').addEventListener('click', function () { sb.auth.signOut(); });
-  $('pwBtn').addEventListener('click', async function () {
+  /* luật mật khẩu dùng chung (lần đầu, đổi, khôi phục): ≥ 8 ký tự, có chữ lẫn số, không trùng mã SV / phần trước @ của email */
+  function loiMatKhau(p) {
+    if (p.length < 8) return 'Mật khẩu cần ít nhất 8 ký tự.';
+    if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return 'Mật khẩu cần có cả chữ và số.';
+    var mssv = String(profile && profile.student_no || '').replace(/\s+/g, '');
+    if (mssv && p.toLowerCase() === mssv.toLowerCase()) return 'Đừng dùng mã sinh viên làm mật khẩu — ai biết mã là vào được.';
+    var tenMail = String(me && me.email || '').split('@')[0];
+    if (tenMail && p.toLowerCase() === tenMail.toLowerCase()) return 'Đừng dùng phần đầu email làm mật khẩu.';
+    return '';
+  }
+  $('pwBtn').addEventListener('click', function () {
     toggleMenu(false);
-    var p1 = prompt('Mật khẩu mới (ít nhất 8 ký tự):');
-    if (!p1) return;
-    if (p1.length < 8) { alert('Mật khẩu quá ngắn.'); return; }
-    var r = await sb.auth.updateUser({ password: p1 });
-    alert(r.error ? ('Không đổi được: ' + r.error.message) : 'Đã đổi mật khẩu.');
+    $('pwMoi1').value = ''; $('pwMoi2').value = ''; $('pwHien').checked = false; $('pwMoi1').type = $('pwMoi2').type = 'password';
+    msg($('pwDoiMsg'), ''); $('pwBox').hidden = false; $('pwMoi1').focus();
+  });
+  $('pwDoiHuy').addEventListener('click', function () { $('pwBox').hidden = true; });
+  $('pwBox').addEventListener('click', function (e) { if (e.target === $('pwBox')) $('pwBox').hidden = true; });
+  $('pwHien').addEventListener('change', function () { $('pwMoi1').type = $('pwMoi2').type = this.checked ? 'text' : 'password'; });
+  $('pwDoiForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var a = $('pwMoi1').value, b = $('pwMoi2').value, loi = loiMatKhau(a);
+    if (loi) { msg($('pwDoiMsg'), loi); return; }
+    if (a !== b) { msg($('pwDoiMsg'), 'Hai lần gõ không giống nhau.'); return; }
+    $('pwDoiLuu').disabled = true; msg($('pwDoiMsg'), 'Đang lưu…', 'ok');
+    var r = await sb.auth.updateUser({ password: a });
+    $('pwDoiLuu').disabled = false;
+    if (r.error) { msg($('pwDoiMsg'), 'Không đổi được: ' + (/same|different/i.test(r.error.message) ? 'mật khẩu mới phải khác mật khẩu đang dùng.' : r.error.message)); return; }
+    $('pwBox').hidden = true; baoChup('Đã đổi mật khẩu', 'Lần đăng nhập tới dùng mật khẩu mới.', 'ok');
   });
   $('helpBtn').addEventListener('click', function () { $('helpBox').hidden = false; });
   $('helpClose').addEventListener('click', function () { $('helpBox').hidden = true; });
@@ -1434,8 +1467,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   }
   $('pwForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    var a = $('pw1').value, b = $('pw2').value;
-    if (a.length < 8) { msg($('pwMsg'), 'Mật khẩu cần ít nhất 8 ký tự.'); return; }
+    var a = $('pw1').value, b = $('pw2').value, loi1 = loiMatKhau(a);
+    if (loi1) { msg($('pwMsg'), loi1); return; }
     if (a !== b) { msg($('pwMsg'), 'Hai lần gõ không giống nhau.'); return; }
     $('pwBtnGo').disabled = true; msg($('pwMsg'), 'Đang lưu…', 'ok');
     var r = await sb.auth.updateUser({ password: a });

@@ -41,6 +41,21 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-12 — Rà trình quản lý mật khẩu; email đã có tài khoản thì mật khẩu không = mã SV
+
+M báo mật khẩu khởi tạo của maknoonnjs@gmail.com không trùng mã SV. Nguyên nhân trong mã: `taoTaiKhoan` gặp email **đã có tài khoản**
+(422 already registered) → chỉ `enroll_by_email`, **không đụng mật khẩu** — tài khoản này được tạo ở lần duyệt đầu (lúc còn trigger một khoá:
+tạo tài khoản được, ghi danh hỏng), lần duyệt lại sau v29 đi vào nhánh "đã có". Hộp Đã duyệt trước đây chỉ nói "đăng nhập như cũ".
+- Worker: nhánh đã-có trả `user_id`, `chua_vao` (chưa onboard), điền `student_no` nếu hồ sơ trống; `capLaiMatKhau` nhận `dung_mssv`
+  → mật khẩu = `profiles.student_no` (≥ 6), trả `la_mssv`.
+- QT: hộp Đã duyệt giải thích + nút **🔑 Đặt lại mật khẩu = mã SV** (confirm → API → viết lại tin Zalo); nút *Cấp lại mật khẩu* ở roster
+  thành hộp chọn *Bằng mã sinh viên* / *Sinh ngẫu nhiên*.
+- SV: *Đổi mật khẩu* từ `prompt()` thành hộp `#pwBox` (2 ô, hiện mật khẩu); `loiMatKhau()` dùng chung cho lần đầu/khôi phục/đổi:
+  ≥ 8, có chữ và số, ≠ mã SV, ≠ phần trước @ email.
+- Stub QT: `?daco=1` giả email đã có; mock cap-lai trả theo `dung_mssv`. Sổ tay thêm mục "Mật khẩu — ai đặt, ai đổi, quên thì sao".
+
+---
+
 ## 2026-09-12 — Đóng học phí GỘP nhiều khoá + hồ sơ liệt kê lớp
 
 - SV: `hpChuaDong()/hpTongChuaDong()`, cờ `hpGop`; thẻ Học phí có dòng tổng + nút Đóng gộp (`data-gop`); màn học phí có thanh
