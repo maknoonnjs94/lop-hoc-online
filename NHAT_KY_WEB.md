@@ -41,6 +41,41 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — "Vẫn không đổi gì": cột trái không cuộn nên nút Trợ giúp rơi khỏi màn hình; bỏ bong bóng linh vật; no-store + app 1.0.18 tự xoá cache
+
+**T (ảnh chụp + 4 lần báo):** *"giao diện nhân vật hoạt hình cứ hiện thông báo chữ… che đi trong rất xấu"*,
+*"phần hướng dẫn sử dụng không tìm thấy"*, rồi *"tắt app vào lại rồi"*, *"update bản v18 rồi… vẫn không có
+phần hướng dẫn và chữ vẫn đè lên nhân vật ở đầu"*.
+
+**Đi vòng (ghi lại để lần sau đừng lặp):** t đoán cache — đúng là có chuyện cache (Cloudflare `CF-Cache-Status:
+HIT` dù origin "no-cache"; Chromium trong app giữ bản cũ) nên đã sửa thật: `_headers` 9 trang app sang
+`Cache-Control: no-store`, app 1.0.18 gọi `session.defaultSession.clearCache()` mỗi lần mở (tag v1.0.18, R2
+`latest.yml` đã 1.0.18). Nhưng đó KHÔNG phải lý do m "không thấy gì đổi". Bảo m xoá thư mục cache tay còn
+đoán sai tên (`LopHoc` — Electron dùng `name` = `lop-hoc`), m xoá nhầm rộng hơn → app trắng một lúc; cài
+lại là hết. Bài học: khi user gửi ảnh nói "chữ đè lên nhân vật", nhìn kỹ ẢNH trước khi đổ cho cache.
+
+**Nguyên nhân thật (đọc CSS):** `.side{ position:sticky; height:calc(100vh - 40px); display:flex;
+flex-direction:column }` — cao cố định, KHÔNG `overflow`. Máy màn hình thấp (laptop 768/800px) thì tổng
+brand + 7 nút nav + khối linh vật (bong bóng + ảnh 128px + nút Trợ giúp) ≈ 810px > cột → flex ép các khối
+co lại: bong bóng đè lên đầu nhân vật ("chữ đè lên nhân vật ở đầu"), nút **Trợ giúp** rơi ra ngoài đáy
+màn hình → m không bao giờ thấy nút, nên mục hướng dẫn "không tìm thấy" và mọi bản mới đều "y chang".
+Ở bố cục hẹp (< 1200px) `.mascot{display:none}` — nút Trợ giúp không tồn tại luôn.
+
+**Sửa:** (1) bỏ hẳn `<div class="bub" id="mascotSay">` + CSS `.bub`, `MASCOT[]`/2 timer — linh vật chỉ là
+ảnh; `noiMascot(t)` giờ = `baoChup(t,'','ok')` (4 câu chúc "Nộp bài xong rồi đó!"… lên banner đầu trang
+6 s, đúng ý "thông báo đẩy lên trên"). (2) `.side` thêm `overflow-y:auto; overflow-x:hidden`, `.side > *{flex:none}`
+(không cho ép), ảnh linh vật 96px khi cao < 860px, ẩn khi < 720px. (3) menu tài khoản (avatar góc phải)
+thêm **Hướng dẫn sử dụng** (`#hdBtn` → `toggleMenu(false)` + mở `#helpBox`) — tới được ở mọi bố cục.
+
+**Thử:** `_test_hoc.html?g=nu` ở 1366×700: không bong bóng, ảnh linh vật ẩn, nút Trợ giúp nằm trong cột
+(đáy 657/660), cột không phải cuộn; 1366×800: ảnh 96px, nút trong cột; menu avatar → Hướng dẫn sử dụng mở
+đúng hộp, menu tự đóng; không lỗi console; `ra-soat.js` sạch, không còn tham chiếu `mascotSay`.
+
+**Việc t cần làm:** F5 (hay mở lại app) — bản này là web, không cần cập nhật app. Muốn xem hướng dẫn: nút
+**Trợ giúp** dưới linh vật, hoặc bấm ảnh đại diện góc trên phải → **Hướng dẫn sử dụng**.
+
+---
+
 ## 2026-09-15 (khuya) — Mục Trợ giúp trong app học thêm bản đồ 7 mục + sơ đồ Module 4 bước
 
 **T:** t đưa ra một "Bản Đồ Lớp Học" (infographic Claude) hướng dẫn dùng giao diện học sinh, rồi hỏi lại:
