@@ -296,18 +296,14 @@
   .pcard h2{ font-size:20px; line-height:1.3; display:flex; gap:10px; align-items:center; margin-bottom:16px }
   .pcard h2 .ico{ font-size:22px; color:var(--primary) }
   .pcard h2 .more{ margin-left:auto; font-size:13px; font-weight:600; color:var(--primary); display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0; white-space:nowrap }
-  .hero{ position:relative; min-height:300px; overflow:hidden; padding:0; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; align-items:center }
-  /* Chữ và ảnh KHÔNG chồng lên nhau: chữ 52% bên này, ảnh 48% bên kia (trước đây 48% + 60% chồng 8%, tên bài dài
-     hai dòng là chữ tràn lên mặt nhân vật). Mép trong của ảnh vẫn tan ngắn vào nền cho mềm. */
-  .hero .copy{ position:relative; z-index:1; width:52%; padding:24px 14px 24px 26px; overflow-wrap:anywhere }
+  /* Thẻ hero: CHỮ Ở TRÊN, ẢNH Ở DƯỚI NGUYÊN VẸN — không cột, không phủ mờ, không chữ nào chạm vào ảnh (t chốt 16/9). */
+  .hero{ position:relative; overflow:hidden; padding:0; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; flex-direction:column }
+  .hero .copy{ position:relative; z-index:1; width:100%; padding:22px 26px 18px; overflow-wrap:anywhere }
   .eyebrow{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); padding:7px 12px; border-radius:999px; font-size:11px; letter-spacing:1px; color:var(--primary); font-weight:800; text-transform:uppercase }
   .hero h2{ font-size:clamp(23px,2.3vw,32px); margin:14px 0 6px; letter-spacing:-.02em; display:block; text-wrap:balance }
   .hero p{ color:var(--muted); margin-bottom:20px }
-  /* Ảnh phủ 2/3 thẻ, mép trong tan dài vào nền nên chữ và ảnh là một khối. Nhân vật luôn ở phía xa chữ:
-     bạn nữ đứng bên phải khung → ảnh bên phải; bạn nam đứng bên trái khung → lật (.trai): ảnh trái, chữ phải. */
-  .hero .art{ position:absolute; top:0; bottom:0; right:0; width:48%; pointer-events:none }
-  .hero.trai .copy{ margin-left:auto; padding:24px 26px 24px 14px }
-  .hero.trai .art{ right:auto; left:0 }
+  /* Ảnh minh hoạ nằm dưới khối chữ, rộng hết thẻ, giữ đúng tỉ lệ gốc — nhân vật nam/nữ đều nguyên vẹn. */
+  .hero .art{ position:relative; width:100%; pointer-events:none; line-height:0 }
   /* Minh hoạ "khoảnh khắc học tập": ảnh giữ nguyên tỉ lệ, bo góc, đổi theo nhân vật đã chọn. */
   .canh{ display:block; width:100%; height:auto; max-width:260px; margin:0 auto; border-radius:16px; box-shadow:0 6px 18px rgba(20,30,40,.09) }
   .canhbox{ padding:10px 0 6px }
@@ -320,9 +316,7 @@
   .moment .txt p{ color:var(--muted); font-size:14px; line-height:1.55; margin:0 0 16px }
   .moment .txt .btn{ margin:0 }
   @container (max-width:480px){ .moment{ grid-template-columns:1fr; gap:14px; min-height:0 } .moment .pic{ min-height:180px } .moment .txt{ text-align:center } .moment .txt p{ margin-bottom:12px } }
-  .hero .art img.canh{ position:absolute; inset:0; width:100%; height:100%; max-width:none; margin:0; object-fit:cover; object-position:right 35%; border-radius:0; box-shadow:none;
-    -webkit-mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%); mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%) }
-  .hero.trai .art img.canh{ object-position:left 35%; -webkit-mask-image:linear-gradient(270deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%); mask-image:linear-gradient(270deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%) }
+  .hero .art img.canh{ position:static; display:block; width:100%; height:auto; max-width:none; margin:0; border-radius:0; box-shadow:none; -webkit-mask-image:none; mask-image:none }
   .weekly .canh{ max-width:100%; margin:-2px auto 12px }
   .hero .quip{ position:relative; z-index:1; font-size:13px; color:var(--primary); font-weight:600; margin-top:14px }
   .today{ display:flex; flex-direction:column }
@@ -756,7 +750,7 @@
     .shell{ display:block; padding:10px } .side{ position:relative; inset:auto; min-height:0; height:auto; padding:10px 8px; margin-bottom:12px }
     .brand{ font-size:16px; justify-content:flex-start; padding:0 6px; gap:10px } .brand img.logo{ width:46px; height:46px } .nav{ grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:10px; gap:2px }
     .nav button{ min-width:0; padding:10px 2px; border-radius:12px; font-size:10px }
-    .hero{ display:block } .hero .copy,.hero.trai .copy{ width:100%; margin:0; padding:20px 20px 10px } .hero .art,.hero.trai .art{ position:relative; inset:auto; width:100%; height:215px } .hero .art img.canh,.hero.trai .art img.canh{ object-position:center 30%; -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 18%); mask-image:linear-gradient(180deg, transparent 0, #000 18%) }
+    .hero .copy{ padding:20px 20px 12px }
     .topbar{ flex-wrap:wrap; position:static } .search{ order:2; flex-basis:100% } .quick{ gap:8px } .qcard{ padding:14px 6px } .qcard small{ display:none }
     /* Điện thoại không có bàn phím nên gợi ý Esc chỉ tổ chật đầu trình xem. */
     .vhead .esc{ display:none } .vhead{ gap:8px; padding:10px 12px }
