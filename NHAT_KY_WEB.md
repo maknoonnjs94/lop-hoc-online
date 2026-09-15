@@ -41,6 +41,31 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — Bài giảng HTML mở chậm + giật: /bai-giang bị "no-cache" tải lại cả gói mỗi lần, dấu chìm mix-blend-mode nặng GPU
+
+**T:** *"giật lag + delay khi mở bài giảng html… phần sơ lược nhóm chức thì không cho mở trong tab mới, phần
+liên kết lai hóa thì mở được nhưng vẫn chụp màn hình được. Update bản v19 thì không được."*
+
+**Kiểm trước khi đoán:** R2 `latest.yml` = 1.0.19, file 85 MB có, Actions "completed successfully" → bản 1.0.19
+ĐÃ phát hành; "update không được" nằm ở khâu app tải/cài trên máy t (hỏi lại thông báo; đường tay: /tai-app
+tải LopHoc-win.exe chạy đè). "Sơ lược nhóm chức không mở tab mới" = link đó tick "Chỉ cho xem trong trang"
+(cố ý ẩn nút Mở ở tab mới) — không phải lỗi; "Liên kết lai hóa" không tick → mở cửa sổ con → app 1.0.18 chưa
+khoá cửa sổ con nên chụp được (1.0.19 sửa).
+
+**Hai thủ phạm lag (sửa ở web, F5 là ăn):**
+1. `/bai-giang/<tên>` rơi vào luật `/*.html`… không, địa chỉ gọn không khớp `/*.html` nên KHÔNG có Cache-Control
+   nào → Cloudflare trả `public, max-age=0, must-revalidate`, không ETag → mỗi lần mở bài là tải lại nguyên gói
+   ~900 KB rồi bung. Thêm khối `/bai-giang/*` → `Cache-Control: public, max-age=86400` (trình duyệt + biên CDN
+   giữ 1 ngày; skill `bai-giang` ghi rõ: sửa bài thì đặt tên file mới, đừng ghi đè).
+2. Dấu chìm `.wmgrid span{ mix-blend-mode:difference }` phủ lên iframe có mô hình 3D/video đang vẽ liên tục →
+   compositor phải trộn màu từng khung hình → giật. Đổi sang chữ trắng mờ 40 % + `text-shadow` viền tối, không
+   blend; thử trên tài liệu nền sáng: 24 dấu vẫn đọc rõ.
+
+**Còn nghi (chưa đụng, chờ t xác nhận sau khi F5 + lên 1.0.19):** app dò phần mềm quay bằng `tasklist` mỗi 4 s —
+máy yếu có thể khựng nhẹ theo nhịp; nếu vẫn giật đều đặn thì giãn 10 s ở bản 1.0.20.
+
+---
+
 ## 2026-09-16 — Thẻ "Bài mới" trang chủ: chữ tràn lên mặt nhân vật; app 1.0.19 khoá chống chụp cả cửa sổ con
 
 **T (ảnh thẻ "BÀI MỚI · Liên kết - Lai hóa trong Hóa hữu cơ", chữ đè ngang mặt bạn nữ):** *"chữ vẫn đè lên
