@@ -171,6 +171,43 @@ function taoMenu() {
   ]));
 }
 
+/* Mọi cửa sổ của app đều phải được khoá như nhau — cửa sổ chính LẪN cửa sổ con (bài giảng "Mở ở tab mới",
+   link cùng tên miền). Trước 1.0.19 chỉ cửa sổ chính gọi setContentProtection nên bài giảng mở ở cửa sổ mới
+   chụp Snipping Tool được bình thường. Cửa sổ con sinh ra qua did-create-window → khoá đệ quy. */
+const GOC = new URL(SITE_URL).origin;
+function khoaCuaSo(win) {
+  /* ---- cái lõi: cửa sổ vô hình với mọi công cụ chụp / quay ---- */
+  win.setContentProtection(true);
+  win.setMenuBarVisibility(false);
+  win.webContents.setUserAgent(win.webContents.getUserAgent() + ' ' + APP_TAG);
+
+  /* chỉ đi trong tên miền của lớp; link ngoài (YouTube, Drive…) mở bằng trình duyệt thường */
+  win.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith(GOC)) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); }
+  });
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith(GOC)) {
+      return { action: 'allow', overrideBrowserWindowOptions: {
+        width: 1180, height: 780, minWidth: 720, minHeight: 480, autoHideMenuBar: true,
+        backgroundColor: '#f3f6f8', icon: path.join(__dirname, 'build', 'icon.png'),
+        webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, devTools: false, spellcheck: false }
+      } };
+    }
+    if (/^https?:/.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.webContents.on('did-create-window', (child) => { khoaCuaSo(child); });
+
+  /* chặn in, lưu, mở DevTools bằng phím */
+  win.webContents.on('before-input-event', (e, input) => {
+    const k = String(input.key || '').toLowerCase();
+    const mod = input.control || input.meta;
+    if (mod && (k === 'p' || k === 's' || k === 'u')) e.preventDefault();
+    if (k === 'f12' || (mod && input.shift && (k === 'i' || k === 'j' || k === 'c'))) e.preventDefault();
+  });
+  win.webContents.on('devtools-opened', () => win.webContents.closeDevTools());
+}
+
 function taoCuaSo() {
   const win = new BrowserWindow({
     width: 1280, height: 820, minWidth: 900, minHeight: 600,
@@ -188,32 +225,7 @@ function taoCuaSo() {
     }
   });
 
-  /* ---- cái lõi: cửa sổ vô hình với mọi công cụ chụp / quay ---- */
-  win.setContentProtection(true);
-
-  win.setMenuBarVisibility(false);
-  win.webContents.setUserAgent(win.webContents.getUserAgent() + ' ' + APP_TAG);
-
-  const goc = new URL(SITE_URL).origin;
-
-  /* chỉ đi trong tên miền của lớp; link ngoài (YouTube, Drive…) mở bằng trình duyệt thường */
-  win.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith(goc)) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); }
-  });
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith(goc)) return { action: 'allow' };
-    if (/^https?:/.test(url)) shell.openExternal(url);
-    return { action: 'deny' };
-  });
-
-  /* chặn in, lưu, mở DevTools bằng phím */
-  win.webContents.on('before-input-event', (e, input) => {
-    const k = String(input.key || '').toLowerCase();
-    const mod = input.control || input.meta;
-    if (mod && (k === 'p' || k === 's' || k === 'u')) e.preventDefault();
-    if (k === 'f12' || (mod && input.shift && (k === 'i' || k === 'j' || k === 'c'))) e.preventDefault();
-  });
-  win.webContents.on('devtools-opened', () => win.webContents.closeDevTools());
+  khoaCuaSo(win);
 
   win.webContents.on('did-fail-load', (e, code, desc) => {
     if (code === -3) return;                                   /* huỷ tải, không phải lỗi */

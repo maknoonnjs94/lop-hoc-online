@@ -297,14 +297,16 @@
   .pcard h2 .ico{ font-size:22px; color:var(--primary) }
   .pcard h2 .more{ margin-left:auto; font-size:13px; font-weight:600; color:var(--primary); display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0; white-space:nowrap }
   .hero{ position:relative; min-height:300px; overflow:hidden; padding:0; background:linear-gradient(120deg, var(--hero-a), var(--hero-b)); display:flex; align-items:center }
-  .hero .copy{ position:relative; z-index:1; width:48%; padding:24px 4px 24px 26px }
+  /* Chữ và ảnh KHÔNG chồng lên nhau: chữ 52% bên này, ảnh 48% bên kia (trước đây 48% + 60% chồng 8%, tên bài dài
+     hai dòng là chữ tràn lên mặt nhân vật). Mép trong của ảnh vẫn tan ngắn vào nền cho mềm. */
+  .hero .copy{ position:relative; z-index:1; width:52%; padding:24px 14px 24px 26px; overflow-wrap:anywhere }
   .eyebrow{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); padding:7px 12px; border-radius:999px; font-size:11px; letter-spacing:1px; color:var(--primary); font-weight:800; text-transform:uppercase }
   .hero h2{ font-size:clamp(23px,2.3vw,32px); margin:14px 0 6px; letter-spacing:-.02em; display:block; text-wrap:balance }
   .hero p{ color:var(--muted); margin-bottom:20px }
   /* Ảnh phủ 2/3 thẻ, mép trong tan dài vào nền nên chữ và ảnh là một khối. Nhân vật luôn ở phía xa chữ:
      bạn nữ đứng bên phải khung → ảnh bên phải; bạn nam đứng bên trái khung → lật (.trai): ảnh trái, chữ phải. */
-  .hero .art{ position:absolute; top:0; bottom:0; right:0; width:60%; pointer-events:none }
-  .hero.trai .copy{ margin-left:auto; padding:24px 26px 24px 6px }
+  .hero .art{ position:absolute; top:0; bottom:0; right:0; width:48%; pointer-events:none }
+  .hero.trai .copy{ margin-left:auto; padding:24px 26px 24px 14px }
   .hero.trai .art{ right:auto; left:0 }
   /* Minh hoạ "khoảnh khắc học tập": ảnh giữ nguyên tỉ lệ, bo góc, đổi theo nhân vật đã chọn. */
   .canh{ display:block; width:100%; height:auto; max-width:260px; margin:0 auto; border-radius:16px; box-shadow:0 6px 18px rgba(20,30,40,.09) }
@@ -319,8 +321,8 @@
   .moment .txt .btn{ margin:0 }
   @container (max-width:480px){ .moment{ grid-template-columns:1fr; gap:14px; min-height:0 } .moment .pic{ min-height:180px } .moment .txt{ text-align:center } .moment .txt p{ margin-bottom:12px } }
   .hero .art img.canh{ position:absolute; inset:0; width:100%; height:100%; max-width:none; margin:0; object-fit:cover; object-position:right 35%; border-radius:0; box-shadow:none;
-    -webkit-mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.5) 20%, #000 42%); mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.5) 20%, #000 42%) }
-  .hero.trai .art img.canh{ object-position:left 35%; -webkit-mask-image:linear-gradient(270deg, transparent 0, rgba(0,0,0,.5) 20%, #000 42%); mask-image:linear-gradient(270deg, transparent 0, rgba(0,0,0,.5) 20%, #000 42%) }
+    -webkit-mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%); mask-image:linear-gradient(90deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%) }
+  .hero.trai .art img.canh{ object-position:left 35%; -webkit-mask-image:linear-gradient(270deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%); mask-image:linear-gradient(270deg, transparent 0, rgba(0,0,0,.6) 10%, #000 22%) }
   .weekly .canh{ max-width:100%; margin:-2px auto 12px }
   .hero .quip{ position:relative; z-index:1; font-size:13px; color:var(--primary); font-weight:600; margin-top:14px }
   .today{ display:flex; flex-direction:column }
