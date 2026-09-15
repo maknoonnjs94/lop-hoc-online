@@ -599,6 +599,10 @@
   /* Dấu chìm: KHÔNG dùng mix-blend-mode — trộn màu từng khung hình lên khung xem có video/mô hình 3D đang chạy
      rất nặng GPU (bài giảng HTML giật, trễ). Chữ trắng mờ + viền tối mảnh vẫn đọc được trên nền sáng lẫn tối. */
   .wmgrid span{ position:absolute; font-size:12px; font-weight:700; white-space:nowrap; letter-spacing:.02em; color:rgba(255,255,255,.4); text-shadow:0 0 2px rgba(0,0,0,.6), 0 0 1px rgba(0,0,0,.6); transform:rotate(-22deg); transform-origin:left top; will-change:transform }
+  /* Trên nền trắng (bài tập PDF, trang viết tay, ghi chú, ảnh — .vpaper) chữ trắng mờ + viền tối của kiểu
+     trên gần như vô hình, chỉ còn cái viền tối loang ra trông như vết mờ bẩn trên giấy — đổi qua chữ xám
+     nhạt + viền sáng, giống dấu chìm in trên giấy thật. */
+  .vpaper .wmgrid span{ color:rgba(20,26,32,.15); text-shadow:0 0 1px rgba(255,255,255,.7) }
   .veil{ position:absolute; left:0; right:0; top:56px; bottom:0; z-index:70; display:none; place-items:center; padding:20px; text-align:center; color:#fff; background:rgba(11,17,22,.5); cursor:pointer }
   .veil b{ display:block; font-size:17px; margin-bottom:6px } .veil span{ color:#c7d5e2; font-size:13.5px }
   .viewer.unfocused .veil{ display:grid } .viewer.unfocused .vbody{ filter:blur(18px); pointer-events:none }
@@ -3404,7 +3408,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     try {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       var pdf = await pdfjsLib.getDocument({ url: url }).promise;
-      body.innerHTML = '<div class="vstage" id="pdfStage"></div>';
+      body.innerHTML = '<div class="vstage vpaper" id="pdfStage"></div>';
       var stage = $('pdfStage'), maxW = Math.min(1040, body.clientWidth - 16);
       var mm = mid ? matById(mid) : null, ds = [];
       /* 1. Dựng sẵn khung đúng tỉ lệ cho MỌI trang, kèm ô trả lời — nhìn thấy ngay,

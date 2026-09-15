@@ -41,6 +41,22 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — Dấu chìm tên+email trên bài tập PDF trông như vết bẩn — sửa màu cho nền trắng
+
+**T thấy gì:** mở bài tập (PDF) giao cho lớp, dòng tên + email của sinh viên phủ lên trang, "trông ghê quá".
+
+**Đó là gì:** dấu chìm chống lộ đề — mọi trang xem trong app (video, bài giảng viết tay, ghi chú, ảnh, PDF) đều in mờ tên + email + giờ phút của người đang xem, lặp khắp trang (hàm `watermark()` trong `hoc.html`). Mục đích: ai chụp màn hình hay quay lại rồi phát tán ra ngoài thì vẫn lộ đúng ai đã xem, giảng viên biết để xử lý.
+
+**Vì sao trông xấu:** kiểu chữ (trắng mờ + viền tối) vốn làm cho nền video/ảnh tối — đặt lên nền TRẮNG của trang PDF/giấy thì phần chữ trắng gần như vô hình, chỉ còn viền tối loang ra thành từng vết mờ, giống vết bẩn. Ngoài ra khung PDF (`renderPdf`) từ trước thiếu class `vpaper` mà các loại nội dung giấy khác (bài giảng viết tay, ghi chú, ảnh) đã có, nên không được hưởng bất cứ style dành riêng cho nền trắng nào.
+
+**Đã sửa:** gắn thêm class `vpaper` cho khung xem PDF (đúng như các loại nội dung nền trắng khác), rồi thêm luật CSS riêng `.vpaper .wmgrid span` — đổi qua chữ xám nhạt + viền sáng, giống dấu chìm in trên giấy thật. Khung video/bài giảng có khung nền tối vẫn giữ đúng kiểu chữ trắng cũ, không đổi.
+
+**Đã kiểm:** dựng trang thử độc lập so 2 kiểu cạnh nhau trên nền trắng — bản cũ đúng là mờ nhoè như vết bẩn, bản mới đọc được rõ, sạch hơn hẳn; khung video giữ nguyên không ảnh hưởng.
+
+**Không fix (giữ nguyên vì đây là mục đích chính):** dấu chìm KHÔNG bỏ được — đây là biện pháp truy được người làm lộ đề, không phải lỗi.
+
+---
+
 ## 2026-09-16 — Câu hỏi Hóa phân tích không chỉ hiện sai, đã bị ĐẨY THẬT vào kho các môn khác — thêm nút dọn
 
 **T thấy gì (tiếp mục localStorage phía trên):** sau khi vá localStorage, mục "Tất cả câu hỏi" của sổ môn khác (đọc từ kho trên Supabase, không phải localStorage) vẫn còn câu của Hóa phân tích.
