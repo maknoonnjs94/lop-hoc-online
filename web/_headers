@@ -22,6 +22,12 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 /*.html
   Cache-Control: no-cache, must-revalidate
+# Bài giảng HTML riêng (gói ~1 MB, có mô hình 3D): cho cache 1 ngày ở cả trình duyệt lẫn biên Cloudflare —
+# trước đây rơi vào /*.html "no-cache" mà không có ETag nên MỖI lần mở là tải lại nguyên gói → mở bài rất
+# chậm. Khung xem gọi địa chỉ gọn /bai-giang/<tên> (không .html) nên luật này áp riêng, không bị /*.html
+# nối thêm "no-cache" vào. Muốn thay nội dung một bài: đặt TÊN FILE MỚI, đừng ghi đè tên cũ (còn cache 1 ngày).
+/bai-giang/*
+  Cache-Control: public, max-age=86400
 /
   Cache-Control: no-store
   X-Frame-Options: DENY
