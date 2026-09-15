@@ -41,6 +41,20 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — Sửa lỗi lớn: các sổ web dùng lẫn kho câu hỏi của nhau
+
+**T thấy gì:** mở sổ Hóa hữu cơ (bản web) lại thấy bài tập của Hóa phân tích trong Kho bài tập.
+
+**Nguyên nhân:** dữ liệu trên Supabase đã tách đúng theo môn từ trước (bảng `notebook`, tiền tố `huu-co:` …). Nhưng sổ còn giữ vài thứ ngay trong máy bằng `localStorage` khoá cố định — `sbt-bank-v1` (kho câu), `sbt-weeks-v1`, `sbt-settings-v1`, `sbt-banktree-v1`, `sbt-images-v1`, `sbt-trash-v1` — viết thẳng trong mã sổ gốc, không đi qua tiền tố môn. Bản Claude Artifact mỗi cái chạy ở một địa chỉ web riêng nên không sao, nhưng **mọi bản web đều chạy chung một tên miền** `giangduonghoahoc.com` → trình duyệt coi đó là MỘT localStorage duy nhất cho tất cả các sổ. Mở sổ nào sau cùng thì đọc trúng khoá của sổ mở trước.
+
+**Sửa:** `shim_supabase.js` (cầu nối riêng cho bản web) chặn `localStorage.getItem/setItem/removeItem`, tự gắn tiền tố môn (`NS`, giống tiền tố đã dùng cho bảng `notebook`) vào MỌI khoá bắt đầu bằng `sbt-`. Khoá đăng nhập `sb-...-auth-token` do supabase-js tự quản KHÔNG bị đổi — đăng nhập một lần vẫn dùng chung được cho mọi sổ. IndexedDB `keyval-store` (kho tệp ngôn ngữ OCR của Tesseract.js) CỐ Ý để chung — chỉ là mô hình OCR dùng lại được, không phải nội dung bài tập.
+
+**Đã kiểm:** viết lại đúng đoạn vá trong Node (giả lập localStorage), xác nhận: sổ Hữu cơ không đọc được khoá của sổ gốc; ghi vào sổ Hữu cơ tạo khoá thật riêng `huu-co:sbt-bank-v1`; khoá auth của supabase không bị đổi tên. Rồi build lại đủ 5 bản web (`Tools/build_web_so.js`) và soát `new Function()` từng bản, không lỗi cú pháp.
+
+**T cần làm:** sau khi Cloudflare phát xong, mở LẠI từng sổ web một lần (gốc, Hữu cơ, Hóa lý, Vô cơ, Kĩ thuật) để chắc kho câu đúng của từng môn. Dữ liệu m thấy "lẫn" trước đây vẫn còn nguyên dưới khoá cũ không tiền tố (khoá của sổ gốc) — không mất, chỉ là từ giờ sổ khác không đọc trúng nữa nữa.
+
+---
+
 ## 2026-09-16 — "Sơ lược nhóm chức" không có nút "Mở tab mới": do skill /bai-giang tự tick, giờ bỏ mặc định
 
 **T thấy gì:** "Liên kết & lai hóa" mở tab mới được, "Sơ lược nhóm chức" thì không — hỏi sao không đồng bộ.

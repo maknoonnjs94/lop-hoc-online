@@ -1881,6 +1881,25 @@
   var NS = MON && MON.key ? MON.key + ':' : '';
   function ns(c) { return NS + c; }
 
+  /* Kho trên Supabase đã tách theo môn qua ns() ở trên, nhưng sổ còn giữ VÀI thứ ngay trong máy —
+     localStorage khoá cố định (sbt-bank-v1, sbt-weeks-v1, sbt-settings-v1, …) — vốn viết thẳng
+     trong mã sổ (bản Artifact chạy riêng từng origin nên không sao), còn mọi bản web lại chạy
+     CHUNG một tên miền giangduonghoahoc.com → trình duyệt coi đó là MỘT localStorage duy nhất.
+     Mở sổ Hữu cơ sau khi vừa dùng sổ gốc thì thấy nguyên kho câu của sổ gốc do đọc trúng cùng
+     khoá. Gắn thêm tiền tố NS vào riêng các khoá "sbt-…" của app; khoá "sb-...-auth-token" mà
+     supabase-js tự quản lý cho phiên đăng nhập KHÔNG đổi, để đăng nhập một lần dùng chung được
+     cho mọi môn. (IndexedDB 'keyval-store' của Tesseract.js — kho tệp ngôn ngữ OCR — CỐ Ý không
+     tách: chỉ là dữ liệu mô hình OCR dùng chung, tách ra chỉ tốn chỗ tải lại cho từng môn.) */
+  if (NS) {
+    var lsGet = localStorage.getItem.bind(localStorage),
+        lsSet = localStorage.setItem.bind(localStorage),
+        lsDel = localStorage.removeItem.bind(localStorage);
+    function lsKey(k) { return /^sbt-/.test(k) ? NS + k : k; }
+    localStorage.getItem = function (k) { return lsGet(lsKey(k)); };
+    localStorage.setItem = function (k, v) { return lsSet(lsKey(k), v); };
+    localStorage.removeItem = function (k) { return lsDel(lsKey(k)); };
+  }
+
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   var me = null;
   var dbResolve, dbReady = new Promise(function (r) { dbResolve = r; });
