@@ -41,6 +41,18 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — Dải nhắc "app bản cũ" ngay trên trang, không cần app tự cập nhật mới thấy
+
+**Vì sao thêm:** cơ chế tự cập nhật của app (mục 1.0.20 trên) chỉ chạy đúng khi bản đó ĐANG cài rồi — máy nào còn kẹt ở bản trước, không có cách nào tự vá từ xa qua app. Nhưng `hoc.html` tải lại từ máy chủ mỗi lần mở (không cache), nên sửa được ngay cả khi app đã cài rất cũ.
+
+**Làm gì:** thêm hằng `BAN_MOI_NHAT` trong `hoc.html` (đang là `1.0.20`) và hàm so số hiệu phiên bản. Sau khi lấy được số phiên bản app qua `getVersion()`, nếu cũ hơn `BAN_MOI_NHAT` thì hiện dải màu cam đầu trang chính (không tự biến mất, chỉ đóng khi bấm ✕, nhớ theo `sessionStorage` tới khi có bản mới hơn) — chỉ đường tải tay tại `/tai-app`.
+
+**Sau mỗi lần ra tag app mới:** phải sửa `BAN_MOI_NHAT` trong `hoc.html` theo số tag đó rồi đẩy lên — không tự động theo tag, quên sửa thì dải nhắc sai số hoặc không hiện.
+
+**Đã kiểm:** hàm so version qua 6 trường hợp (kể cả `1.0.2` so `1.0.20` — dễ sai nếu so chuỗi thường); giao diện dải nhắc render đúng ở khổ hẹp 420px qua trang thử độc lập (không log vào tài khoản thật, vì `window.lopHocApp` chỉ có trong app Electron thật).
+
+---
+
 ## 2026-09-16 — App 1.0.20: "đang tải ngầm" mà không thấy gì → hiện % tải, báo lỗi rõ, ghi log
 
 **T thấy gì:** bấm *Kiểm tra cập nhật* báo "Có bản 1.0.19 — đang tải ngầm" rồi im bặt, không bao giờ hỏi khởi động lại.
