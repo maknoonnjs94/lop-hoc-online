@@ -1,23 +1,33 @@
 # Trang HTML đổi liên tục: trình duyệt phải hỏi lại máy chủ mỗi lần mở (có ETag nên vẫn nhanh: chưa đổi thì 304).
-# Mọi đường: khoá HTTPS một năm (HSTS), không cho trang nào khác nhúng (chống clickjacking), không đoán kiểu tệp,
-# không lộ địa chỉ trang khi bấm link ra ngoài, tắt camera/micro/vị trí cho mọi script.
+# Mọi đường: khoá HTTPS một năm (HSTS), không đoán kiểu tệp, không lộ địa chỉ trang khi bấm link ra ngoài,
+# tắt camera/micro/vị trí cho mọi script.
+# X-Frame-Options (chống clickjacking) đặt RIÊNG từng trang thật bên dưới — KHÔNG đặt ở /* — vì Cloudflare
+# NỐI (không ghi đè) header trùng tên giữa các luật khớp cùng lúc; để ở /* thì /bai-giang/* cũng dính DENY,
+# không nhúng được vào khung xem của Quản trị/trang học nữa. /bai-giang/* CỐ Ý không có dòng này — trang
+# bài giảng riêng của giảng viên (dán ở "＋ Liên kết", tick "Chỉ cho xem trong trang") cần nhúng được vào
+# khung xem đó. Trang nào không có tên trong danh sách bên dưới (kể cả /bai-giang/*) thì không có
+# X-Frame-Options — không sao vì chỉ trang có đăng nhập/dữ liệu mới cần chặn nhúng.
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
-  X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 /*.html
   Cache-Control: no-cache, must-revalidate
 /
   Cache-Control: no-cache, must-revalidate
+  X-Frame-Options: DENY
 /tai-app
   Cache-Control: no-cache, must-revalidate
+  X-Frame-Options: DENY
 /hoc
   Cache-Control: no-cache, must-revalidate
+  X-Frame-Options: DENY
 /quan-tri
   Cache-Control: no-cache, must-revalidate
   X-Robots-Tag: noindex, nofollow
+  X-Frame-Options: DENY
 /so-bai-tap
   Cache-Control: no-cache, must-revalidate
   X-Robots-Tag: noindex, nofollow
+  X-Frame-Options: DENY
