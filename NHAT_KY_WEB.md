@@ -41,6 +41,20 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — "Sơ lược nhóm chức" không có nút "Mở tab mới": do skill /bai-giang tự tick, giờ bỏ mặc định
+
+**T thấy gì:** "Liên kết & lai hóa" mở tab mới được, "Sơ lược nhóm chức" thì không — hỏi sao không đồng bộ.
+
+**Nguyên nhân:** không phải lỗi mã — mỗi Liên kết có riêng ô tick "Chỉ cho xem trong trang" trong Quản trị, tick thì ẩn nút "Mở tab mới". Skill `/bai-giang` (m viết) trước đây LUÔN nhắc tick ô này để đỡ lộ link gốc — "Sơ lược nhóm chức" đưa lên theo đúng hướng dẫn đó nên bị tick, còn "Liên kết & lai hóa" t tự thêm sau không tick.
+
+**Vì sao bỏ mặc định:** từ app 1.0.19, "Mở tab mới" không phải tab trình duyệt thật — là cửa sổ Electron con do `main.js` tạo, không có ô địa chỉ, đã tắt F12, và bị khoá chống chụp/quay giống cửa sổ chính. Ẩn nút đó không còn ngăn được gì thêm, chỉ gây khác biệt khó hiểu giữa các bài giảng.
+
+**Đã sửa:** `.claude/skills/bai-giang/SKILL.md` không còn nhắc tick ô này; chữ giải thích ô tick trong `quan-tri.html` cập nhật theo đúng lý do trên (không cần tick nữa, chỉ để dành khi m chủ động muốn giấu hẳn địa chỉ).
+
+**T cần tự làm (m không đụng được, phải m đăng nhập của t):** vào Quản trị → buổi có "Sơ lược nhóm chức" → Sửa tài liệu → bỏ tick "Chỉ cho xem trong trang" → Lưu. Các bài giảng thêm sau này qua skill sẽ không bị tick nữa, khỏi phải sửa tay từng cái.
+
+---
+
 ## 2026-09-16 — Dải nhắc "app bản cũ" ngay trên trang, không cần app tự cập nhật mới thấy
 
 **Vì sao thêm:** cơ chế tự cập nhật của app (mục 1.0.20 trên) chỉ chạy đúng khi bản đó ĐANG cài rồi — máy nào còn kẹt ở bản trước, không có cách nào tự vá từ xa qua app. Nhưng `hoc.html` tải lại từ máy chủ mỗi lần mở (không cache), nên sửa được ngay cả khi app đã cài rất cũ.
