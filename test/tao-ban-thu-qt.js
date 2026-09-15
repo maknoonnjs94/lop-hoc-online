@@ -47,19 +47,24 @@ const stub = `<script>
       { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2.', created_at:d(-2*864e5) },
       { id:'s2', class_id:'c1', no:4, title:'Cân bằng tạo phức', published:true, pinned:false, starts_at:null, held_on:'2026-09-01', note:'', created_at:d(-7*864e5) },
       { id:'s3', class_id:'c1', no:3, title:'Buổi nháp chưa mở', published:false, pinned:false, starts_at:null, held_on:null, note:'', created_at:d(-1*864e5) }
-    , { id:'lm1', class_id:'c1', no:1, title:'1.1 — Mở đầu', published:true, la_bai_giang:true, topic_id:'t1', created_at:d(-5*864e5) }
     ],
-    lecture_topics: [ { id:'t1', class_id:'c1', name:'Chủ đề 1: Mở đầu', order_no:1 } ],
+    /* module trong buổi (schema_v32) — thử ở buổi s2: 1 module đủ 4 bước + 1 tài liệu rời (m5) để xem cả hai kiểu cùng lúc */
+    session_modules: [ { id:'mod1', session_id:'s2', title:'1. Cân bằng tạo phức là gì', order_no:1 } ],
     materials: [
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu', order_no:0, open_at:null, created_at:d(-2*864e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
       { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), cho_tai:false, o_tra_loi:[{ id:'oa', trang:1, x:29.3, y:18, w:18.2, h:2.4 },{ id:'ob', trang:1, x:15, y:25.9, w:18.2, h:2.4 },{ id:'oc', trang:1, x:15, y:33.8, w:11.4, h:2.4 },{ id:'od', trang:1, x:15, y:41.7, w:11.4, h:2.4 }] },
       { id:'m2', session_id:'s1', kind:'video', title:'Video: đường cong chuẩn độ', order_no:2, open_at:null, created_at:d(-864e5), gioi_han_giay:3600, nhan_bai:false, han_nop:null },
       { id:'m3', session_id:'s1', kind:'answer', title:'Đáp án phiếu 5', order_no:3, open_at:d(3*864e5), created_at:d(-36e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
-      { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, open_at:null, created_at:d(-7*864e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(-864e5), cho_tai:true }
+      { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, open_at:null, created_at:d(-7*864e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(-864e5), cho_tai:true },
+      { id:'mm1', session_id:'s2', kind:'video', title:'Video mở đầu', order_no:10, open_at:null, created_at:d(-6*864e5), gioi_han_giay:0, module_id:'mod1' },
+      { id:'mm2', session_id:'s2', kind:'link', title:'Bài giảng HTML tương tác', order_no:11, open_at:null, created_at:d(-6*864e5), xem_khong_tai:true, module_id:'mod1' },
+      { id:'mm3', session_id:'s2', kind:'pdf', title:'Bài tập vận dụng nhanh', order_no:12, open_at:null, created_at:d(-6*864e5), nhan_bai:false, module_id:'mod1' },
+      { id:'mm4', session_id:'s2', kind:'answer', title:'Đáp án', order_no:13, open_at:d(2*864e5), created_at:d(-6*864e5), module_id:'mod1' }
     ],
     material_contents: [
       { material_id:'m1', url:null, storage_path:'s1/_test_phieu.png', body:null },
       { material_id:'m2', url:'stream:0123456789abcdef0123456789abcdef', storage_path:null, body:null },
+      { material_id:'mm2', url:'https://example.com/bai-giang-tuong-tac.html', storage_path:null, body:null },
       { material_id:'m3', url:null, storage_path:null, body:'Đáp án thử nghiệm.' },
       { material_id:'m4', url:null, storage_path:'s1/baigiang.pdf', body:null },
       { material_id:'m5', url:null, storage_path:'s2/phieu4.pdf', body:null }
@@ -125,6 +130,7 @@ const stub = `<script>
     var rows = (DB[ten] || []).filter(function (r) { return khop(r, dk); }).map(hop);
     if (ten === 'sessions') rows.forEach(function (s) {
       s.materials = DB.materials.filter(function (m) { return m.session_id === s.id; }).map(hop);
+      s.session_modules = (DB.session_modules || []).filter(function (t) { return t.session_id === s.id; }).map(hop);
     });
     if (ten === 'loi_khach') rows.forEach(function (e) { e.profiles = hop(TEN[e.user_id] || {}); });
     if (ten === 'enrollments') rows.forEach(function (e) { e.profiles = hop(TEN[e.student] || {}); e.classes = hop(DB.classes.filter(function (c) { return c.id === e.class_id; })[0] || {}); });
@@ -158,6 +164,10 @@ const stub = `<script>
     }
     if (hd === 'delete') {
       var giu = kho.filter(function (r) { return !khop(r, dk); });
+      if (ten === 'session_modules') {
+        var xoaId = {}; kho.forEach(function (r) { if (!giu.includes(r)) xoaId[r.id] = true; });
+        (DB.materials || []).forEach(function (m) { if (xoaId[m.module_id]) m.module_id = null; });   /* giả on delete set null */
+      }
       DB[ten] = giu;
       return [];
     }

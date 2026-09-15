@@ -20,7 +20,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.17** (tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
-**SQL:** v9 → **v28** đều `true` trên `/api/trang-thai` (kiểm 12/9). Không còn schema nào treo.
+**SQL:** v9 → **v28** đều `true` trên `/api/trang-thai` (kiểm 12/9). **v30, v32** vừa thêm (15/9) — t cần chạy SQL rồi mới thấy `true`; **v31 không cần chạy nữa** (đổi thiết kế trước khi t kịp chạy — xem mục 15/9 ở dưới).
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
 
 Tự kiểm sau này, khỏi mở Supabase:
@@ -39,6 +39,66 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-15 — Đổi lại: Module NẰM TRONG buổi (video → HTML → bài tập → đáp án, mở theo ngày riêng từng bước) — thay thế mục "Video bài giảng" (v31) vừa làm ở trên (schema_v32)
+
+**T:** *"t nghĩ lại rồi, nếu video ở 1 mục khác, thì khó theo dõi quá nhỉ, có cách nào thiết kế thông
+minh hơn được không, là video chắc phải ở trong từng buổi, nhưng t nghĩ nó vẫn phải chia thành các
+module kèm chỗ gắn html như cũ, và bài tập sẽ ở giao diện trong buổi để HS biết logic là: xem video
+xong - dùng html để hiểu - và làm bt vận dụng cái thử mình xem được - sau đó hiện đáp án - cho t set
+ngày với tất cả các tính năng trên (chọn ngày để video, html hay bài tập nó xuất hiện ấy"*. Ngay sau
+khi vừa làm xong mục "🎬 Video bài giảng" tách riêng (v31, mục nhật ký ngay dưới) — đổi ý trong vòng
+một buổi làm việc, chưa kịp báo t chạy SQL v31 nên không mất gì thật.
+
+**Gỡ v31:** bỏ sạch tab/nav/section/CSS/hàm riêng cho "Video bài giảng" ở cả hai trang, đưa
+`matById`/`saveMaterial`/`delMaterial`/`moveMaterial` về lại dạng chỉ tìm trong `sessions` (bỏ
+`modules`/`lecModules`/`refreshBuoiHoacModule`) — **giữ nguyên** `materials.xem_khong_tai` và
+`oXemKhongTai()` (ô "Chỉ cho xem trong trang" của Liên kết) vì tính năng đó vẫn cần cho thiết kế mới.
+`lecture_topics`/`sessions.la_bai_giang`/`topic_id` (bảng/cột của v31) để nguyên trong CSDL, không
+dùng nữa — không xoá, phòng khi t đã trót tạo dữ liệu thật ở đó.
+
+**Kỹ thuật v32:** bảng mới `session_modules` (session_id, title, order_no) + `materials.module_id`
+(nullable, trỏ vào đó). Module KHÔNG ép cứng 4 loại ở CSDL — Quản trị chỉ GỢI Ý đúng 4 nút (Video/
+Liên kết/Tệp PDF/Đáp án) theo mạch video→HTML→bài tập→đáp án cho quen mắt, còn thêm loại gì cũng được.
+`open_at` ("Mở lúc") vốn đã có sẵn ở `materials` từ trước — chỉ mở rộng ô nhập ngày trong hộp "Thêm
+tài liệu" ra MỌI loại (trước đây chỉ answer/pdf/lecture mới có), để video/link cũng đặt được ngày mở.
+
+`web/quan-tri.html`: mỗi buổi (khung `<details class="ses">` sẵn có, không đổi gì) có thêm nút **📦
+Module mới**; module hiện thành khung `.modbox` con bên trong buổi, có hàng nút ＋ riêng (gắn
+`data-mod` để `saveMaterial` biết gắn `module_id`). Tách `matRowHtml()`/`addRowHtml()` ra khỏi
+`loadSessions()` để dùng chung cho tài liệu rời lẫn tài liệu trong module, đỡ chép hai lần. `↑ ↓` của
+một tài liệu chỉ đổi chỗ trong CÙNG cụm (module đó, hay nhóm tài liệu rời) — không nhảy lẫn module
+khác. **Xoá module** chỉ xoá cái khung (`session_modules` có `on delete set null` cho `module_id`) —
+tài liệu bên trong không mất, tự tách thành tài liệu rời; phòng khi bản thử (không có FK thật) không
+tự làm vậy, `loadSessions()` còn tự coi tài liệu trỏ vào module-đã-mất là tài liệu rời (không cho biến
+mất khỏi danh sách).
+
+`web/hoc.html`: `renderMain()` tách module thành khung `.modblock` riêng ngay trong buổi, đúng thứ tự,
+tài liệu chưa tới giờ mở vẫn hiện kèm ổ khoá + giờ mở y hệt tài liệu rời (dùng lại nguyên `row()`); tài
+liệu không thuộc module nào (buổi cũ) vẫn hiện y như trước trong mục "Tài liệu khác". `matList` (mảng
+cho nút ◀ ▶ trong khung xem) dồn theo đúng thứ tự hiện trên trang — module trước, tài liệu rời sau —
+nên lướt đúng mạch video→html→bt→đáp án.
+
+**Bẫy khi vá:** dùng hàm `khoang(a, b, moi)` (thay từ mốc a tới mốc b bằng `moi`) mà lỡ truyền `moi`
+TRÙNG với chính mốc `b` — kết quả bị TRÙNG LẶP dòng đó hai lần (`<div id="paneWeb" hidden>` in hai
+lần liền, comment `/* kho tệp */` in hai lần) vì hàm giữ nguyên đoạn từ b trở đi rồi còn nối thêm
+`moi` phía trước. `node --check` không bắt được (comment/HTML trùng vẫn hợp lệ cú pháp) — chỉ lộ ra
+khi đọc `git diff`. Từ nay `khoang(a, b, moi)` mà muốn XOÁ hẳn đoạn ở giữa thì `moi` phải là `''`
+(rỗng), không phải chép lại `b`.
+
+**Thử:** `_test_quan-tri.html` — buổi "Cân bằng tạo phức" có sẵn 1 module đủ 4 bước (video mở ngay,
+HTML "chỉ xem trong trang" mở ngay, bài tập mở ngay, đáp án khoá "Mở sau") + 1 tài liệu rời, xem đúng
+cả hai kiểu cùng lúc; thêm tài liệu vào module qua nút riêng lưu đúng `module_id`; xoá module xong 4
+tài liệu tách ra thành tài liệu rời, không mất cái nào; "Mở lúc" hiện cho cả Video/Liên kết (trước
+đây không có). `_test_hoc.html` — buổi 4 hiện khung module đúng mạch, mục Đáp án khoá nằm dưới "MỞ
+SAU" NGAY TRONG module (không văng ra ngoài); bấm link HTML trong module vẫn đúng `sandbox`, không có
+nút Mở tab mới; buổi 5 (không dùng module) hiện y hệt trước khi sửa — không hỏng gì. `ra-soat.js`
+sạch cả hai trang.
+
+**Việc t cần làm:** chạy `schema_v32_module_trong_buoi.sql`, publish lại web. `schema_v31...sql` không
+cần chạy nữa (đã đổi thiết kế trước khi t kịp chạy).
+
 ---
 
 ## 2026-09-15 — Video bài giảng: Chủ đề → Module, tách khỏi Buổi học; link HTML "chỉ cho xem" (schema_v31)

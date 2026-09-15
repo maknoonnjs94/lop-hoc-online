@@ -589,24 +589,29 @@ vào tên → hộp Hồ sơ có mục *Canh gác chụp / quay màn hình* → 
 xoá sạch lịch sử, lần vi phạm sau tính lại từ đầu (khoá 3 ngày). Cột *Hồ sơ* trong danh sách lớp cũng hiện
 pill 🔒 ngay khi đang khoá, để không cần mở từng hồ sơ mới biết.
 
-## Video bài giảng — Chủ đề → Module (mục riêng, tách khỏi Buổi học)
+## Module trong buổi — video → HTML → bài tập → đáp án, mở theo ngày riêng từng bước
 
-Cần chạy `schema_v31_video_bai_giang.sql` một lần (`/api/trang-thai` → `v31_video_bai_giang: true`).
+Cần chạy `schema_v32_module_trong_buoi.sql` một lần (`/api/trang-thai` → `v32_module_trong_buoi: true`).
 
-Mục **🎬 Video bài giảng** (menu trái của SV, tab riêng trong Quản trị) dành cho video quay sẵn xếp
-theo giáo trình — xem lúc nào cũng được, không cần đúng buổi lên lớp. **Buổi học** vẫn y nguyên: điểm
-danh, giao tài liệu, bài tập cho buổi lên lớp — hai mục không đụng nhau.
+Video vẫn nằm **trong** buổi học như bình thường (không có mục riêng nữa) — chỉ thêm một cách gom nhỏ
+gọi là **Module**, để sinh viên theo đúng mạch: xem **video** xong → đọc **HTML** để hiểu → làm **bài
+tập** thử sức → xem **đáp án**. Buổi không cần module vẫn y nguyên như trước — tính năng chỉ xuất hiện
+khi m bấm dùng.
 
-- **Chủ đề** (VD: "Chủ đề 1: Mở đầu") gom vài **Module** nhỏ. Quản trị → tab Video bài giảng → cột trái
-  chọn/thêm/sửa/xoá/sắp thứ tự chủ đề, cột phải quản lý module của chủ đề đang chọn.
-- **Module** = một video (thêm được nhiều mục: video, link bài giảng HTML, PDF, ghi chú) — dùng lại
-  đúng khung "Thêm video" (Cloudflare Stream, quỹ giờ xem) như bên Buổi học, quen tay.
-- **Link bài giảng HTML**: thêm bằng nút *"＋ Link bài giảng HTML"* (thực ra là Liên kết thường, tick
-  ô **"Chỉ cho xem trong trang"**) — trang học nhúng khung xem có `sandbox`, **ẩn nút "Mở tab mới"** nên
-  sinh viên không tiện tải nguyên trang. **Không phải khoá tuyệt đối** — ai mở công cụ trình duyệt (F12)
-  vẫn thấy địa chỉ gốc trong mã nguồn trang; đây là ngăn thói quen bấm-tải-luôn, không phải mã hoá.
-- Sinh viên bấm vào thẻ Module là mở luôn video (hay mục đầu tiên); nút ◀ ▶ trong khung xem lướt đúng
-  các mục của module đó (không lẫn sang buổi khác).
+- Quản trị → mở một buổi → bấm **📦 Module mới**, đặt tên (VD: "1. Cân bằng tạo phức là gì"). Module hiện
+  thành một khung nhỏ trong buổi, có hàng nút riêng **＋ Video / ＋ Liên kết / ＋ Tệp PDF / ＋ Ghi chú /
+  ＋ Đáp án** giống hệt hàng nút của buổi — thêm tài liệu vào đó là tự thuộc về module.
+- Mỗi tài liệu (không riêng gì đáp án) đều đặt được **"Mở lúc"** riêng — ẩn video tuần sau, HTML tuần
+  này, bài tập mở cùng lúc với HTML, đáp án mở sau khi hết hạn làm bài… tuỳ ý, độc lập từng bước.
+- **Liên kết "Chỉ cho xem trong trang"** (tick khi thêm/sửa Liên kết) vẫn hoạt động như cũ: trang học
+  nhúng khung xem có `sandbox`, ẩn nút "Mở tab mới" — đỡ sinh viên bấm tải nguyên trang HTML. Không phải
+  khoá tuyệt đối (F12 vẫn thấy địa chỉ), chỉ ngăn thói quen tải một cú bấm.
+- ↑ ↓ của một tài liệu chỉ đổi chỗ **trong cùng module** (hay trong cùng nhóm tài liệu rời) — không nhảy
+  lẫn giữa module khác.
+- **Xoá module** chỉ xoá cái khung — tài liệu bên trong không mất, tự tách thành tài liệu rời của buổi.
+- Bên trang học, module hiện thành một khung nhỏ ngay trong buổi, đúng thứ tự đã thêm; tài liệu chưa tới
+  giờ mở vẫn hiện tên kèm ổ khoá + giờ mở, y như tài liệu rời. Tài liệu không thuộc module nào (buổi cũ,
+  chưa dùng module) tiếp tục hiện y như trước, không đổi gì.
 
 ## Bảo mật cơ bản — rà 12/9/2026
 

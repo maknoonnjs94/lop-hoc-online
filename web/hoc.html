@@ -227,18 +227,6 @@
   .heading h1{ font-size:clamp(28px,3vw,38px); line-height:1.15; letter-spacing:-.025em; font-weight:800 }
   .heading p{ color:var(--muted); margin-top:6px; font-size:15px }
   /* ---------- Khoá học của tôi ---------- */
-  /* v31: mục Video bài giảng — Chủ đề rồi lưới Module, dùng lại ngôn ngữ .pcard/--tint/--line có sẵn */
-  .lectopic{ margin-bottom:26px } .lectopic:last-child{ margin-bottom:0 }
-  .lectopic h2{ font-size:16px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; gap:8px }
-  .lectopic h2 small{ font-weight:600; color:var(--muted); font-size:12.5px }
-  .lecgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px }
-  .leccard{ display:flex; flex-direction:column; gap:10px; text-align:left; padding:16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--shadow-1); cursor:pointer; font:inherit; color:inherit; transition:transform .12s,box-shadow .12s }
-  .leccard:hover{ transform:translateY(-2px); box-shadow:var(--shadow-2,var(--shadow-1)) }
-  .leccard .lc-ic{ width:40px; height:40px; border-radius:12px; display:grid; place-items:center; background:var(--tint); color:var(--primary); font-size:19px }
-  .leccard b{ display:block; font-size:14.5px; font-weight:700; line-height:1.3 }
-  .leccard .lc-sub{ font-size:12.5px; color:var(--muted); margin-top:2px }
-  .leccard .lc-pills{ display:flex; gap:6px; flex-wrap:wrap; margin-top:2px }
-  .leccard .lc-pills span{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:99px; background:var(--tint); color:var(--primary) }
 
   .khoas{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px }
   @media (max-width:900px){ .khoas{ grid-template-columns:1fr } }
@@ -433,6 +421,10 @@
   .snote{ margin:14px 16px 4px; padding:12px 14px; border-radius:var(--r-s); background:var(--accent-soft); color:var(--ink-2); font-size:13.5px; white-space:pre-wrap; border-left:3px solid var(--accent); line-height:1.5 }
   .smbody{ padding:10px }
   .mgroup{ padding:8px 10px 4px; font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted) }
+  /* Module trong buổi (schema_v32): video → HTML → bài tập → đáp án, gom trong một khung nhỏ */
+  .modblock{ border:1px solid var(--line); border-radius:var(--r-m); margin:0 0 12px; overflow:hidden }
+  .modtitle{ margin:0; padding:10px 12px; background:var(--surface-2); font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px }
+  .modtitle .ico{ width:18px; height:18px; color:var(--primary) }
   .mat{ display:flex; align-items:center; gap:14px; width:100%; text-align:left; padding:11px 12px; border:0; background:none; border-radius:var(--r-m); transition:background .12s }
   .mat:hover{ background:var(--tint-alt) }
   .mat .mi{ flex:none; width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:22px; color:var(--k, var(--k-link)); background:var(--kbg, var(--k-link-bg)) }
@@ -826,7 +818,6 @@
         <button type="button" data-view="home" class="on"><span class="ico" data-ico="home"></span>Trang chủ</button>
         <button type="button" data-view="khoa"><span class="ico" data-ico="stack"></span>Khoá học<b id="navKhoaN" hidden>0</b></button>
         <button type="button" data-view="lessons"><span class="ico" data-ico="video"></span>Bài giảng</button>
-        <button type="button" data-view="lec"><span class="ico" data-ico="video"></span>Video bài giảng</button>
         <button type="button" data-view="tasks"><span class="ico" data-ico="clipboard"></span>Bài tập<b id="navTaskN" hidden>0</b></button>
         <button type="button" data-view="schedule"><span class="ico" data-ico="calendar"></span>Lịch học</button>
         <button type="button" data-view="progress"><span class="ico" data-ico="chart"></span>Tiến độ</button>
@@ -882,11 +873,6 @@
             <aside class="sesnav" id="sesNav"></aside>
             <section class="sesmain" id="sesMain"></section>
           </div>
-        </section>
-
-        <section id="viewLec" hidden>
-          <div class="heading"><h1>Video bài giảng</h1><p>Video quay sẵn xếp theo giáo trình — xem lúc nào cũng được, không cần đúng buổi lên lớp.</p></div>
-          <div id="lecBody"></div>
         </section>
 
         <section id="viewTasks" hidden>
@@ -1023,7 +1009,6 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   window.addEventListener('error', function (e) { ghiLoiKhach(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, { loai: 'error' }); });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; ghiLoiKhach((r && (r.message || r.reason)) || String(r), '', { loai: 'promise', ma: r && r.code }); });
   var sessions = [], curSes = null, view = 'home';
-  var lecTopics = [], lecModules = [];   /* v31: Chủ đề / Module video bài giảng — tách khỏi sessions (Buổi học) */
   var views = {}, lanTruoc = 0, classNotice = '', rtChan = null, daNhacBuoi = {};
   var matList = [], matIdx = -1, tienDo = { timer: null, save: null };
   /* Ứng dụng máy tính gắn LopHocApp/ vào user agent.
@@ -1869,7 +1854,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* bật đúng mục + thanh lớp theo view hiện tại — gọi ở cả goView lẫn renderView để đổi view bằng gán biến cũng đúng */
   function hienSection(v) {
     [].forEach.call($('nav').querySelectorAll('button[data-view]'), function (b) { b.classList.toggle('on', b.dataset.view === v); });
-    ['khoa', 'home', 'lessons', 'lec', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
+    ['khoa', 'home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
     $('classBar').style.display = (v === 'khoa' || classes.length < 2) ? 'none' : '';
   }
   function goView(v) {
@@ -1887,7 +1872,6 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (view === 'hocphi') { veHocPhi(); capNhatChuong(); return; }
     if (view === 'home') renderHome();
     else if (view === 'lessons') { renderNav(); renderMain(); }
-    else if (view === 'lec') renderLec();
     else if (view === 'tasks') renderTasks();
     else if (view === 'schedule') renderSchedule();
     else if (view === 'progress') renderProgress();
@@ -1922,20 +1906,19 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   async function loadSessions() {
     hqDs = null;   /* đổi lớp hoặc có tin mới thì lấy lại hỏi đáp */
-    var r = await sb.from('sessions').select('*, materials(*)').eq('class_id', curClass).eq('published', true);
+    var r = await sb.from('sessions').select('*, materials(*), session_modules(id, title, order_no, deleted_at)').eq('class_id', curClass).eq('published', true);
+    if (r.error && /session_modules/.test(r.error.message || '')) {
+      r = await sb.from('sessions').select('*, materials(*)').eq('class_id', curClass).eq('published', true);
+    }
     if (r.error) { $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">Không tải được danh sách buổi: ' + esc(r.error.message) + '</div></div>'; return; }
-    var tatCaSes = r.data || [];
-    /* v31: module video bài giảng là buổi ẩn (la_bai_giang=true) — tách hẳn khỏi Buổi học, không lẫn vào đây */
-    lecModules = tatCaSes.filter(function (s) { return s.la_bai_giang; });
-    sessions = tatCaSes.filter(function (s) { return !s.la_bai_giang; }).sort(function (a, b) {
+    (r.data || []).forEach(function (s) {
+      s.modules = (s.session_modules || []).filter(function (t) { return !t.deleted_at; });
+    });
+    sessions = (r.data || []).sort(function (a, b) {
       if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
       var d = mocHoatDong(b) - mocHoatDong(a);
       return d || ((b.no || 0) - (a.no || 0));
     });
-    try {
-      var rt = await sb.from('lecture_topics').select('*').eq('class_id', curClass).order('order_no', { ascending: true });
-      lecTopics = rt.error ? [] : (rt.data || []);
-    } catch (e) { lecTopics = []; }
     await taiLuotXem();
     await taiBaiNop();
     await taiHoiDaTra();
@@ -1946,54 +1929,6 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     renderView();
     if (moSau) { var ms = moSau; moSau = null; if (ms.ses) { curSes = ms.ses; goView('lessons'); } else if (ms.id) openMaterial(ms.id, ms.kind, ms.title); }
   }
-  /* =====================================================================
-     VIDEO BÀI GIẢNG (v31) — Chủ đề (lecTopics) → Module (lecModules, buổi ẩn la_bai_giang=true).
-     Bấm thẻ Module là mở luôn tài liệu đầu tiên trong khung xem sẵn có (openMaterial) — matList đặt
-     lại thành tài liệu của module đó nên nút ◀ ▶ trong khung xem lướt đúng trong module, không lẫn
-     sang buổi khác.
-     ===================================================================== */
-  function renderLec() {
-    var box = $('lecBody');
-    if (!lecModules.length) {
-      box.innerHTML = khoanhKhac('trong', 'Chưa có video bài giảng', 'Giảng viên chưa thêm chủ đề/module nào ở mục này — xem tạm ở Bài giảng theo buổi.', 'Xem Bài giảng', 'lessons');
-      return;
-    }
-    var theoChuDe = {};
-    lecModules.forEach(function (s) { var k = s.topic_id || '_'; (theoChuDe[k] = theoChuDe[k] || []).push(s); });
-    function sapNo(a, b) { return (a.no || 0) - (b.no || 0); }
-    var html = '';
-    lecTopics.forEach(function (t) {
-      var mods = (theoChuDe[t.id] || []).slice().sort(sapNo);
-      if (!mods.length) return;
-      html += '<div class="lectopic"><h2>' + esc(t.name || 'Chủ đề') + ' <small>' + mods.length + ' module</small></h2>'
-        + '<div class="lecgrid">' + mods.map(lecCardHtml).join('') + '</div></div>';
-    });
-    var chuaXep = (theoChuDe['_'] || []).slice().sort(sapNo);
-    if (chuaXep.length) html += '<div class="lectopic"><h2>Chưa xếp chủ đề</h2><div class="lecgrid">' + chuaXep.map(lecCardHtml).join('') + '</div></div>';
-    box.innerHTML = html || khoanhKhac('trong', 'Chưa có module nào mở', 'Các chủ đề hiện có đều chưa có module — quay lại sau nhé.', 'Xem Bài giảng', 'lessons');
-  }
-  function lecCardHtml(s) {
-    var now = Date.now();
-    var mats = (s.materials || []).filter(function (m) { return moKhoa(m, now); });
-    var xem = mats.filter(daXem).length;
-    var coHtml = mats.some(function (m) { return m.kind === 'link'; });
-    return '<button type="button" class="leccard" data-mod="' + s.id + '">'
-      + '<span class="lc-ic ico">' + I.video + '</span>'
-      + '<span><b>' + esc(s.title || 'Module') + '</b>'
-      + '<span class="lc-sub">' + (mats.length ? mats.length + ' mục' + (xem ? ' · đã xem ' + xem + '/' + mats.length : '') : 'Chưa có nội dung') + '</span></span>'
-      + (coHtml ? '<span class="lc-pills"><span>+ bài giảng HTML</span></span>' : '')
-      + '</button>';
-  }
-  $('lecBody').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-mod]'); if (!b) return;
-    var s = lecModules.filter(function (x) { return x.id === b.dataset.mod; })[0]; if (!s) return;
-    var mats = (s.materials || []).filter(function (m) { return moKhoa(m, Date.now()); })
-      .sort(function (a, b2) { return (a.order_no || 0) - (b2.order_no || 0); });
-    if (!mats.length) { baoChup('Module chưa có nội dung', 'Giảng viên chưa thêm video hay tài liệu vào module này.', 'info'); return; }
-    matList = mats;
-    var first = mats[0], k = KIND[first.kind] || KIND.link;
-    openMaterial(first.id, first.kind, first.title || k.name);
-  });
   async function taiLuotXem() {
     views = {};
     try {
@@ -2178,11 +2113,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (!s) { $('sesMain').innerHTML = '<div class="card"><div class="empty">' + lic('classroom', 72) + 'Lớp này chưa có buổi nào được mở.</div></div>'; return; }
     var now = Date.now();
     var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
-    var open = mats.filter(function (m) { return moKhoa(m, now); }), later = mats.filter(function (m) { return !moKhoa(m, now); });
-    /* Video đã dùng hết quỹ thời gian xem thì rời khỏi danh sách của riêng sinh viên này. */
-    var daHet = open.filter(hetLuot);
-    open = open.filter(function (m) { return !hetLuot(m); });
-    matList = open;
+    var mods = (s.modules || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+    var modIds = {}; mods.forEach(function (mo) { modIds[mo.id] = true; });
+    var loose = mats.filter(function (m) { return !m.module_id || !modIds[m.module_id]; });
     function row(m, locked) {
       var k = KIND[m.kind] || KIND.link, seen = daXem(m), done = xemXong(m), moi = laMoi(m);
       var cls = locked ? 'k-lock locked' : k.cls + (done ? ' seen' : (seen ? ' part' : ''));
@@ -2195,15 +2128,32 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<span class="mt"><b>' + esc(m.title || k.name) + (moi && !locked ? '<span class="pillnew">MỚI</span>' : '') + '</b><span>' + st + '</span></span>'
         + '<span class="mc ico">' + I.chev + '</span></button>';
     }
-    var body = mats.length ? open.map(function (m) { return row(m, false); }).join('') + (later.length ? '<div class="mgroup">Mở sau</div>' + later.map(function (m) { return row(m, true); }).join('') : '')
-      + (daHet.length ? '<div class="mgroup">Đã dùng hết lượt xem</div><div class="empty" style="padding:14px 12px;text-align:left">' + daHet.map(function (m) { return esc(m.title || (KIND[m.kind] || KIND.link).name); }).join('<br>') + '<br><small>Bạn đã dùng hết quỹ thời gian xem giảng viên đặt cho video này. Cần xem thêm thì nhắn giảng viên.</small></div>' : '')
+    /* một cụm tài liệu (module hoặc tài liệu rời): mở trước, "Mở sau" sau, hết lượt xem cuối — dồn vào matList theo đúng thứ tự hiện trên trang để nút ◀ ▶ trong khung xem lướt đúng mạch */
+    function groupBody(list) {
+      var mo = list.filter(function (m) { return moKhoa(m, now); }), later = list.filter(function (m) { return !moKhoa(m, now); });
+      var daHet = mo.filter(hetLuot);
+      mo = mo.filter(function (m) { return !hetLuot(m); });
+      matList = matList.concat(mo);
+      return mo.map(function (m) { return row(m, false); }).join('')
+        + (later.length ? '<div class="mgroup">Mở sau</div>' + later.map(function (m) { return row(m, true); }).join('') : '')
+        + (daHet.length ? '<div class="mgroup">Đã dùng hết lượt xem</div><div class="empty" style="padding:14px 12px;text-align:left">' + daHet.map(function (m) { return esc(m.title || (KIND[m.kind] || KIND.link).name); }).join('<br>') + '<br><small>Bạn đã dùng hết quỹ thời gian xem giảng viên đặt cho video này. Cần xem thêm thì nhắn giảng viên.</small></div>' : '');
+    }
+    matList = [];
+    var modHtml = mods.map(function (mo) {
+      var trong = mats.filter(function (m) { return m.module_id === mo.id; });
+      if (!trong.length) return '';
+      return '<div class="modblock"><h4 class="modtitle"><span class="ico">' + I.stack + '</span>' + esc(mo.title || 'Module') + '</h4>' + groupBody(trong) + '</div>';
+    }).join('');
+    var looseHtml = groupBody(loose);
+    var body = mats.length ? modHtml + (mods.length && loose.length ? '<div class="mgroup">Tài liệu khác</div>' : '') + looseHtml
       : '<div class="empty">' + lic('documents', 72) + 'Buổi này chưa có tài liệu.</div>';
-    var xem = open.filter(daXem).length;
+    var shown = mats.filter(function (m) { return moKhoa(m, now) && !hetLuot(m); });
+    var xem = shown.filter(daXem).length;
     $('sesMain').innerHTML = (classNotice.trim() ? '<div class="today-strip"><div class="notice"><b>Thông báo</b>' + esc(classNotice.trim()) + '</div></div>' : '') + '<div class="card">'
       + '<div class="smhead"><span class="big">' + esc(so2(s.no)) + '</span><div><h3>' + esc(tenBuoi(s)) + '</h3>'
       + '<div class="meta">' + (s.pinned ? '<em><span class="ico">' + I.pin + '</span>Đang học</em>' : '') + (s.held_on ? '<em><span class="ico">' + I.calendar + '</span>' + fmtDate(s.held_on) + '</em>' : '')
       + (s.starts_at ? '<em><span class="ico">' + I.clock + '</span>' + fmtWhen(s.starts_at) + '</em>' : '')
-      + '<em><span class="ico">' + I.stack + '</span>' + mats.length + ' tài liệu' + (open.length ? ' · đã xem ' + xem + '/' + open.length : '') + '</em></div></div></div>'
+      + '<em><span class="ico">' + I.stack + '</span>' + mats.length + ' tài liệu' + (shown.length ? ' · đã xem ' + xem + '/' + shown.length : '') + '</em></div></div></div>'
       + (s.note ? '<div class="snote">' + esc(s.note) + '</div>' : '') + '<div class="smbody">' + body + '</div></div>';
   }
   $('sesNav').addEventListener('click', function (e) {
@@ -2647,9 +2597,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     hoiDaTra = (r.data || []).filter(function (q) { return q.tra_luc; });
   }
   function matById(id) {
-    var kho = sessions.concat(lecModules);   /* v31: tài liệu có thể thuộc buổi HOẶC module video bài giảng */
-    for (var i = 0; i < kho.length; i++) {
-      var ms = kho[i].materials || [];
+    for (var i = 0; i < sessions.length; i++) {
+      var ms = sessions[i].materials || [];
       for (var j = 0; j < ms.length; j++) if (ms[j].id === id) return ms[j];
     }
     return null;
@@ -3230,7 +3179,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       watermark(body.querySelector('.vstage')); if (yt) theoDoiYouTube(body.querySelector('iframe'), id); return;
     }
     if (c.url && !c.storage_path) {
-      /* v31: material.xem_khong_tai (đặt trong Quản trị khi thêm Liên kết) → nhúng khung xem có sandbox,
+      /* material.xem_khong_tai (đặt trong Quản trị khi thêm Liên kết) → nhúng khung xem có sandbox,
          ẩn nút Mở tab mới, đỡ lộ link gốc để tải. Không phải khoá tuyệt đối — ai mở F12 vẫn thấy địa chỉ,
          chỉ ngăn thói quen tải bằng một cú bấm. */
       var mLink = matById(id), khongTai = !!(mLink && mLink.xem_khong_tai);
