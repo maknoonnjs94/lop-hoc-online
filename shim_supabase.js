@@ -16,6 +16,12 @@
   var SUPABASE_URL = 'https://euyrrodppbpnkmificbs.supabase.co';
   var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var TABLE = 'notebook';
+  /* Mỗi môn một kho riêng trong cùng bảng: bản theo môn (build_web_so.js <mã môn>) đặt window.SBT_MON
+     = { key:'hoa-ly', name:'Hóa lý', upper:'HÓA LÝ' } → mọi collection được gắn tiền tố 'hoa-ly:'.
+     Bản Hóa phân tích (gốc) không có tiền tố, dữ liệu cũ giữ nguyên. */
+  var MON = window.SBT_MON || null;
+  var NS = MON && MON.key ? MON.key + ':' : '';
+  function ns(c) { return NS + c; }
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   var me = null;
@@ -134,8 +140,38 @@
     me = user;
     gate.className = 'done';
     badge(p.full_name || user.email, user.email);
+    try { await seedMon(); } catch (e) { console.warn('[sổ web] chưa chép được cài đặt sang môn mới:', e && e.message); }
     dbResolve(makeDb());
     return true;
+  }
+  /* Kho môn mới còn trống thì chép cài đặt chung (GV, email, logo, hồ sơ thương hiệu, khổ giấy) từ kho
+     Hóa phân tích sang, đổi tên bộ môn, theme = preset của môn — như Tools/seed_mon.js làm cho bản Claude. */
+  async function seedMon() {
+    if (!NS) return;
+    var co = await docRef(ns('settings'), 'course').get();
+    if (co.exists) return;
+    var goc = await docRef('settings', 'course').get();
+    if (!goc.exists) return;
+    var live = goc.data() || {};
+    function swap(s) {
+      return typeof s === 'string'
+        ? s.replace(/HÓA PHÂN TÍCH/g, MON.upper).replace(/Hóa phân tích/g, MON.name)
+        : s;
+    }
+    var out = {};
+    ['brand', 'teacherName', 'teacherEmail', 'logoDataUrl', 'paperSize', 'marginMm', 'fontPt', 'lineHeight',
+     'headerHtml', 'footerHtml', 'nameLabel', 'classLabel', 'activeBrandId', 'pageNumbers'].forEach(function (k) {
+      if (live[k] !== undefined) out[k] = swap(live[k]);
+    });
+    if (Array.isArray(live.brands)) out.brands = live.brands.map(function (b) {
+      return Object.assign({}, b, { brand: swap(b.brand), headerHtml: swap(b.headerHtml) });
+    });
+    /* chỉ mang theo chữ chìm/logo mờ; màu, font, hoạ tiết lấy từ preset của môn (themeDefaults() của bản
+       theo môn đã trỏ đúng preset) — chép cả màu của Hóa phân tích sang thì sổ môn mới mang nhầm màu */
+    var lt = live.theme || {};
+    out.theme = { preset: MON.key, wmText: lt.wmText || '', wmTextOpacity: lt.wmTextOpacity != null ? lt.wmTextOpacity : 0.06,
+                  wmLogo: !!lt.wmLogo, wmLogoOpacity: lt.wmLogoOpacity != null ? lt.wmLogoOpacity : 0.05 };
+    await docRef(ns('settings'), 'course').set(out);
   }
 
   document.addEventListener('submit', async function (e) {
@@ -309,8 +345,8 @@
 
   function makeDb() {
     return {
-      doc: function (path) { var p = splitPath(path); return docRef(p.c, p.id); },
-      collection: function (name) { return collectionRef(name); }
+      doc: function (path) { var p = splitPath(path); return docRef(ns(p.c), p.id); },
+      collection: function (name) { return collectionRef(ns(name)); }
     };
   }
 

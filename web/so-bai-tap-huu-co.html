@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Sổ Bài Tập HUS · bản web</title>
+<title>Sổ Bài Tập Hóa Hữu Cơ · bản web</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -1854,6 +1854,7 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>window.SBT_MON = {"key":"huu-co","name":"Hóa hữu cơ","upper":"HÓA HỮU CƠ"};</script>
 <script>
 /* ===== bản web: cầu nối Supabase, sinh ra bởi Tools/build_web_so.js ===== */
 /* =====================================================================
@@ -2480,7 +2481,7 @@
       <span class="brand-mark">Hh</span>
       <div class="brand-text">
         <strong>Sổ Bài Tập</strong>
-        <span>Hóa phân tích · HUS/VNU</span>
+        <span>Hóa hữu cơ · HUS/VNU</span>
       </div>
     </div>
     <span class="save-state no-print" id="saveState" title="Trạng thái lưu dữ liệu"></span>
@@ -2527,7 +2528,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 90 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 90 · bản Hóa hữu cơ · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -2658,7 +2659,7 @@
     <div class="modal modal-wide" id="bankBox">
       <div class="modal-head modal-head-row">
         <div style="flex:1;min-width:0">
-          <h3>Kho bài tập Hóa phân tích</h3>
+          <h3>Kho bài tập Hóa hữu cơ</h3>
           <p>Bản đồ kiến thức 3 cấp: Chủ đề → Chuyên đề → Dạng bài. Bấm vào ô vuông của một dạng bài để mở màn hình nhập câu hỏi.</p>
         </div>
         <div class="modal-ctrls">
@@ -3100,7 +3101,7 @@
               <label>Họa tiết in chìm<select data-tf="motif" id="tfMotif"></select></label>
               <label><span>Độ đậm họa tiết <output data-tfout="motifOpacity"></output></span><input type="range" data-tf="motifOpacity" min="0" max="0.25" step="0.005"></label>
               <label><span>Cỡ họa tiết <output data-tfout="motifScale"></output></span><input type="range" data-tf="motifScale" min="0.5" max="2" step="0.05"></label>
-              <label class="wide">Chữ chìm chéo trên từng trang (để trống = không in)<input type="text" data-tf="wmText" placeholder="VD: HUS · CHE1082 hoặc tên lớp riêng"></label>
+              <label class="wide">Chữ chìm chéo trên từng trang (để trống = không in)<input type="text" data-tf="wmText" placeholder="VD: HUS · Hóa hữu cơ hoặc tên lớp riêng"></label>
               <label><span>Độ đậm chữ chìm <output data-tfout="wmTextOpacity"></output></span><input type="range" data-tf="wmTextOpacity" min="0" max="0.25" step="0.005"></label>
               <label><span>Độ đậm logo chìm <output data-tfout="wmLogoOpacity"></output></span><input type="range" data-tf="wmLogoOpacity" min="0" max="0.25" step="0.005"></label>
               <label class="check wide"><input type="checkbox" data-tf="wmLogo"> In logo mờ ở giữa mỗi trang (logo lấy theo hồ sơ thương hiệu)</label>
@@ -3928,7 +3929,7 @@
     })(),
     shuffleLabel: null,
     settings: {
-      brand: 'BỘ MÔN HÓA PHÂN TÍCH - HUS',
+      brand: 'BỘ MÔN HÓA HỮU CƠ - HUS',
       teacherName: 'GV - PHẠM THỊ NGỌC MAI',
       teacherEmail: 'm.t.n.pham@gmail.com',
       logoDataUrl: '',
@@ -5385,7 +5386,7 @@
     };
     var json = JSON.stringify(payload);
     try {
-      await downloadsApi.save({ filename: 'SoBaiTapHUS_SaoLuu_' + stamp + '.json', data: new Blob([json], { type: 'application/json' }) });
+      await downloadsApi.save({ filename: 'SoBaiTapHuuCo_SaoLuu_' + stamp + '.json', data: new Blob([json], { type: 'application/json' }) });
       notify('Đã sao lưu: ' + payload.bank.length + ' câu trong kho, ' + payload.weeks.length + ' tài liệu, '
         + Object.keys(images).length + ' ảnh (' + Math.round(json.length / 1024) + ' KB).');
       state.settings.lastBackupAt = Date.now();   /* để nhắc sao lưu biết lần gần nhất */
@@ -5457,7 +5458,7 @@
     try { data = JSON.parse(await file.text()); }
     catch (e) { notify('File này không đọc được (không phải JSON hợp lệ).'); return; }
     if (!data || data.app !== BACKUP_APP || !Array.isArray(data.weeks) || !Array.isArray(data.bank)) {
-      notify('File này không phải file sao lưu của Sổ Bài Tập HUS.');
+      notify('File này không phải file sao lưu của Sổ Bài Tập.');
       return;
     }
     var weeks = data.weeks.filter(function (w) { return w && w.id && Array.isArray(w.problems); });
@@ -10009,7 +10010,7 @@
   }
 
   var AI_PDF_PROMPT =
-    'Bạn đọc ảnh chụp (các) trang đề bài tập môn Hóa phân tích, tiếng Việt.\n'
+    'Bạn đọc ảnh chụp (các) trang đề bài tập môn Hóa hữu cơ, tiếng Việt.\n'
     + 'Hãy đọc CHÍNH XÁC nội dung đang có trên ảnh — không bịa thêm, không tự giải bài.\n'
     + 'Tách riêng từng câu hỏi theo đúng thứ tự xuất hiện trên trang.\n\n'
     + 'Với MỖI câu hỏi, trả về một object trong một mảng JSON:\n'
@@ -11142,7 +11143,7 @@
       wizard = null;
       document.getElementById('makeWeekBtn').hidden = false;
       document.getElementById('addToWeekBtn').textContent = 'Thêm vào tuần đang mở';
-      document.querySelector('#bankModal .modal-head h3').textContent = 'Kho bài tập Hóa phân tích';
+      document.querySelector('#bankModal .modal-head h3').textContent = 'Kho bài tập Hóa hữu cơ';
       document.querySelector('#bankModal .modal-head p').textContent =
         'Bản đồ kiến thức 3 cấp: Chủ đề → Chuyên đề → Dạng bài. Bấm vào ô vuông của một dạng bài để mở màn hình nhập câu hỏi.';
     }
@@ -11477,7 +11478,7 @@
       + '    <div><div class="cover-brand">' + s.brand + '</div>'
       + '    <div class="cover-sub">Tập bài tập cả học kỳ</div></div>'
       + '  </div>'
-      + '  <h1 class="cover-title">' + escapeText(textOf(s.brand) ? 'BÀI TẬP HÓA PHÂN TÍCH' : 'TẬP BÀI TẬP') + '</h1>'
+      + '  <h1 class="cover-title">' + escapeText(textOf(s.brand) ? 'BÀI TẬP HÓA HỮU CƠ' : 'TẬP BÀI TẬP') + '</h1>'
       + '  <div class="cover-meta">' + weeks.length + ' buổi · '
       +      weeks.reduce(function (n, w) { return n + (w.problems || []).length; }, 0) + ' câu hỏi</div>'
       + '  <h2 class="cover-toc-title">Mục lục</h2>'
@@ -12739,7 +12740,7 @@
   var THEME_FONTS = ['Be Vietnam Pro', 'Times New Roman', 'Noto Serif', 'Noto Sans', 'Lora', 'Merriweather', 'EB Garamond', 'Cormorant Garamond', 'Playfair Display', 'Montserrat', 'Roboto Slab', 'Source Serif 4', 'Bitter', 'Spectral', 'Literata', 'Nunito'];
   var THEME_SYSTEM_FONTS = { 'Times New Roman': 1, 'Arial': 1 };
   var THEME_MOTIFS = { none: 'Không có', titration: 'Buret & đường chuẩn độ', benzene: 'Vòng benzen & mạch cacbon', orbital: 'Nguyên tử & orbital', phase: 'Đồ thị & giản đồ pha', lattice: 'Mạng tinh thể', process: 'Tháp chưng cất & đường ống' };
-  function themeDefaults() { return Object.assign({ preset: 'phan-tich', wmText: '', wmTextOpacity: 0.06, wmLogo: false, wmLogoOpacity: 0.05 }, THEME_PRESETS['phan-tich']); }
+  function themeDefaults() { return Object.assign({ preset: 'huu-co', wmText: '', wmTextOpacity: 0.06, wmLogo: false, wmLogoOpacity: 0.05 }, THEME_PRESETS['huu-co']); }
   function currentTheme() { return Object.assign(themeDefaults(), state.settings.theme || {}); }
   function setThemeField(k, v) { state.settings.theme = Object.assign(currentTheme(), {}); state.settings.theme[k] = v; scheduleSaveSettings(); }
   function hexToRgb(h) { var m = String(h || '').replace('#', ''); if (m.length === 3) m = m.replace(/(.)/g, '$1$1'); var n = parseInt(m, 16); return isNaN(n) ? [0, 0, 0] : [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }

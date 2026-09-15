@@ -622,8 +622,11 @@ Artifact — Claude chặn trang khác nhúng khung. File trong `/bai-giang/` l�
 DENY` cho 5 trang thật, không đặt ở `/*` — Cloudflare nối header trùng tên chứ không ghi đè.)
 
 **Sổ Bài Tập từng môn:** thanh đầu Quản trị có chip **Sổ Bài Tập ▾** bung ra từng cuốn — Hóa phân tích (bản
-web / sổ Claude), Hữu cơ, Lý, Vô cơ, Kĩ thuật — và 📚 Kệ Sổ. Mỗi cuốn là một sổ riêng trên Claude, kho câu
-hỏi riêng; thêm môn mới thì bảo Claude Code (chạy `build_mon.js` + publish + sửa thẻ trên Kệ).
+web / sổ Claude), Hữu cơ, Lý, Vô cơ, Kĩ thuật (đều là **bản web** `/so-bai-tap-<môn>`, dùng chung phiên đăng
+nhập giáo viên, dữ liệu ở Supabase — mỗi môn một kho riêng, tiền tố `<môn>:` trong bảng `notebook`) — và
+📚 Kệ Sổ (bản Claude). Mở lần đầu, sổ môn mới tự chép cài đặt chung (GV, email, logo, hồ sơ) từ kho Hóa phân
+tích bản web và đổi tên bộ môn; kho câu hỏi trống. Thêm môn mới thì bảo Claude Code: `build_mon.js` (file sổ
+theo môn) → `build_web_so.js <file> ..\Hoc_Online <mã môn>` → thêm dòng vào `web/_headers` + menu Quản trị.
 
 ## Bảo mật cơ bản — rà 12/9/2026
 

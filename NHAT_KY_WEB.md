@@ -41,6 +41,35 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-15 (tối) — Sổ từng môn thành BẢN WEB trên giangduonghoahoc.com (kho riêng từng môn trong bảng `notebook`), menu Quản trị trỏ sang bản web
+
+**T:** *"các sổ bài tập làm thành link web cho t, chừa lại cái hóa phân tích thì để lại thôi, các sổ mới để
+link web gắn với trang quản trị hết"* — sổ Claude bất tiện (cần đăng nhập claude.ai, app desktop của t không
+tải/AI được, không "Giao cho lớp" được); bản web dùng chung phiên giáo viên, giao thẳng lên lớp.
+
+**Làm:** `shim_supabase.js` thêm tiền tố kho theo môn — bản theo môn đặt `window.SBT_MON = {key,name,upper}`
+(chèn bởi `build_web_so.js` khi truyền mã môn), mọi `collection` được gắn `key + ':'` (`hoa-ly:weeks`,
+`hoa-ly:settings`…) trong cùng bảng `notebook` (PK owner+collection+doc_id, không đổi schema); bản Hóa phân
+tích không tiền tố → dữ liệu cũ y nguyên. `seedMon()` sau đăng nhập: kho môn chưa có `settings/course` thì
+chép từ kho gốc (GV, email, logo, hồ sơ, khổ giấy — đổi "HÓA PHÂN TÍCH" → tên môn, như `seed_mon.js`),
+theme chỉ mang chữ chìm/logo mờ + `preset` của môn (KHÔNG chép màu — chép cả màu thì sổ mới mang màu Hóa
+phân tích; `THEME_PRESETS` nằm trong IIFE của app nên shim không với tới, phải để `themeDefaults()` của bản
+theo môn lo). `Tools/build_web_so.js` nhận tham số 3 `<mã môn>`: đọc file `Mon/…`, chèn `SBT_MON`, tiêu đề
+"· bản web", ra `web/so-bai-tap-<mã>.html`. Dựng 4 bản: huu-co, hoa-ly, vo-co, ky-thuat (1609 KB mỗi file,
+đợt 90) + gốc. `web/_headers` thêm 4 khối (no-cache, noindex, DENY). Menu **Sổ Bài Tập ▾** ở Quản trị: Hóa
+phân tích giữ 2 dòng (bản web · sổ Claude), 4 môn kia trỏ `so-bai-tap-<mã>.html` cùng tab, cuối là 📚 Kệ
+Sổ (bản Claude). Sổ Claude của 4 môn vẫn còn, không xoá.
+
+**Thử:** mở `/so-bai-tap-ky-thuat.html` tại máy: tiêu đề "Sổ Bài Tập Hóa Kĩ Thuật · bản web", `SBT_MON`
+đúng, chữ đầu app "Hóa kĩ thuật · HUS/VNU", dấu bản "đợt 90 · bản Hóa kĩ thuật · bản web", màn đăng nhập
+hiện, không lỗi console. Chưa thử được bước sau đăng nhập (t không có mật khẩu) — `seedMon` đọc bằng mắt,
+lần đầu t mở sổ môn mới mà thấy thiếu logo/tên GV thì báo.
+
+**Việc t cần làm:** đăng nhập một lần ở mỗi sổ môn để kho tự chép cài đặt; muốn mang câu hỏi từ sổ Claude
+sang bản web thì Sao lưu toàn bộ (sổ Claude) → Khôi phục từ file (bản web).
+
+---
+
 ## 2026-09-15 — Thư mục /bai-giang cho HTML bài giảng riêng (nhúng "chỉ cho xem"), X-Frame-Options tách theo trang; menu Sổ Bài Tập từng môn ở Quản trị
 
 **T:** *"link html mở bằng chrome thì nhúng vào mục quản trị kiểu gì để chỉ xem mà không tải được nhỉ, t chưa
