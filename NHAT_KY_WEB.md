@@ -63,6 +63,14 @@ Link ngoài tên miền (YouTube, Drive) vẫn mở bằng trình duyệt thư�
 riêng nên để trong `/bai-giang` (cùng tên miền) hoặc tick "Chỉ cho xem trong trang" (mở ngay trong cửa sổ
 chính, không cần cửa sổ con). Tag `v1.0.19`, Windows tự cập nhật qua R2.
 
+**Sửa lại lần 2 (t chê "fix tệ"):** *"chữ t muốn hiển thị ở mục phía trên, để nguyên vẹn ảnh cho t"* — không
+phải chia cột hẹp/rộng gì cả. `.hero` thành cột dọc: khối chữ (nhãn, tiêu đề, dòng phụ, nút, câu nhắc)
+rộng hết thẻ ở TRÊN; `.art` ở DƯỚI, ảnh `width:100%; height:auto`, bỏ mask/absolute/cover — ảnh nguyên tỉ
+lệ gốc, không cắt, không chữ nào chạm. Bỏ luôn nhánh lật `.hero.trai` (không còn cần) và rule mobile riêng.
+Đo ở 1000 px: ảnh nằm trọn dưới khối chữ, 458×276 đúng tỉ lệ 460×277. Bài học: hai lần "chữ đè ảnh" t đều
+tự nghĩ ra cách "đỡ chồng" thay vì làm đúng câu t nói — hỏi lại một câu "chữ trên, ảnh dưới đúng không?"
+đã xong từ đầu.
+
 **Việc t cần làm:** F5 thấy thẻ hero mới ngay; app chờ tự cập nhật 1.0.19 (hoặc tải lại từ /tai-app) rồi
 thử lại Snipping Tool trên bài giảng mở tab mới — phải ra đen.
 
