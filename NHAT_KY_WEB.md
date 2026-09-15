@@ -41,6 +41,45 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-15 — Thư mục /bai-giang cho HTML bài giảng riêng (nhúng "chỉ cho xem"), X-Frame-Options tách theo trang; menu Sổ Bài Tập từng môn ở Quản trị
+
+**T:** *"link html mở bằng chrome thì nhúng vào mục quản trị kiểu gì để chỉ xem mà không tải được nhỉ, t chưa
+rõ"* — hỏi lại: file `.html` nằm trên máy (bấm đúp mở), chưa có địa chỉ web. Ô "Đường dẫn" của Liên kết chỉ
+nhận địa chỉ http(s); `file:///C:/…` chỉ có trên máy t, sinh viên không mở được.
+
+**Đã thử & loại:** (1) publish thành Claude Artifact rồi dán link — thử thật: trang Claude trả
+`X-Frame-Options: SAMEORIGIN` nên khung xem ở giangduonghoahoc.com bị trình duyệt từ chối hiển thị (và CSP
+của artifact cũng không cho artifact nhúng trang khác). (2) kho `tailieu` Supabase là bucket kín (RLS, cần
+phiên đăng nhập) — `<iframe src>` trần không mang phiên, không dùng được.
+
+**Làm:** thư mục `web/bai-giang/` — file đặt vào đó lên cùng tên miền:
+`https://giangduonghoahoc.com/bai-giang/<tên>` (Cloudflare tự bỏ `.html`; gõ `.html` thì 307 sang địa chỉ
+gọn). Dán vào `＋ Liên kết`, tick "Chỉ cho xem trong trang". **Bẫy:** `web/_headers` đặt
+`X-Frame-Options: DENY` ở `/*` từ 12/9, và Cloudflare NỐI (không ghi đè) header trùng tên giữa các luật cùng
+khớp (kiểm tài liệu Cloudflare Pages `_headers`) → không thể "nới riêng" `/bai-giang/*` bằng một luật thêm
+(sẽ thành `DENY, SAMEORIGIN`). Dời DENY khỏi `/*`, đặt riêng ở `/`, `/hoc`, `/quan-tri`, `/so-bai-tap`,
+`/tai-app` (5 trang thật, `/quan-tri.html` v.v. đều 307 về đường gọn nên không hở); `/bai-giang/*` không có
+header này. Kiểm live sau deploy: `/hoc` `/quan-tri` vẫn DENY, `/bai-giang/Module1-HoaHuuCo-NhapMon` 200 và
+không có X-Frame-Options. File thử của t: `Module1-HoaHuuCo-NhapMon.html` (bản Claude "Bundled Page" tải
+về, 885 KB) → https://giangduonghoahoc.com/bai-giang/Module1-HoaHuuCo-NhapMon . Nói rõ với t: file trong
+`/bai-giang/` công khai, ai có link cũng xem được, không cần đăng nhập — đừng để đáp án riêng vào đó.
+
+**Bị chặn một nhịp:** hệ thống chặn lệnh `git commit && git push` với nhãn "out-of-place publication"
+(đẩy tệp gói lớn lên kho công khai + web công khai) — dừng, hỏi lại t, t gõ "đẩy đi" mới đẩy (`f7523d0`).
+
+**Menu Sổ Bài Tập (quan-tri.html):** *"cho t các sổ bài tập của từng môn ở trang quản trị"* — chip "Sổ Bài
+Tập" thành `<details class="chipmenu">` bung: Hóa phân tích (bản web `so-bai-tap.html` · sổ Claude), Hữu cơ,
+Lý, Vô cơ, Kĩ thuật, 📚 Kệ Sổ; sổ trên Claude mở tab mới; bấm ra ngoài là đóng (handler cạnh `$`). Ba sổ
+Lý / Vô cơ / Kĩ thuật tạo mới cùng phiên — xem `So_Bai_Tap_HUS/NHAT_KY_PHIEN_LAM_VIEC.md` đợt 90.
+`web/so-bai-tap.html` dựng lại theo gốc đợt 90 (`build_web_so.js`).
+
+**Thử:** `_test_quan-tri.html`: 7 link đúng địa chỉ + `target=_blank`, mở/đóng đúng, không lỗi console;
+`ra-soat.js` sạch.
+
+**Việc t cần làm:** không.
+
+---
+
 ## 2026-09-15 — Đổi lại: Module NẰM TRONG buổi (video → HTML → bài tập → đáp án, mở theo ngày riêng từng bước) — thay thế mục "Video bài giảng" (v31) vừa làm ở trên (schema_v32)
 
 **T:** *"t nghĩ lại rồi, nếu video ở 1 mục khác, thì khó theo dõi quá nhỉ, có cách nào thiết kế thông

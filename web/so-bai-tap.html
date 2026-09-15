@@ -2491,7 +2491,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-19 · đợt 85 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 90 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -5798,8 +5798,8 @@
       : '<span class="logo-hint">+ LOGO</span>';
     /* Header/footer là chữ tự do, sửa ngay trên trang; chưa sửa bao giờ thì header = tên bộ môn,
        footer = giảng viên • email (như trước). Nhãn "BUỔI", "Họ và tên:", "Lớp:" cũng sửa được. */
-    var headerHtml = s.headerHtml != null ? s.headerHtml : s.brand;
-    var footerHtml = s.footerHtml != null ? s.footerHtml : (s.teacherName + ' <span class="dot">•</span> ' + s.teacherEmail);
+    var headerHtml = chuHayMacDinh(s.headerHtml, s.brand);
+    var footerHtml = chuHayMacDinh(s.footerHtml, s.teacherName + ' <span class="dot">•</span> ' + s.teacherEmail);
     var badgeLabel = week.badgeLabel != null ? week.badgeLabel : 'BUỔI';
     var nameLabel = s.nameLabel != null ? s.nameLabel : 'Họ và tên:';
     var classLabel = s.classLabel != null ? s.classLabel : 'Lớp:';
@@ -5956,11 +5956,20 @@
     html += '</div>';
 
     sheetEl.innerHTML = html;
-    mathDressElement(sheetEl);   /* đợt 67: √(…) và (a)/(b) → căn thức, phân số thật */
-    canChinhCao(sheetEl);        /* đợt 76: kéo dấu căn cho vừa, theo phông thật của phiếu */
     hydrateImages();
     schedulePageMarks();
     inkAfterRender();   /* đợt 52: bảng giảng phủ lại lớp vẽ */
+    /* Đợt 88: mathDressElement (bọc √.../phân số) là việc nặng nhất lúc chuyển tài liệu — đo được ~100-130ms
+       chặn đứng cho tài liệu 40 câu có công thức. Dời sang khung hình kế tiếp để trang chuyển hiện ngay; ai
+       chuyển tiếp sang tài liệu khác trước khi kịp chạy thì bỏ qua (kiểm lại đúng tài liệu qua id, không phải
+       so #sheet — thẻ đó dùng lại cho mọi tài liệu nên không đổi giữa các lần chuyển). */
+    var idLucVe = week.id;
+    requestAnimationFrame(function () {
+      var cw = currentWeek();
+      if (!cw || cw.id !== idLucVe) return;
+      mathDressElement(sheetEl);   /* đợt 67: √(…) và (a)/(b) → căn thức, phân số thật */
+      canChinhCao(sheetEl);        /* đợt 76: kéo dấu căn cho vừa, theo phông thật của phiếu */
+    });
   }
 
   /* ---------------- 5.2 vạch báo hết trang ----------------
@@ -6067,6 +6076,10 @@
       if (pno) pno.textContent = pageNoText;
       return c;
     }
+    /* Đợt 86: chèn HẾT các khối trang trước (toàn ghi), rồi mới đo vị trí (toàn đọc), rồi mới đặt
+       chiều cao khoảng đệm (toàn ghi) — thay vì chèn-đọc-chèn-đọc từng trang một như trước (mỗi lần
+       đọc ngay sau ghi buộc trình duyệt tính lại bố cục cả trang, N trang = N lần giật). */
+    var bandInfos = [];
     for (var p = 0; p < n - 1; p++) {
       var endEl = liveProblems[pages[p].end];
       if (!endEl) continue;
@@ -6087,10 +6100,14 @@
       band.appendChild(headClone);
       pageAnchors.push(headClone);
       endEl.parentNode.insertBefore(band, endEl.nextSibling);
-      var bandTop = band.getBoundingClientRect().top - sheetTop();
-      var target = pageTop(p) + pageH - padPx - footerH;                  /* mép trên footer của trang p */
-      spacer.style.height = Math.max(0, target - (bandTop + 22)) + 'px'; /* 22 = margin-top của footer */
+      bandInfos.push({ p: p, band: band, spacer: spacer });
     }
+    var sheetT = sheetTop();   /* một lần đọc cho cả lô, không phải mỗi trang một lần */
+    bandInfos.forEach(function (info) {
+      var bandTop = info.band.getBoundingClientRect().top - sheetT;
+      var target = pageTop(info.p) + pageH - padPx - footerH;                  /* mép trên footer của trang p */
+      info.spacer.style.height = Math.max(0, target - (bandTop + 22)) + 'px'; /* 22 = margin-top của footer */
+    });
     /* trang cuối: đệm để footer thật nằm đúng mép dưới trang */
     var footerTop = footerLive.getBoundingClientRect().top - sheetTop();
     var lastTarget = pageTop(n - 1) + pageH - padPx - footerH;
@@ -8485,6 +8502,11 @@
     }).catch(function () { if (mySeq === bankMutSeq) bankItems = local; });
   }
 
+    /* "chữ tự do hay dùng mặc định": chỉ dùng CHỮ ĐÃ GÕ khi thật sự có nội dung (không phải chuỗi
+     trắng/rỗng) — trước đây chỉ kiểm != null nên hễ ai từng bấm vào ô (đầu trang, chân trang…) rồi
+     xoá sạch thì giá trị thành '' (không phải null), mặc định (tên GV • SĐT, tên đơn vị) mất hẳn,
+     không có cách nào tự quay lại tự động — phải biết bấm nút X xoá hồ sơ mới thoát được. */
+  function chuHayMacDinh(v, macDinh) { return (v != null && textOf(v) !== '') ? v : macDinh; }
   function textOf(html) {
     var d = document.createElement('div');
     d.innerHTML = html || '';
@@ -11010,33 +11032,43 @@
     /* thanh kéo cỡ hiển thị */
     var slider = document.getElementById('bankZoom');
     var val = document.getElementById('bankZoomVal');
-    function applyScale(pct) {
+    /* opts.persist === false: chỉ đổi hình (đang kéo), không ghi localStorage — ghi 1 lần lúc thả tay
+       (đợt 86) — CSS zoom tính lại bố cục cả khối .bank-split, ghi đĩa liên tục lúc kéo mới là chỗ giật. */
+    function applyScale(pct, opts) {
       pct = Math.max(70, Math.min(160, Number(pct) || 100));
       slider.value = pct;
       val.textContent = pct + '%';
       document.documentElement.style.setProperty('--bank-zoom', (pct / 100).toString());
-      try { localStorage.setItem('sbt-bank-zoom', String(pct)); } catch (e) {}
+      if (!opts || opts.persist !== false) { try { localStorage.setItem('sbt-bank-zoom', String(pct)); } catch (e) {} }
     }
     var savedZoom = 100;
     try { savedZoom = Number(localStorage.getItem('sbt-bank-zoom')) || 100; } catch (e) {}
     applyScale(savedZoom);
-    slider.addEventListener('input', function () { applyScale(slider.value); });
+    var zoomRaf = 0;
+    slider.addEventListener('input', function () {
+      if (zoomRaf) return;                 /* đã có một khung hình đang chờ vẽ, khỏi xếp thêm */
+      zoomRaf = requestAnimationFrame(function () { zoomRaf = 0; applyScale(slider.value, { persist: false }); });
+    });
+    slider.addEventListener('change', function () { applyScale(slider.value); });   /* thả tay ra mới ghi */
     document.getElementById('bankZoomReset').addEventListener('click', function () { applyScale(100); });
 
     /* kéo vách ngăn để đổi bề rộng cột chủ đề */
     var splitter = document.getElementById('bankSplitter');
     var treePane = document.getElementById('bankTreePane');
-    function applyTreeWidth(px) {
+    function applyTreeWidth(px, opts) {
       px = Math.max(180, Math.min(560, px));
       document.documentElement.style.setProperty('--bank-tree-w', px + 'px');
-      try { localStorage.setItem('sbt-bank-treew', String(Math.round(px))); } catch (e) {}
+      if (!opts || opts.persist !== false) { try { localStorage.setItem('sbt-bank-treew', String(Math.round(px))); } catch (e) {} }
     }
     try {
       var savedW = Number(localStorage.getItem('sbt-bank-treew'));
       if (savedW) applyTreeWidth(savedW);
     } catch (e) {}
 
-    var dragging = false;
+    /* Đợt 86: mousemove lúc kéo bắn liên tục — dồn lại đúng 1 lần đổi bề rộng mỗi khung hình
+       (requestAnimationFrame) thay vì tính lại bố cục mỗi lần nhích chuột; ghi localStorage đúng 1
+       lần lúc thả tay, không ghi suốt lúc đang kéo. */
+    var dragging = false, dragRaf = 0, dragX = 0, lastTreeWidthPx = null;
     splitter.addEventListener('mousedown', function (e) {
       dragging = true;
       splitter.classList.add('dragging');
@@ -11045,14 +11077,22 @@
     });
     document.addEventListener('mousemove', function (e) {
       if (!dragging) return;
-      var scale = Number(getComputedStyle(document.documentElement).getPropertyValue('--bank-zoom')) || 1;
-      applyTreeWidth((e.clientX - treePane.getBoundingClientRect().left) / scale);
+      dragX = e.clientX;                    /* nhớ vị trí mới nhất; rAF bên dưới đọc biến này khi tới lượt vẽ */
+      if (dragRaf) return;
+      dragRaf = requestAnimationFrame(function () {
+        dragRaf = 0;
+        var scale = Number(getComputedStyle(document.documentElement).getPropertyValue('--bank-zoom')) || 1;
+        lastTreeWidthPx = (dragX - treePane.getBoundingClientRect().left) / scale;
+        applyTreeWidth(lastTreeWidthPx, { persist: false });
+      });
     });
     document.addEventListener('mouseup', function () {
       if (!dragging) return;
       dragging = false;
+      if (dragRaf) { cancelAnimationFrame(dragRaf); dragRaf = 0; }
       splitter.classList.remove('dragging');
       document.body.style.userSelect = '';
+      if (lastTreeWidthPx != null) applyTreeWidth(lastTreeWidthPx);   /* ghi 1 lần khi thả tay */
     });
     splitter.addEventListener('dblclick', function () { applyTreeWidth(296); });
   })();
@@ -11395,7 +11435,7 @@
     var weeks = state.order.map(function (id) { return state.weeks.get(id); });
 
     sheetEl.innerHTML =
-      '<div class="running-header"><div class="rh-text">' + (s.headerHtml != null ? s.headerHtml : s.brand) + '</div><div class="rh-right">Tập bài tập cả học kỳ</div></div>'
+      '<div class="running-header"><div class="rh-text">' + (chuHayMacDinh(s.headerHtml, s.brand)) + '</div><div class="rh-right">Tập bài tập cả học kỳ</div></div>'
       + '<div class="cover">'
       + '  <div class="cover-top">' + (s.logoDataUrl ? '<img src="' + s.logoDataUrl + '" alt="">' : '')
       + '    <div><div class="cover-brand">' + s.brand + '</div>'
@@ -11414,7 +11454,7 @@
       + '  </ol>'
       + '</div>'
       + '<div class="running-footer"><div class="rf-text">'
-      + (s.footerHtml != null ? s.footerHtml : (s.teacherName + ' <span class="dot">•</span> ' + s.teacherEmail))
+      + (chuHayMacDinh(s.footerHtml, s.teacherName + ' <span class="dot">•</span> ' + s.teacherEmail))
       + '</div><div class="rf-right"><span class="page-no"></span></div></div>';
 
     await new Promise(function (r) { setTimeout(r, 60); });
@@ -12657,11 +12697,12 @@
     'huu-co': { name: 'Hóa hữu cơ', ink: '#2b2118', primary: '#b4562b', accent: '#4f7d3a', fontTitle: 'Merriweather', fontBody: 'Noto Serif', motif: 'benzene', motifOpacity: 0.07, motifScale: 1 },
     'hoa-ly': { name: 'Hóa lý', ink: '#1f2a44', primary: '#5b3fd1', accent: '#d99a1e', fontTitle: 'Montserrat', fontBody: 'Source Serif 4', motif: 'phase', motifOpacity: 0.07, motifScale: 1 },
     'dai-cuong': { name: 'Hóa đại cương', ink: '#16324f', primary: '#0f766e', accent: '#e0705a', fontTitle: 'Be Vietnam Pro', fontBody: 'Lora', motif: 'orbital', motifOpacity: 0.07, motifScale: 1 },
-    'vo-co': { name: 'Hóa vô cơ', ink: '#1c2833', primary: '#2f5d9e', accent: '#c9a227', fontTitle: 'Roboto Slab', fontBody: 'EB Garamond', motif: 'lattice', motifOpacity: 0.07, motifScale: 1 }
+    'vo-co': { name: 'Hóa vô cơ', ink: '#1c2833', primary: '#2f5d9e', accent: '#c9a227', fontTitle: 'Roboto Slab', fontBody: 'EB Garamond', motif: 'lattice', motifOpacity: 0.07, motifScale: 1 },
+    'ky-thuat': { name: 'Hóa kĩ thuật', ink: '#22282e', primary: '#c2711a', accent: '#5c7a89', fontTitle: 'Bitter', fontBody: 'Noto Sans', motif: 'process', motifOpacity: 0.07, motifScale: 1 }
   };
   var THEME_FONTS = ['Be Vietnam Pro', 'Times New Roman', 'Noto Serif', 'Noto Sans', 'Lora', 'Merriweather', 'EB Garamond', 'Cormorant Garamond', 'Playfair Display', 'Montserrat', 'Roboto Slab', 'Source Serif 4', 'Bitter', 'Spectral', 'Literata', 'Nunito'];
   var THEME_SYSTEM_FONTS = { 'Times New Roman': 1, 'Arial': 1 };
-  var THEME_MOTIFS = { none: 'Không có', titration: 'Buret & đường chuẩn độ', benzene: 'Vòng benzen & mạch cacbon', orbital: 'Nguyên tử & orbital', phase: 'Đồ thị & giản đồ pha', lattice: 'Mạng tinh thể' };
+  var THEME_MOTIFS = { none: 'Không có', titration: 'Buret & đường chuẩn độ', benzene: 'Vòng benzen & mạch cacbon', orbital: 'Nguyên tử & orbital', phase: 'Đồ thị & giản đồ pha', lattice: 'Mạng tinh thể', process: 'Tháp chưng cất & đường ống' };
   function themeDefaults() { return Object.assign({ preset: 'phan-tich', wmText: '', wmTextOpacity: 0.06, wmLogo: false, wmLogoOpacity: 0.05 }, THEME_PRESETS['phan-tich']); }
   function currentTheme() { return Object.assign(themeDefaults(), state.settings.theme || {}); }
   function setThemeField(k, v) { state.settings.theme = Object.assign(currentTheme(), {}); state.settings.theme[k] = v; scheduleSaveSettings(); }
@@ -12702,6 +12743,15 @@
       body += '<g ' + st + '><path d="M60 100 l50-28 50 28 -50 28z M60 100 v56 l50 28 50-28 v-56 M110 128 v56"/><path d="M60 156 l50-28 50 28"/>';
       body += '<path d="M200 60 l30 22 -30 22 -30-22z M200 26 v112 M170 82 l30 -56 30 56 -30 56z"/></g>';
       body += '<g ' + fl + '><circle cx="60" cy="100" r="3"/><circle cx="110" cy="72" r="3"/><circle cx="160" cy="100" r="3"/><circle cx="110" cy="128" r="3"/><circle cx="60" cy="156" r="3"/><circle cx="110" cy="184" r="3"/><circle cx="160" cy="156" r="3"/></g>';
+    } else if (kind === 'process') {
+      /* Hóa kĩ thuật: tháp chưng cất có đĩa + sinh hàn hồi lưu + van, bình phản ứng cánh khuấy, đường ống nối */
+      body += '<g ' + st + '><rect x="52" y="34" width="34" height="126" rx="10"/>';
+      for (var j = 0; j < 6; j++) body += '<path d="M56 ' + (56 + j * 18) + ' h26"/>';
+      body += '<path d="M86 44 h34 v26 h-14"/><circle cx="106" cy="70" r="5"/><path d="M69 160 v20 h50"/><path d="M119 172 v16 M111 180 h16"/>';
+      body += '<path d="M52 92 h-18 v-40 h-10"/><path d="M28 47 l-6 5 M28 47 l-6 -5"/>';
+      body += '<path d="M170 130 h50 v62 a25 25 0 0 1 -50 0z"/><path d="M195 116 v50"/><path d="M181 166 h28"/><path d="M180 130 v-14 h30"/><path d="M186 218 h18"/>';
+      body += '<path d="M120 205 c20 0 20 -30 40 -30 s20 30 40 30" stroke-dasharray="3 5"/></g>';
+      body += '<g ' + fl + '><circle cx="106" cy="70" r="2"/><circle cx="195" cy="118" r="3"/></g>';
     } else return '';
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + S + '" height="' + S + '" viewBox="0 0 ' + S + ' ' + S + '">' + body + '</svg>';
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -13158,9 +13208,9 @@
 
     if (week.layout === 'exam') kids.push(P({ children: [T(textOf(examView(week).note), { italics: true })], alignment: D.AlignmentType.CENTER, spacing: { before: 240 }, border: { top: { style: D.BorderStyle.SINGLE, size: 6, color: '333333', space: 4 } } }));
     var dims = paperDims(), mm = marginMm();
-    var headerText = textOf(s.headerHtml != null ? s.headerHtml : s.brand);
+    var headerText = textOf(chuHayMacDinh(s.headerHtml, s.brand));
     var headerRight = textOf(week.headerRight ? week.headerRight : autoHeaderRight(week));
-    var footerText = textOf(s.footerHtml != null ? s.footerHtml : (s.teacherName + ' • ' + s.teacherEmail));
+    var footerText = textOf(chuHayMacDinh(s.footerHtml, s.teacherName + ' • ' + s.teacherEmail));
     var doc = new D.Document({
       creator: textOf(s.teacherName || 'Sổ Bài Tập'),
       title: textOf(week.title),
@@ -16093,8 +16143,8 @@
   }
   function lectureSheetHtml(week) {
     var s = brandView(state.settings, week);
-    var headerHtml = s.headerHtml != null ? s.headerHtml : s.brand;
-    var footerHtml = s.footerHtml != null ? s.footerHtml : (s.teacherName + ' <span class="dot">•</span> ' + s.teacherEmail);
+    var headerHtml = chuHayMacDinh(s.headerHtml, s.brand);
+    var footerHtml = chuHayMacDinh(s.footerHtml, s.teacherName + ' <span class="dot">•</span> ' + s.teacherEmail);
     var badgeLabel = week.badgeLabel != null ? week.badgeLabel : 'BUỔI';
     var html = '';
     html += '<div class="running-header">'

@@ -613,6 +613,18 @@ khi m bấm dùng.
   giờ mở vẫn hiện tên kèm ổ khoá + giờ mở, y như tài liệu rời. Tài liệu không thuộc module nào (buổi cũ,
   chưa dùng module) tiếp tục hiện y như trước, không đổi gì.
 
+**Bài giảng HTML riêng của m (file .html tự làm, bấm đúp mở bằng Chrome):** ô Đường dẫn chỉ nhận địa chỉ
+web, file trên máy phải đưa lên mạng trước. Cách đang dùng: gửi file cho Claude Code — nó chép vào
+`web/bai-giang/` rồi đẩy lên GitHub, 1–3 phút sau có địa chỉ `https://giangduonghoahoc.com/bai-giang/<tên-file>`
+(không cần `.html`); dán vào `＋ Liên kết` + tick "Chỉ cho xem trong trang". **Đừng** dán link Claude
+Artifact — Claude chặn trang khác nhúng khung. File trong `/bai-giang/` là công khai: ai có link cũng mở
+được, không đăng nhập — đừng để đáp án riêng ở đó. (Kỹ thuật: `web/_headers` chỉ đặt `X-Frame-Options:
+DENY` cho 5 trang thật, không đặt ở `/*` — Cloudflare nối header trùng tên chứ không ghi đè.)
+
+**Sổ Bài Tập từng môn:** thanh đầu Quản trị có chip **Sổ Bài Tập ▾** bung ra từng cuốn — Hóa phân tích (bản
+web / sổ Claude), Hữu cơ, Lý, Vô cơ, Kĩ thuật — và 📚 Kệ Sổ. Mỗi cuốn là một sổ riêng trên Claude, kho câu
+hỏi riêng; thêm môn mới thì bảo Claude Code (chạy `build_mon.js` + publish + sửa thẻ trên Kệ).
+
 ## Bảo mật cơ bản — rà 12/9/2026
 
 **Đã có sẵn trong mã (kiểm từ ngoài):** mọi bảng dữ liệu đọc bằng khoá công khai đều trả rỗng hoặc bị từ chối (RLS); không chèn được
