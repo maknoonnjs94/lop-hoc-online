@@ -7,6 +7,14 @@
 # bài giảng riêng của giảng viên (dán ở "＋ Liên kết", tick "Chỉ cho xem trong trang") cần nhúng được vào
 # khung xem đó. Trang nào không có tên trong danh sách bên dưới (kể cả /bai-giang/*) thì không có
 # X-Frame-Options — không sao vì chỉ trang có đăng nhập/dữ liệu mới cần chặn nhúng.
+#
+# CÁC TRANG APP (ĐỔI THẬT LIÊN TỤC) DÙNG "no-store", KHÔNG DÙNG "no-cache" — đã dính thật (15/9): Cloudflare
+# vẫn `CF-Cache-Status: HIT` (giữ ở biên CDN) dù origin trả "no-cache, must-revalidate" — "no-cache" chỉ
+# YÊU CẦU xin lại máy chủ trước khi dùng bản cache, không CẤM cache; thiếu ETag/Last-Modified thì cũng
+# chẳng có gì để "revalidate", CDN cứ giữ nguyên bản cũ. "no-store" thì mọi tầng (CDN + trình duyệt) đều
+# hiểu là cấm tuyệt đối, không giữ gì cả — đúng ý cho các trang app tự nạp dữ liệu qua API, code đổi là
+# phải thấy ngay. /*.html vẫn để "no-cache" (áp cho /bai-giang/*.html — nội dung tĩnh ít đổi, cache một
+# chút cho nhanh là hợp lý; đổi bài giảng thì đặt tên file mới, đừng ghi đè tên cũ).
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
@@ -15,35 +23,35 @@
 /*.html
   Cache-Control: no-cache, must-revalidate
 /
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Frame-Options: DENY
 /tai-app
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Frame-Options: DENY
 /hoc
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Frame-Options: DENY
 /quan-tri
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: DENY
 /so-bai-tap
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: DENY
 /so-bai-tap-huu-co
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: DENY
 /so-bai-tap-hoa-ly
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: DENY
 /so-bai-tap-vo-co
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: DENY
 /so-bai-tap-ky-thuat
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow
   X-Frame-Options: DENY
