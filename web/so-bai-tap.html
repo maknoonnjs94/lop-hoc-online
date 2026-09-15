@@ -1985,6 +1985,7 @@
       menu.innerHTML =
         '<div class="who" id="sbtWho"></div>' +
         '<button type="button" id="sbtGiao">📤 Giao tài liệu này cho lớp</button>' +
+        (NS ? '<button type="button" id="sbtDonKho">🧹 Dọn câu dính từ Hóa phân tích</button>' : '') +
         '<a href="quan-tri.html">▦ Trang quản trị lớp</a>' +
         '<a href="hoc.html" target="_blank" rel="noopener">👁 Trang học (xem như sinh viên)</a>' +
         '<button type="button" class="out" id="sbtOut">⎋ Đăng xuất</button>';
@@ -1994,6 +1995,7 @@
       menu.addEventListener('click', function (e) { e.stopPropagation(); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') menu.hidden = true; });
       menu.querySelector('#sbtGiao').addEventListener('click', function () { menu.hidden = true; openSend(); });
+      if (NS) menu.querySelector('#sbtDonKho').addEventListener('click', function () { menu.hidden = true; donKhoDinh(); });
       mountNavGiao();
       menu.querySelector('#sbtOut').addEventListener('click', async function () {
         await sb.auth.signOut();
@@ -2049,6 +2051,59 @@
     out.theme = { preset: MON.key, wmText: lt.wmText || '', wmTextOpacity: lt.wmTextOpacity != null ? lt.wmTextOpacity : 0.06,
                   wmLogo: !!lt.wmLogo, wmLogoOpacity: lt.wmLogoOpacity != null ? lt.wmLogoOpacity : 0.05 };
     await docRef(ns('settings'), 'course').set(out);
+  }
+
+  /* Dọn câu/thùng-rác bị "cứu" NHẦM từ Hóa phân tích sang môn khác (sửa 16/9/2026). Trước khi
+     localStorage được tách theo môn (đoạn vá lsKey phía trên), mở sổ môn khác trên máy đã dùng sổ
+     gốc trước đó từng đọc trúng kho câu chung của trình duyệt — rồi cơ chế "câu chỉ có trên máy thì
+     đẩy lên ngay" (đợt 63 của app) tưởng đó là câu riêng của môn này nên ĐẨY THẬT lên kho trên
+     Supabase của môn này, không chỉ hiện sai trên màn hình. Cùng một mã câu (id tự sinh theo giờ +
+     số ngẫu nhiên, không thể trùng tự nhiên) xuất hiện ở CẢ kho gốc (không tiền tố) VÀ kho môn này
+     là dấu hiệu chắc chắn của lần đẩy nhầm đó. Chỉ xoá ở kho MÔN NÀY sau khi giáo viên xác nhận,
+     không đụng tới kho gốc. */
+  async function laySoDocId(collection) {
+    var r = await sb.from(TABLE).select('doc_id, data').eq('collection', collection);
+    if (r.error) throw new Error(r.error.message);
+    return r.data || [];
+  }
+  async function donKhoDinh() {
+    if (!NS) return;
+    try {
+      var goc = await laySoDocId('bank'), rieng = await laySoDocId(ns('bank'));
+      var gocT = await laySoDocId('trash'), riengT = await laySoDocId(ns('trash'));
+      var gocIds = {}; goc.forEach(function (d) { gocIds[d.doc_id] = true; });
+      var gocTIds = {}; gocT.forEach(function (d) { gocTIds[d.doc_id] = true; });
+      var dinhBank = rieng.filter(function (d) { return gocIds[d.doc_id]; });
+      var dinhTrash = riengT.filter(function (d) { return gocTIds[d.doc_id]; });
+      if (!dinhBank.length && !dinhTrash.length) {
+        alert('Không thấy câu nào dính từ Hóa phân tích. Kho của ' + MON.name + ' đang sạch.');
+        return;
+      }
+      var mau = dinhBank.slice(0, 5).map(function (d) {
+        var t = d.data && d.data.questionHtml ? String(d.data.questionHtml).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+        return '· ' + (t ? t.slice(0, 70) : d.doc_id);
+      }).join('\n');
+      var hoi = 'Thấy ' + dinhBank.length + ' câu' + (dinhTrash.length ? ' và ' + dinhTrash.length + ' mục thùng rác' : '')
+        + ' trong kho ' + MON.name + ' trùng mã với kho Hóa phân tích — gần như chắc chắn là câu bị đẩy nhầm sang trước đây.\n\n'
+        + (mau ? 'Vài câu ví dụ:\n' + mau + '\n\n' : '')
+        + 'Xoá số câu này khỏi kho ' + MON.name + '? Kho Hóa phân tích KHÔNG bị đụng tới.\n'
+        + '(Nếu câu nào trong đây thật ra do m tự soạn riêng cho ' + MON.name + ' mà trùng đúng mã — rất khó xảy ra — thì bấm Huỷ rồi báo lại.)';
+      if (!confirm(hoi)) return;
+      var okB = 0, okT = 0;
+      for (var i = 0; i < dinhBank.length; i++) {
+        var r1 = await sb.from(TABLE).delete().eq('collection', ns('bank')).eq('doc_id', dinhBank[i].doc_id);
+        if (!r1.error) okB++;
+      }
+      for (var j = 0; j < dinhTrash.length; j++) {
+        var r2 = await sb.from(TABLE).delete().eq('collection', ns('trash')).eq('doc_id', dinhTrash[j].doc_id);
+        if (!r2.error) okT++;
+      }
+      alert('Đã xoá ' + okB + '/' + dinhBank.length + ' câu' + (dinhTrash.length ? ' và ' + okT + '/' + dinhTrash.length + ' mục thùng rác' : '')
+        + ' khỏi kho ' + MON.name + '. Trang sẽ tải lại để thấy đúng.');
+      location.reload();
+    } catch (e) {
+      alert('Không dọn được: ' + (e && e.message || e));
+    }
   }
 
   document.addEventListener('submit', async function (e) {

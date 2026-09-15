@@ -41,6 +41,20 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — Câu hỏi Hóa phân tích không chỉ hiện sai, đã bị ĐẨY THẬT vào kho các môn khác — thêm nút dọn
+
+**T thấy gì (tiếp mục localStorage phía trên):** sau khi vá localStorage, mục "Tất cả câu hỏi" của sổ môn khác (đọc từ kho trên Supabase, không phải localStorage) vẫn còn câu của Hóa phân tích.
+
+**Vì sao vá localStorage chưa đủ:** app có sẵn cơ chế "câu chỉ có trên máy thì đẩy lên kho chung ngay" (đợt 63, tránh mất câu khi mạng chập chờn — xem `pushUpDocs`/`rescueLocalOnly` trong `so_bai_tap.html`). Trước khi vá localStorage, mở sổ môn khác đã đọc trúng kho câu CHUNG của trình duyệt (kho của Hóa phân tích) — cơ chế trên tưởng đó là câu riêng mới có trên máy của môn này, nên **đẩy thật** những câu đó lên đúng kho Supabase của môn đó (`<mã môn>:bank`). Không phải hiện sai màn hình — dữ liệu thật đã bị chép nhầm.
+
+**Đã thêm:** nút **🧹 Dọn câu dính từ Hóa phân tích** trong menu tài khoản (`shim_supabase.js`, chỉ hiện ở bản môn khác, không hiện ở bản gốc). Bấm vào: so mã câu (`doc_id`) giữa kho gốc `bank`/`trash` (không tiền tố) và kho môn này (`<mã môn>:bank`/`trash`) — mã trùng gần như chắc chắn là câu bị đẩy nhầm (mã tự sinh theo giờ + số ngẫu nhiên, không trùng tự nhiên). Hiện số lượng + vài câu ví dụ, hỏi xác nhận, chỉ xoá ở kho MÔN NÀY sau khi giáo viên đồng ý — không đụng tới kho Hóa phân tích.
+
+**Đã kiểm:** viết lại đúng logic so/xoá bằng `sb` giả trong Node — kho giả có 2 câu dính + 1 câu thật của Hữu cơ, chạy xong chỉ xoá đúng 2 câu dính (và 1 mục thùng rác dính), câu thật của Hữu cơ và cả kho gốc còn nguyên. Build lại 5 bản web, soát cú pháp `new Function()` không lỗi.
+
+**T cần làm:** mở từng sổ môn khác (Hữu cơ, Hóa lý, Vô cơ, Kĩ thuật — KHÔNG có ở sổ gốc), bấm avatar ☁ → 🧹 Dọn câu dính từ Hóa phân tích, đọc kỹ danh sách ví dụ trước khi bấm OK. Nếu chắc chắn không câu nào trong đó là m tự soạn riêng thì xác nhận xoá.
+
+---
+
 ## 2026-09-16 — Sửa lỗi lớn: các sổ web dùng lẫn kho câu hỏi của nhau
 
 **T thấy gì:** mở sổ Hóa hữu cơ (bản web) lại thấy bài tập của Hóa phân tích trong Kho bài tập.
