@@ -233,7 +233,7 @@ function taoCuaSo() {
   return win;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   /* trang không được xin quyền chia sẻ màn hình, micro, camera, vị trí… — chỉ giữ những gì cần để học */
   const choPhep = new Set(['fullscreen', 'clipboard-sanitized-write', 'clipboard-read', 'notifications']);
   session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => cb(choPhep.has(permission)));
@@ -241,6 +241,12 @@ app.whenReady().then(() => {
   if (session.defaultSession.setDisplayMediaRequestHandler) {
     session.defaultSession.setDisplayMediaRequestHandler((req, cb) => cb(null));   /* cấm getDisplayMedia */
   }
+
+  /* Xoá cache HTTP mỗi lần mở app: trang đổi liên tục (sửa lỗi, thêm tính năng), máy chủ đã trả
+     no-store nhưng Chromium (và cả CDN giữa đường) vẫn có thể ôm bản cũ nếu SV không tự bấm Ctrl+R
+     đúng lúc. App vốn đã tải lại toàn trang mỗi lần mở (không phải app native đọc dữ liệu cục bộ)
+     nên xoá cache ở đây không mất gì, chỉ chậm hơn vài trăm ms lúc mở. */
+  try { await session.defaultSession.clearCache(); } catch (e) {}
 
   taoMenu();
   const win = taoCuaSo();
