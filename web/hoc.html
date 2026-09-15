@@ -140,7 +140,11 @@
 
   /* ---- khung app ---- */
   .shell{ position:relative; display:grid; grid-template-columns:224px minmax(0,1fr); gap:24px; max-width:1600px; margin:0 auto; padding:20px }
-  .side{ position:sticky; top:20px; height:calc(100vh - 40px); min-height:600px; display:flex; flex-direction:column; background:color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--line); border-radius:var(--r-l); padding:22px 14px }
+  /* Cột trái cao đúng bằng màn hình; màn hình thấp thì CUỘN được trong cột (overflow-y) và không cho các khối
+     bên trong co lại (flex:none) — trước đây nav + linh vật bị ép, bong bóng đè lên đầu nhân vật, nút Trợ giúp
+     rơi ra ngoài đáy màn hình không bấm được. */
+  .side{ position:sticky; top:20px; height:calc(100vh - 40px); min-height:600px; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; background:color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--line); border-radius:var(--r-l); padding:22px 14px }
+  .side > *{ flex:none }
   .brand{ display:flex; align-items:center; gap:12px; font-size:17px; line-height:1.15; font-weight:800; color:var(--ink); text-decoration:none; padding:0 2px; letter-spacing:-.01em; white-space:nowrap }
   .brand img.logo{ width:64px; height:64px; border-radius:50%; object-fit:cover; flex:none; background:#fff; box-shadow:0 3px 10px rgba(20,60,90,.12) }
   .brand .ico-fallback{ display:none; place-items:center; width:38px; height:42px; background:var(--tint); border-radius:12px; color:var(--primary); transform:rotate(-8deg); flex:none }
@@ -153,10 +157,11 @@
   .nav button.on{ color:var(--primary); background:var(--tint); font-weight:800 }
   .nav button.on .ico{ color:var(--primary) }
   .nav button b{ margin-left:auto; min-width:22px; height:22px; padding:0 7px; border-radius:999px; background:var(--accent); color:#fff; font-size:11.5px; font-weight:800; display:grid; place-items:center }
+  /* Linh vật chỉ là ảnh trang trí — không còn bong bóng chữ; thông báo ngắn dồn lên banner đầu trang (baoChup) */
   .mascot{ margin-top:auto; padding:10px 4px 0; text-align:center }
-  .mascot .bub{ position:relative; margin:0 6px 10px; padding:10px 12px; border-radius:16px; background:var(--tint-alt); color:var(--ink-2); font-size:12.5px; line-height:1.45; text-align:left }
-  .mascot .bub::after{ content:""; position:absolute; left:28px; bottom:-8px; border:8px solid transparent; border-top-color:var(--tint-alt); border-bottom:0 }
   .mascot img{ display:block; width:128px; height:128px; object-fit:contain; margin:0 auto }
+  @media (max-height:860px){ .mascot img{ width:96px; height:96px } .nav{ margin-top:22px; gap:5px } .nav button{ min-height:48px; padding:12px 16px } }
+  @media (max-height:720px){ .mascot img{ display:none } }
   .mascot .help{ display:flex; align-items:center; gap:10px; width:100%; margin-top:10px; padding:11px 12px; border:0; background:transparent; color:var(--ink); border-radius:12px; font-weight:600 }
   .mascot .help:hover{ background:var(--tint-alt) }
   .mascot .help .ico{ font-size:20px; color:var(--ink-2) }
@@ -845,7 +850,6 @@
         <button type="button" data-view="hoi"><span class="ico" data-ico="help"></span>Hỏi đáp<b id="navHoiN" hidden>0</b></button>
       </nav>
       <div class="mascot">
-        <div class="bub" id="mascotSay">Có thắc mắc? Mình luôn ở đây để giúp bạn!</div>
         <img id="mascotImg" class="lic" data-lic="help" alt="" draggable="false">
         <button type="button" class="help" id="helpBtn"><span class="ico" data-ico="help"></span>Trợ giúp</button>
       </div>
@@ -865,6 +869,7 @@
             <button class="profbtn" id="avBtn" type="button" aria-haspopup="menu" aria-expanded="false"><span class="avatar"><span id="avIni">?</span><img id="avImg" alt=""></span><span id="avName">…</span></button>
             <div class="menu" id="avMenu" hidden role="menu">
               <div class="who"><b id="whoName"></b><span id="whoMail"></span><span id="whoMeta"></span></div>
+              <button type="button" id="hdBtn" role="menuitem"><span class="ico" data-ico="help"></span>Hướng dẫn sử dụng</button>
               <button type="button" id="pwBtn" role="menuitem"><span class="ico" data-ico="key"></span>Đổi mật khẩu</button>
               <button type="button" id="updBtn" role="menuitem" hidden><span class="ico" data-ico="refresh"></span><span id="updLbl">Kiểm tra cập nhật</span></button>
               <button type="button" id="outBtn" class="out" role="menuitem"><span class="ico" data-ico="out"></span>Đăng xuất</button>
@@ -1438,6 +1443,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('pwBox').hidden = true; baoChup('Đã đổi mật khẩu', 'Lần đăng nhập tới dùng mật khẩu mới.', 'ok');
   });
   $('helpBtn').addEventListener('click', function () { $('helpBox').hidden = false; });
+  /* "Hướng dẫn sử dụng" trong menu tài khoản — luôn tới được, kể cả màn hình hẹp (cột trái ẩn linh vật + nút Trợ giúp) */
+  $('hdBtn').addEventListener('click', function () { toggleMenu(false); $('helpBox').hidden = false; });
   $('helpClose').addEventListener('click', function () { $('helpBox').hidden = true; });
   $('helpBox').addEventListener('click', function (e) { if (e.target === $('helpBox')) $('helpBox').hidden = true; });
 
@@ -2373,11 +2380,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       });
     }, 60000);
   }
-  /* mascot ở cột trái thỉnh thoảng đổi câu */
-  var MASCOT = ['Có thắc mắc? Mình luôn ở đây để giúp bạn!', 'Cố lên! Bạn làm được mà!', 'Học một chút mỗi ngày, hơn học dồn một đêm.', 'Ctrl+K là tìm được mọi thứ đấy.', 'Bài xem xong sẽ có tick xanh nhé.'];
-  var mascotT = null;
-  function noiMascot(t) { $('mascotSay').textContent = t; clearTimeout(mascotT); mascotT = setTimeout(function () { $('mascotSay').textContent = MASCOT[Math.floor(Math.random() * MASCOT.length)]; }, 20000); }
-  setInterval(function () { if (me && !mascotT) $('mascotSay').textContent = MASCOT[Math.floor(Math.random() * MASCOT.length)]; }, 45000);
+  /* Câu chúc ngắn (nộp bài xong, chấm đúng…) hiện ở banner đầu trang — linh vật cột trái chỉ là ảnh, không có bong bóng chữ nữa */
+  function noiMascot(t) { baoChup(t, '', 'ok'); }
 
   /* ---------------- Ctrl+K / ô tìm ---------------- */
   function boDau(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd'); }
