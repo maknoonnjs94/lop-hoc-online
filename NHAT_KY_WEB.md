@@ -41,6 +41,40 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-15 (khuya) — Mục Trợ giúp trong app học thêm bản đồ 7 mục + sơ đồ Module 4 bước
+
+**T:** t đưa ra một "Bản Đồ Lớp Học" (infographic Claude) hướng dẫn dùng giao diện học sinh, rồi hỏi lại:
+*"thế cái bản đồ lớp học nó xuất hiện ở đâu, t nghĩ nên là mục hướng dẫn ở trong app chứ? để cho người
+mới hiểu"* — đúng, artifact Claude riêng tư/không nhúng được (đã kiểm ở mục trước), học sinh không xem
+được; phải đưa nội dung THẲNG vào app.
+
+**Làm:** không tạo mục mới — đưa nội dung vào đúng hộp `#helpBox` đã có sẵn (bấm nhân vật góc dưới trái
+→ nút Trợ giúp). Hộp cũ chỉ có 6 dòng gạch đầu; thêm hai khối mới ở đầu, dùng nguyên bộ icon `I{}` và
+biến màu `--primary/--accent/--ok/--primary-deep` sẵn có của app (tự đổi đúng theo 4 giao diện Mint/Sky/
+Peach/Lavender, không hard-code màu):
+- **Bảy mục ở cột trái** — 7 dòng gọn (icon + tên + 1 câu) cho Trang chủ/Khoá học/Bài giảng/Bài tập/Lịch
+  học/Tiến độ/Hỏi đáp.
+- **Sơ đồ Module 4 bước** (`.hb-pipe`) — Xem video → Đọc bài giảng HTML → Làm bài tập → Đối chiếu đáp án,
+  mỗi bước một icon + màu riêng theo token, nối bằng mũi tên; > 480px xếp ngang, ≤ 480px xếp dọc (mũi
+  tên tự xoay 90°).
+`.helpbox .card` thêm `max-height:88vh; overflow:auto` (nội dung dài hơn trước nhiều) — cẩn thận: đổi
+`width:min(560px,100%)` sang `width:min(560px,calc(100vw - 32px))` để tránh phần trăm bên trong grid
+item `place-items:center` không có track xác định.
+
+**Bẫy khi thử:** đo `.helpbox .card` bằng `document.querySelector` ra 0×0, tưởng CSS hỏng — hộp "Đổi mật
+khẩu" cũng dùng chung class `.helpbox`, `querySelector` (không phải `querySelectorAll`) chỉ lấy phần tử
+ĐẦU TIÊN khớp trong DOM, vớ đúng hộp kia (đang ẩn) chứ không phải `#helpBox`. Đổi sang `#helpBox .card`
+(id, không mơ hồ) mới đo đúng: 382 px trên khung 414 px (= calc(100vw-32px) khớp chính xác), cuộn được.
+Bài học: nhiều hộp thoại dùng chung class chỉ để định vị overlay — luôn đo bằng `#id` khi trang có nhiều
+hộp cùng lúc.
+
+**Thử:** `_test_hoc.html?g=nu` (giao diện Peach) — bấm Trợ giúp, cuộn hết hộp, 7 icon mục + 4 icon bước
+đều tô đúng, không lỗi console; ở 414 px bốn bước xếp dọc mũi tên quay đúng chiều; `ra-soat.js` sạch.
+
+**Việc t cần làm:** không — đã đẩy lên, học sinh mở app bấm Trợ giúp là thấy ngay.
+
+---
+
 ## 2026-09-15 (tối) — Sổ từng môn thành BẢN WEB trên giangduonghoahoc.com (kho riêng từng môn trong bảng `notebook`), menu Quản trị trỏ sang bản web
 
 **T:** *"các sổ bài tập làm thành link web cho t, chừa lại cái hóa phân tích thì để lại thôi, các sổ mới để

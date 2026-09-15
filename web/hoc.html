@@ -619,8 +619,29 @@
   .pallist .it > span{ min-width:0 } .pallist .it b{ display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .pallist .it small{ display:block; color:var(--muted); font-size:12px }
   .palhint{ padding:8px 14px 10px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); display:flex; gap:14px }
   .helpbox{ position:fixed; inset:0; z-index:96; background:rgba(11,17,22,.45); display:grid; place-items:center; padding:16px }
-  .helpbox .card{ width:min(560px,100%); padding:24px }
+  .helpbox .card{ width:min(560px,calc(100vw - 32px)); padding:24px; max-height:88vh; overflow:auto }
   .helpbox h3{ font-size:20px; margin-bottom:12px } .helpbox ul{ margin:0 0 14px; padding-left:20px; color:var(--ink-2); line-height:1.7 }
+  .hb-sub{ font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:0 0 8px }
+  .hb-nav{ display:flex; flex-direction:column; gap:1px; margin-bottom:16px }
+  .hb-nav .row{ display:flex; gap:11px; align-items:flex-start; padding:6px 4px }
+  .hb-nav .row .ic{ width:30px; height:30px; border-radius:9px; background:var(--tint); color:var(--primary); display:grid; place-items:center; flex:none }
+  .hb-nav .row .ic svg{ width:15px; height:15px }
+  .hb-nav .row b{ font-size:13.3px; font-weight:700; display:block }
+  .hb-nav .row span{ font-size:12.2px; color:var(--muted); line-height:1.5 }
+  .hb-pipe{ margin-bottom:16px; padding:14px 14px 12px; border:1px solid var(--line); border-radius:14px; background:var(--surface-2) }
+  .hb-pipe-head{ font-size:12.6px; color:var(--ink-2); line-height:1.55; margin-bottom:12px }
+  .hb-pipe-head b{ color:var(--ink) }
+  .hb-pipe-row{ display:flex; align-items:stretch; gap:5px; flex-wrap:wrap }
+  .hb-step{ flex:1 1 108px; min-width:108px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:10px 10px 9px; border-radius:11px; background:var(--surface) }
+  .hb-step .ic{ width:25px; height:25px; border-radius:8px; display:grid; place-items:center; color:#fff }
+  .hb-step .ic svg{ width:13px; height:13px }
+  .hb-step b{ font-size:11.6px; font-weight:700; line-height:1.25 }
+  .hb-step small{ font-size:10.8px; color:var(--muted); line-height:1.3 }
+  .hb-step.v1 .ic{ background:var(--primary) } .hb-step.v2 .ic{ background:var(--accent) }
+  .hb-step.v3 .ic{ background:var(--ok) } .hb-step.v4 .ic{ background:var(--primary-deep) }
+  .hb-arrow{ display:flex; align-items:center; color:var(--line-2); flex:none; padding-top:15px }
+  .hb-arrow svg{ width:13px; height:13px }
+  @media (max-width:480px){ .hb-pipe-row{ flex-direction:column } .hb-arrow{ transform:rotate(90deg); padding:0; align-self:center; margin:-2px 0 } }
 
   /* ---- icon minh hoạ màu (bộ LearningIcons 24 × 2 skin): <img> đổi tệp theo skin, không tô lại bằng CSS ---- */
   .lic{ display:block; flex:none; object-fit:contain; user-select:none; -webkit-user-drag:none; pointer-events:none }
@@ -939,9 +960,33 @@
 <div class="helpbox" id="helpBox" hidden>
   <div class="card">
     <h3>Dùng Giảng đường Hóa học thế nào<img class="lic" data-lic="help" alt="" draggable="false"></h3>
+
+    <div class="hb-sub">Bảy mục ở cột trái</div>
+    <div class="hb-nav">
+      <div class="row"><span class="ic ico" data-ico="home"></span><span><b>Trang chủ</b><span> — thẻ "Tiếp tục học" đưa bạn về đúng chỗ đang dở. Bài mới có nhãn <b>MỚI</b>.</span></span></div>
+      <div class="row"><span class="ic ico" data-ico="stack"></span><span><b>Khoá học</b><span> — học nhiều lớp thì đổi lớp ở đây.</span></span></div>
+      <div class="row"><span class="ic ico" data-ico="video"></span><span><b>Bài giảng</b><span> — chọn buổi ở cột trái, tài liệu ở cột phải. <kbd>↑</kbd><kbd>↓</kbd> đổi buổi.</span></span></div>
+      <div class="row"><span class="ic ico" data-ico="clipboard"></span><span><b>Bài tập</b><span> — mọi phiếu cần nộp và đáp án đã mở, gom về một chỗ.</span></span></div>
+      <div class="row"><span class="ic ico" data-ico="calendar"></span><span><b>Lịch học</b><span> — giờ buổi học sắp tới.</span></span></div>
+      <div class="row"><span class="ic ico" data-ico="chart"></span><span><b>Tiến độ</b><span> — đã xem, đã nộp bao nhiêu — tự biết mình học tới đâu.</span></span></div>
+      <div class="row"><span class="ic ico" data-ico="note"></span><span><b>Hỏi đáp</b><span> — hỏi ngay dưới tài liệu, hoặc hỏi chung cho lớp.</span></span></div>
+    </div>
+
+    <div class="hb-pipe">
+      <div class="hb-pipe-head">📦 Trong buổi, một số bài xếp thành <b>Module</b> — đi đúng mạch bốn bước:</div>
+      <div class="hb-pipe-row">
+        <div class="hb-step v1"><span class="ic ico" data-ico="video"></span><b>Xem video</b><small>có quỹ giờ riêng</small></div>
+        <span class="hb-arrow ico" data-ico="arrow"></span>
+        <div class="hb-step v2"><span class="ic ico" data-ico="link"></span><b>Đọc bài giảng HTML</b><small>chỉ xem, không tải</small></div>
+        <span class="hb-arrow ico" data-ico="arrow"></span>
+        <div class="hb-step v3"><span class="ic ico" data-ico="clipboard"></span><b>Làm bài tập</b><small>nộp ngay bên dưới</small></div>
+        <span class="hb-arrow ico" data-ico="arrow"></span>
+        <div class="hb-step v4"><span class="ic ico" data-ico="key"></span><b>Đối chiếu đáp án</b><small>có thể khoá tới giờ</small></div>
+      </div>
+    </div>
+
+    <div class="hb-sub">Vài điều nên nhớ</div>
     <ul>
-      <li><b>Trang chủ</b>: thẻ "Tiếp tục học" đưa bạn về đúng chỗ đang dở. Bài mới có nhãn <b>MỚI</b>.</li>
-      <li><b>Bài giảng</b>: chọn buổi ở cột trái, tài liệu ở cột phải. <kbd>↑</kbd><kbd>↓</kbd> đổi buổi.</li>
       <li><kbd>Ctrl</kbd>+<kbd>K</kbd> tìm bất cứ thứ gì, gõ không dấu cũng ra. Đang mở tài liệu: <kbd>←</kbd><kbd>→</kbd> chuyển bài.</li>
       <li>Nút <b>Góc của bạn</b> ở thanh trên cùng đổi màu giao diện (4 mẫu), nhân vật, và tải ảnh thật của bạn làm ảnh đại diện.</li>
       <li>Tài liệu mang dấu chìm tên bạn. Chụp màn hình, quay, in đều được ghi nhận và báo cho giảng viên.</li>
