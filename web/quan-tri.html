@@ -134,6 +134,17 @@
   .citem.on{ background:var(--ink); border-color:var(--ink); color:var(--paper); font-weight:700 }
   .citem > span{ min-width:0 }
   .citem span.sub{ display:block; font-size:12px; opacity:.72; font-weight:400; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  /* mục Video bài giảng: sidebar Chủ đề trái + danh sách Module phải — dùng lại .citem/.clist (sidebar
+     lớp) và .card.ses/.mats/.mat (khung buổi/tài liệu) nên chỉ cần khai bố cục 2 cột ở đây. */
+  .lecwrap{ display:grid; grid-template-columns:240px minmax(0,1fr); gap:18px; align-items:start }
+  .lecwrap .clist{ border:1px solid var(--line); border-radius:var(--r-l); background:var(--surface); box-shadow:var(--shadow-1) }
+  .citem .topic-tools{ margin-left:auto; flex:none; display:flex; gap:2px; opacity:0; transition:opacity .12s }
+  .citem:hover .topic-tools, .citem.on .topic-tools{ opacity:1 }
+  .citem .topic-tools span{ width:24px; height:24px; border-radius:7px; display:grid; place-items:center; font-size:12px; background:rgba(127,127,127,.14); color:inherit; cursor:pointer }
+  .citem.on .topic-tools span{ background:rgba(255,255,255,.18) }
+  .citem .topic-tools span[aria-disabled="true"]{ opacity:.35; cursor:default }
+  @media (max-width:900px){ .lecwrap{ grid-template-columns:1fr } .lecwrap .clist{ display:flex; gap:6px; overflow-x:auto; padding:6px } .lecwrap .citem{ flex:none; width:auto; min-width:170px; margin:0 } }
+
   .tabs{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; padding:4px; background:var(--surface-2); border-radius:999px; width:max-content; max-width:100% }
   .tabs button{ padding:8px 15px; border-radius:999px; border:1px solid transparent; background:transparent; color:var(--muted); font-size:13.5px; font-weight:700; display:inline-flex; align-items:center; gap:6px }
   .tabs button:hover{ color:var(--ink) }
@@ -389,6 +400,7 @@
           <button data-tab="nop">Bài nộp</button>
           <button data-tab="hoi">Hỏi đáp <span class="pill" id="hoiN" hidden style="margin-left:4px">0</span></button>
           <button data-tab="bao">Cảnh báo <span class="pill off" id="baoN" hidden style="margin-left:4px">0</span></button>
+          <button data-tab="lec">🎬 Video bài giảng</button>
           <button data-tab="web">Trang công khai</button>
         </div>
         <div id="paneSes">
@@ -494,6 +506,23 @@
             Có sự kiện mới là báo ngay tại trang này, kể cả khi đang ở tab khác.
           </p>
         </div>
+        <div id="paneLec" hidden>
+          <div class="bar">
+            <b>Video bài giảng</b>
+            <span class="grow"></span>
+            <button class="btn primary" id="addTopicBtn">＋ Chủ đề mới</button>
+          </div>
+          <div class="lecwrap">
+            <div class="clist" id="topicList"></div>
+            <div id="moduleList"></div>
+          </div>
+          <p class="hint" style="margin-top:10px">
+            Mục riêng cho video quay sẵn xếp theo giáo trình — tách khỏi <b>Buổi học</b> (buổi vẫn dùng để điểm danh,
+            giao tài liệu, bài tập cho từng buổi lên lớp như trước, không đụng gì). Mỗi <b>Chủ đề</b> gom vài <b>Module</b>
+            nhỏ; mỗi Module thường có 1 video, thêm được 1 link bài giảng HTML (tick “Chỉ cho xem trong trang” để giấu bớt
+            link gốc, sinh viên không dễ tải).
+          </p>
+        </div>
         <div id="paneWeb" hidden>
           <div class="bar">
             <b>Trang công khai giangduonghoahoc.com</b>
@@ -582,6 +611,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   window.addEventListener('error', function (e) { ghiLoiKhach(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, { loai: 'error' }); });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; ghiLoiKhach((r && (r.message || r.reason)) || String(r), '', { loai: 'promise', ma: r && r.code }); });
   var classes = [], curClass = null, sessions = [], roster = [];
+  var topics = [], modules = [], curTopic = null;   /* v31: Chủ đề / Module video bài giảng */
 
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) {
@@ -793,6 +823,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     $('paneTheo').hidden = tab !== 'theo';
     $('paneNop').hidden = tab !== 'nop';
     $('paneHoi').hidden = tab !== 'hoi';
+    $('paneLec').hidden = tab !== 'lec';
     $('paneWeb').hidden = tab !== 'web';
     refreshPane();
   });
@@ -821,7 +852,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       $('roster').innerHTML = '';
       return;
     }
-    if (tab === 'ses') await loadSessions();
+    if (tab === 'lec') await loadTopics();
+    else if (tab === 'ses') await loadSessions();
     else if (tab === 'stu') await loadRoster();
     else if (tab === 'theo') await loadTheo();
     else await loadKho();
@@ -1094,12 +1126,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* ---------------- tài liệu ---------------- */
   function matById(id) {
-    for (var i = 0; i < sessions.length; i++) {
-      var m = (sessions[i].materials || []).filter(function (x) { return x.id === id; })[0];
-      if (m) { m._ses = sessions[i]; return m; }
+    var kho = sessions.concat(modules);   /* v31: tài liệu có thể thuộc buổi HOẶC module */
+    for (var i = 0; i < kho.length; i++) {
+      var m = (kho[i].materials || []).filter(function (x) { return x.id === id; })[0];
+      if (m) { m._ses = kho[i]; return m; }
     }
     return null;
   }
+  /* v31: tải lại đúng danh sách chứa buổi/module này sau khi lưu-xoá-di chuyển tài liệu */
+  function refreshBuoiHoacModule(ses) { return (ses && ses.la_bai_giang) ? loadModules() : loadSessions(); }
   function fileKind(k) { return k === 'pdf' || k === 'lecture'; }
 
   /* =====================================================================
@@ -1285,6 +1320,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* Bật nhận bài nộp cho một tài liệu (thường là phiếu bài tập). */
   var coNopBai = true;
   /* Cho tải về: mặc định tắt. Bật thì sinh viên có nút Tải về ở tài liệu đó. */
+  /* v31: cho link ngoài (thường là bài giảng HTML riêng) — nhúng khung xem trong app, ẩn nút "Mở tab
+     mới", đỡ lộ link gốc để sinh viên tự tải. Thật ra vẫn xem được địa chỉ qua F12 nếu rành — đây là
+     ngăn thói quen tải chứ không phải khoá tuyệt đối, nói rõ trong ghi chú cho m biết. */
+  function oXemKhongTai(bat) {
+    return '<label class="f" style="display:flex;gap:9px;align-items:flex-start">'
+      + '<input type="checkbox" id="fXemKhongTai"' + (bat ? ' checked' : '') + ' style="width:auto;margin-top:4px">'
+      + '<span>Chỉ cho xem trong trang<small style="display:block;font-weight:400">Nhúng khung xem ngay trong app, ẩn nút "Mở tab mới" — sinh viên không dễ lấy link gốc để tải.'
+      + ' Dùng cho bài giảng HTML riêng của m. Người rành trình duyệt (F12) vẫn xem được địa chỉ — đây là ngăn thói quen tải, không phải khoá tuyệt đối.</small></span></label>';
+  }
   function oChoTai(bat) {
     return '<label class="f" style="display:flex;gap:9px;align-items:flex-start">'
       + '<input type="checkbox" id="fTai"' + (bat ? ' checked' : '') + ' style="width:auto;margin-top:4px">'
@@ -1309,7 +1353,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         + '<label class="f">Hoặc dán link ngoài<input id="fUrl" placeholder="https://www.youtube.com/watch?v=..."><small>YouTube, Drive, Vimeo… Link ngoài thì sinh viên vẫn có cách tải; video quan trọng nên đưa lên Stream. Tệp lớn (tới 30 GB) tải thẳng ở đây được — rớt mạng thì bấm tải lại đúng tệp đó, nó chạy tiếp chỗ dở.</small></label>';
       body += oChonQuy(0);
     } else if (kind === 'link') {
-      body += '<label class="f">Đường dẫn<input id="fUrl" placeholder="https://…"><small>Dán nguyên link là được.</small></label>';
+      body += '<label class="f">Đường dẫn<input id="fUrl" placeholder="https://…"><small>Dán nguyên link là được.</small></label>'
+        + oXemKhongTai(false);
     } else if (kind === 'text') {
       body += '<label class="f">Nội dung<textarea id="fBody" style="min-height:120px"></textarea></label>';
     } else if (kind === 'answer') {
@@ -1449,6 +1494,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local" value="' + toLocalInput(m.open_at) + '"></label>';
       if (m.kind === 'pdf' || m.kind === 'lecture') body += oNhanBai(!!m.nhan_bai, m.han_nop);
       if (m.kind === 'pdf' || m.kind === 'lecture') body += oChoTai(!!m.cho_tai);   /* đáp án: không bao giờ */
+      if (m.kind === 'link') body += oXemKhongTai(!!m.xem_khong_tai);
       dialog('Sửa ' + k.name, body, async function () { return saveMaterial(id, m._ses.id, m.kind); });
     });
   }
@@ -1462,6 +1508,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var nhanBai = $('fNhan') ? $('fNhan').checked : null;
     var hanNop = $('fHan') ? fromLocalInput(val('fHan')) : null;
     var choTai = $('fTai') ? $('fTai').checked : null;
+    var xemKhongTai = $('fXemKhongTai') ? $('fXemKhongTai').checked : null;
     var textBody = $('fBody') ? $('fBody').value : null;
 
     if (!id && !file && !url && !textBody) { msg($('dlgMsg'), 'Chưa có nội dung: chọn tệp, dán link hoặc gõ chữ.'); return false; }
@@ -1483,15 +1530,17 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if (quyGiay != null) thay.gioi_han_giay = quyGiay;
       if (nhanBai != null) { thay.nhan_bai = nhanBai; thay.han_nop = hanNop; }
       if (choTai != null) thay.cho_tai = choTai;
+      if (xemKhongTai != null) thay.xem_khong_tai = xemKhongTai;
       var u = await sb.from('materials').update(thay).eq('id', id);
       if (u.error) { msg($('dlgMsg'), u.error.message); return false; }
     } else {
-      var ses = sessions.filter(function (x) { return x.id === sesId; })[0];
+      var ses = sessions.filter(function (x) { return x.id === sesId; })[0] || modules.filter(function (x) { return x.id === sesId; })[0];   /* v31 */
       var order = ((ses && ses.materials) || []).reduce(function (m, x) { return Math.max(m, x.order_no || 0); }, 0) + 1;
       var dong = { session_id: sesId, kind: kind, title: title || (KIND[kind] || {}).name || '', open_at: openAt, order_no: order };
       if (quyGiay != null) dong.gioi_han_giay = quyGiay;
       if (nhanBai != null) { dong.nhan_bai = nhanBai; dong.han_nop = hanNop; }
       if (choTai != null) dong.cho_tai = choTai;
+      if (xemKhongTai != null) dong.xem_khong_tai = xemKhongTai;
       var ins = await sb.from('materials').insert(dong).select('id').single();
       if (ins.error) { msg($('dlgMsg'), ins.error.message); return false; }
       matId = ins.data.id;
@@ -1507,7 +1556,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       if (cu.error) { msg($('dlgMsg'), cu.error.message); return false; }
     }
     toast(id ? 'Đã lưu.' : 'Đã thêm tài liệu.');
-    await loadSessions();
+    await refreshBuoiHoacModule(ses || (id && matById(id) && matById(id)._ses));   /* v31 */
   }
 
   function delMaterial(id) {
@@ -1518,14 +1567,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         : '<p class="hint">Máy chủ chưa chạy <b>schema_v24</b> nên xoá là mất luôn. Tệp trong kho xoá riêng ở Supabase → Storage nếu cần.</p>',
       async function () {
         if (coThungRac) {
-          var loi = await xoaMem('materials', id, 'tài liệu', loadSessions);
+          var loi = await xoaMem('materials', id, 'tài liệu', function () { return refreshBuoiHoacModule(m._ses); });   /* v31 */
           if (loi) { msg($('dlgMsg'), loi); return false; }
           return;
         }
         var r = await sb.from('materials').delete().eq('id', id);
         if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
         toast('Đã xoá.');
-        await loadSessions();
+        await refreshBuoiHoacModule(m._ses);   /* v31 */
       }, coThungRac ? 'Vào thùng rác' : 'Xoá');
   }
 
@@ -1538,8 +1587,208 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var a = list[i], b = list[j];
     await sb.from('materials').update({ order_no: b.order_no || (j + 1) }).eq('id', a.id);
     await sb.from('materials').update({ order_no: a.order_no || (i + 1) }).eq('id', b.id);
-    await loadSessions();
+    await refreshBuoiHoacModule(m._ses);   /* v31 */
   }
+
+  /* =====================================================================
+     VIDEO BÀI GIẢNG (v31) — Chủ đề (lecture_topics) → Module (sessions la_bai_giang=true, gắn
+     topic_id). Tài liệu trong module (video Stream, link bài giảng HTML…) dùng lại NGUYÊN VẸN
+     addMaterial/editMaterial/saveMaterial/delMaterial/moveMaterial — đã tổng quát hoá ở trên để tìm
+     đúng trong `modules` và tải lại đúng `loadModules()` khi cần (xem matById/refreshBuoiHoacModule).
+     ===================================================================== */
+  async function loadTopics() {
+    var box = $('topicList');
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('lecture_topics').select('*').eq('class_id', curClass).order('order_no', { ascending: true });
+    if (r.error) {
+      box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message)
+        + (/lecture_topics/.test(r.error.message) ? '<br><small>Chưa chạy <b>schema_v31_video_bai_giang.sql</b> trong Supabase.</small>' : '') + '</div>';
+      $('moduleList').innerHTML = ''; topics = []; modules = []; return;
+    }
+    topics = r.data || [];
+    if (!curTopic || !topics.some(function (t) { return t.id === curTopic; })) curTopic = topics.length ? topics[0].id : null;
+    renderTopics();
+    await loadModules();
+  }
+  function renderTopics() {
+    var box = $('topicList');
+    if (!topics.length) { box.innerHTML = '<div class="empty" style="padding:16px 12px">Chưa có chủ đề nào — bấm “＋ Chủ đề mới”.</div>'; return; }
+    box.innerHTML = topics.map(function (t, i) {
+      return '<button type="button" class="citem' + (t.id === curTopic ? ' on' : '') + '" data-t="' + t.id + '">'
+        + '<span><b>' + esc(t.name || 'Chưa đặt tên') + '</b></span>'
+        + '<span class="topic-tools">'
+        + '<span data-ta="up" data-t="' + t.id + '"' + (i === 0 ? ' aria-disabled="true"' : '') + ' title="Lên">↑</span>'
+        + '<span data-ta="down" data-t="' + t.id + '"' + (i === topics.length - 1 ? ' aria-disabled="true"' : '') + ' title="Xuống">↓</span>'
+        + '<span data-ta="edit" data-t="' + t.id + '" title="Đổi tên">✎</span>'
+        + '<span data-ta="del" data-t="' + t.id + '" title="Xoá chủ đề">×</span>'
+        + '</span></button>';
+    }).join('');
+  }
+  $('addTopicBtn').addEventListener('click', function () {
+    if (!curClass) { toast('Chọn một lớp trước đã.'); return; }
+    dialog('Chủ đề mới', '<label class="f">Tên chủ đề<input id="fTitle" placeholder="Chủ đề 1: Mở đầu"></label>', async function () {
+      var name = val('fTitle'); if (!name) { msg($('dlgMsg'), 'Đặt tên đã.'); return false; }
+      var order = topics.reduce(function (m, t) { return Math.max(m, t.order_no || 0); }, 0) + 1;
+      var r = await sb.from('lecture_topics').insert({ class_id: curClass, name: name, order_no: order }).select('id').single();
+      if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+      curTopic = r.data.id;
+      toast('Đã thêm chủ đề.');
+      await loadTopics();
+    }, 'Thêm');
+  });
+  $('topicList').addEventListener('click', async function (e) {
+    var ta = e.target.closest('span[data-ta]');
+    if (ta) {
+      var act = ta.dataset.ta, tid = ta.dataset.t, t = topics.filter(function (x) { return x.id === tid; })[0]; if (!t) return;
+      if (act === 'edit') {
+        dialog('Đổi tên chủ đề', '<label class="f">Tên chủ đề<input id="fTitle" value="' + esc(t.name || '') + '"></label>', async function () {
+          var name = val('fTitle'); if (!name) { msg($('dlgMsg'), 'Đặt tên đã.'); return false; }
+          var r = await sb.from('lecture_topics').update({ name: name }).eq('id', tid);
+          if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+          toast('Đã lưu.'); await loadTopics();
+        });
+      } else if (act === 'del') {
+        var soMod = modules.filter(function (m) { return m.topic_id === tid; }).length;
+        dialog('Xoá chủ đề “' + esc(t.name || '') + '”?',
+          '<p class="hint">' + (soMod ? soMod + ' module bên trong sẽ KHÔNG bị xoá — chỉ mất gắn với chủ đề này (về lại chưa xếp chủ đề, sửa sau được).' : 'Chủ đề đang trống.') + '</p>',
+          async function () {
+            var r = await sb.from('lecture_topics').delete().eq('id', tid);
+            if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+            if (curTopic === tid) curTopic = null;
+            toast('Đã xoá chủ đề.'); await loadTopics();
+          }, 'Xoá');
+      } else if (act === 'up' || act === 'down') {
+        var i = topics.findIndex(function (x) { return x.id === tid; }), j = i + (act === 'up' ? -1 : 1);
+        if (i < 0 || j < 0 || j >= topics.length) return;
+        var a = topics[i], b = topics[j];
+        await sb.from('lecture_topics').update({ order_no: b.order_no || (j + 1) }).eq('id', a.id);
+        await sb.from('lecture_topics').update({ order_no: a.order_no || (i + 1) }).eq('id', b.id);
+        await loadTopics();
+      }
+      return;
+    }
+    var c = e.target.closest('button.citem[data-t]'); if (!c) return;
+    curTopic = c.dataset.t; renderTopics(); await loadModules();
+  });
+
+  /* ---- Module: một dòng sessions, la_bai_giang=true, gắn topic_id ---- */
+  async function loadModules() {
+    var box = $('moduleList');
+    if (!curTopic) { box.innerHTML = topics.length ? '<div class="card"><div class="empty">Chọn một chủ đề ở cột trái.</div></div>' : ''; modules = []; return; }
+    box.innerHTML = '<div class="empty">Đang tải…</div>';
+    var r = await sb.from('sessions')
+      .select('*, materials(id, kind, title, open_at, order_no, created_at, gioi_han_giay, cho_tai, xem_khong_tai, deleted_at)')
+      .eq('class_id', curClass).eq('la_bai_giang', true).eq('topic_id', curTopic).order('no', { ascending: true });
+    if (r.error) { box.innerHTML = '<div class="empty">Lỗi: ' + esc(r.error.message) + '</div>'; modules = []; return; }
+    modules = (r.data || []).filter(function (s) { return !s.deleted_at; });
+    modules.forEach(function (s) { s.materials = (s.materials || []).filter(function (m) { return !m.deleted_at; }); });
+    renderModules();
+  }
+  function renderModules() {
+    var box = $('moduleList');
+    if (!modules.length) {
+      box.innerHTML = '<div class="card steps"><h3>Chủ đề này chưa có module nào</h3>'
+        + '<p class="lead">Module là một video (kèm được 1 link bài giảng HTML). Bấm ＋ Module mới bên dưới.</p></div>'
+        + '<div class="bar" style="margin-top:12px"><button class="btn primary" id="addModBtn">＋ Module mới</button></div>';
+      $('addModBtn').addEventListener('click', addModuleDialog); return;
+    }
+    box.innerHTML = '<div class="bar" style="margin-bottom:10px"><span class="grow"></span><button class="btn primary" id="addModBtn">＋ Module mới</button></div>'
+      + modules.map(function (s, si) {
+        var mats = (s.materials || []).slice().sort(function (a, b) { return (a.order_no || 0) - (b.order_no || 0); });
+        return '<details class="card ses"' + (si === 0 ? ' open' : '') + ' data-s="' + s.id + '">'
+          + '<summary><span class="no">' + (si + 1) + '</span>'
+          + '<span class="t"><b>' + esc(s.title || 'Chưa đặt tên') + '</b><span>' + mats.length + ' tài liệu</span></span>'
+          + '<span class="pill ' + (s.published ? 'on' : 'off') + '">' + (s.published ? 'Đã mở' : 'Nháp') + '</span>'
+          + '</summary>'
+          + '<div class="mats">'
+          + '<div class="bar" style="margin:4px 0 8px">'
+          + '  <button class="btn sm" data-a="pub-mod" data-s="' + s.id + '">' + (s.published ? '🙈 Chuyển về nháp' : '👁 Mở cho sinh viên') + '</button>'
+          + '  <button class="btn sm" data-a="edit-mod" data-s="' + s.id + '">✎ Sửa module</button>'
+          + '  <button class="btn sm danger" data-a="del-mod" data-s="' + s.id + '">Xoá module</button>'
+          + '</div>'
+          + (mats.length ? mats.map(function (m, i) {
+              var k = KIND[m.kind] || KIND.link;
+              return '<div class="mat ' + (k.cls || '') + '"><span class="ic ico">' + k.ic + '</span>'
+                + '<span class="tx"><b>' + esc(m.title || k.name) + '</b><span>' + k.name
+                + (m.kind === 'link' && m.xem_khong_tai ? ' · chỉ xem trong trang' : '')
+                + (m.open_at ? ' · mở ' + fmtWhen(m.open_at) : '') + '</span></span>'
+                + '<span class="acts">'
+                + '<button class="btn sm" data-a="up" data-m="' + m.id + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>'
+                + '<button class="btn sm" data-a="down" data-m="' + m.id + '"' + (i === mats.length - 1 ? ' disabled' : '') + '>↓</button>'
+                + '<button class="btn sm" data-a="edit-mat" data-m="' + m.id + '">✎</button>'
+                + '<button class="btn sm danger" data-a="del-mat" data-m="' + m.id + '">×</button>'
+                + '</span></div>';
+            }).join('') : '<div class="empty" style="padding:14px">Module này chưa có video/tài liệu.</div>')
+          + '<div class="addrow">'
+          + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="video">＋ Video</button>'
+          + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="link">＋ Link bài giảng HTML</button>'
+          + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="pdf">＋ Tệp PDF / ảnh</button>'
+          + '  <button class="btn sm" data-a="add-mat" data-s="' + s.id + '" data-k="text">＋ Ghi chú</button>'
+          + '</div></div></details>';
+      }).join('');
+    $('addModBtn').addEventListener('click', addModuleDialog);
+  }
+  function addModuleDialog() {
+    if (!curTopic) { toast('Chọn một chủ đề trước đã.'); return; }
+    var next = modules.reduce(function (m, s) { return Math.max(m, s.no || 0); }, 0) + 1;
+    dialog('Module mới',
+      '<label class="f">Module số<input id="fNo" type="number" value="' + next + '"></label>'
+      + '<label class="f">Tên module<input id="fTitle" placeholder="1.1 — Mở đầu về nồng độ"></label>'
+      + '<label class="f"><input type="checkbox" id="fPub" style="width:auto;display:inline;margin-right:6px">Mở cho sinh viên xem ngay<small>Chưa tick thì module ở dạng nháp, sinh viên không thấy gì.</small></label>',
+      async function () {
+        var title = val('fTitle'); if (!title) { msg($('dlgMsg'), 'Đặt tên module đã.'); return false; }
+        var r = await sb.from('sessions').insert({
+          class_id: curClass, title: title, no: Number(val('fNo')) || next,
+          la_bai_giang: true, topic_id: curTopic, published: $('fPub').checked
+        }).select('id').single();
+        if (r.error) { msg($('dlgMsg'), r.error.message + (/la_bai_giang/.test(r.error.message) ? ' — chưa chạy schema_v31_video_bai_giang.sql?' : '')); return false; }
+        toast('Đã thêm module.'); await loadModules();
+      }, 'Tạo module');
+  }
+  function editModule(id) {
+    var s = modules.filter(function (x) { return x.id === id; })[0]; if (!s) return;
+    dialog('Sửa module',
+      '<label class="f">Module số<input id="fNo" type="number" value="' + (s.no != null ? s.no : '') + '"></label>'
+      + '<label class="f">Tên module<input id="fTitle" value="' + esc(s.title || '') + '"></label>',
+      async function () {
+        var r = await sb.from('sessions').update({ no: Number(val('fNo')) || null, title: val('fTitle') }).eq('id', id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã lưu.'); await loadModules();
+      });
+  }
+  function delModule(id) {
+    var s = modules.filter(function (x) { return x.id === id; })[0]; if (!s) return;
+    dialog('Xoá module “' + esc(s.title || '') + '”?',
+      coThungRac
+        ? '<p class="hint">Module và mọi tài liệu trong đó vào <b>Thùng rác</b>: sinh viên hết thấy ngay, m khôi phục được trong 30 ngày (tab Buổi học → 🗑 Thùng rác).</p>'
+        : '<p class="hint">Máy chủ chưa chạy schema_v24 nên xoá là mất luôn. Tài liệu trong module cũng bị xoá.</p>',
+      async function () {
+        if (coThungRac) {
+          var loi = await xoaMem('sessions', id, 'module', loadModules);
+          if (loi) { msg($('dlgMsg'), loi); return false; }
+          return;
+        }
+        var r = await sb.from('sessions').delete().eq('id', id);
+        if (r.error) { msg($('dlgMsg'), r.error.message); return false; }
+        toast('Đã xoá module.'); await loadModules();
+      }, coThungRac ? 'Vào thùng rác' : 'Xoá');
+  }
+  $('moduleList').addEventListener('click', async function (e) {
+    var b = e.target.closest('button[data-a]'); if (!b) return;
+    e.preventDefault();
+    var a = b.dataset.a;
+    if (a === 'pub-mod') {
+      var s = modules.filter(function (x) { return x.id === b.dataset.s; })[0];
+      var r = await sb.from('sessions').update({ published: !s.published }).eq('id', s.id);
+      if (r.error) toast('Lỗi: ' + r.error.message);
+      else { toast(!s.published ? 'Đã mở cho sinh viên.' : 'Đã chuyển về nháp.'); await loadModules(); }
+    } else if (a === 'edit-mod') editModule(b.dataset.s);
+    else if (a === 'del-mod') delModule(b.dataset.s);
+    else if (a === 'add-mat') addMaterial(b.dataset.s, b.dataset.k);
+    else if (a === 'edit-mat') editMaterial(b.dataset.m);
+    else if (a === 'del-mat') delMaterial(b.dataset.m);
+    else if (a === 'up' || a === 'down') moveMaterial(b.dataset.m, a === 'up' ? -1 : 1);
+  });
 
   /* ---------------- kho tệp ---------------- */
   var khoRows = [];
@@ -2813,6 +3062,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + '<p class="hint" style="margin:8px 0 0">Tick sẵn các dòng <b>Khớp</b>. Dòng <b>Lệch tiền</b> vẫn duyệt được (ghi đúng số trên sao kê). <b>Chọn lớp</b>: em ấy học nhiều khoá mà nội dung không có viết tắt lớp — chọn tay.</p>';
   }
   $('dlgBody').addEventListener('click', function (e) { if (e.target.closest('#skDoi')) skDoiChieu(); });
+  $('dlgBody').addEventListener('click', async function (e) {
+    var b = e.target.closest('[data-mokhoa]'); if (!b) return;
+    if (!confirm('Mở khoá ngay cho sinh viên này? Xoá sạch lịch sử vi phạm canh gác — lần vi phạm tiếp theo (nếu có) sẽ tính lại từ đầu, khoá 3 ngày.')) return;
+    b.disabled = true; b.textContent = 'Đang mở…';
+    try {
+      var r = await sb.rpc('gv_mo_khoa_cg', { p_user: b.dataset.mokhoa });
+      if (r.error) throw new Error(r.error.message);
+      toast('Đã mở khoá.');
+      var p2 = b.closest('p'); if (p2) p2.innerHTML = '<span class="pill on">Đã mở khoá</span>';
+      await loadRoster();
+    } catch (err) { b.disabled = false; b.textContent = 'Mở khoá ngay'; toast('Lỗi: ' + (err && err.message || err)); }
+  });
   $('saoKeBtn').addEventListener('click', moSaoKe);
 
   function oHoSo(p) {
@@ -2822,6 +3083,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     var s = dong.length ? esc(dong.join(' · ')) : '';
     if (!p.onboarded_at) s += (s ? '<br>' : '') + '<span class="pill off" title="Sinh viên chưa đi qua bước khai danh tính lần đầu">chưa khai hồ sơ</span>';
     if (p.must_change_pw) s += ' <span class="pill" title="Lần đăng nhập tới sẽ bị bắt đổi mật khẩu">chưa đổi mật khẩu</span>';
+    /* v30: canh gác chụp/quay màn hình — chỉ hiện khi đang thật sự khoá, không hiện nếu đã hết hạn tự hết khoá */
+    if (p.cg_cam) s += ' <span class="pill off" title="Đã cấm vĩnh viễn do vi phạm canh gác nhiều lần">🔒 cấm vĩnh viễn</span>';
+    else if (p.cg_khoa_den && new Date(p.cg_khoa_den) > new Date()) s += ' <span class="pill off" title="Khoá tới ' + esc(new Date(p.cg_khoa_den).toLocaleString('vi-VN')) + '">🔒 đang khoá</span>';
     return s || '<small style="color:var(--muted)">(trống)</small>';
   }
   /* Gom mọi thứ về một sinh viên vào một chỗ: đã mở gì, xem bao lâu, nộp bài nào, hỏi câu gì.
@@ -2834,7 +3098,8 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       sb.from('bai_nop').select('material_id, nop_luc, cham_luc, diem, nhan_xet, tep').eq('user_id', uid),
       sb.from('cau_hoi').select('material_id, noi_dung, tao_luc, tra_loi').eq('user_id', uid).order('tao_luc', { ascending: false }),
       sb.from('screenshot_events').select('kind, material_title, at').eq('user_id', uid).order('at', { ascending: false }).limit(5),
-      sb.from('enrollments').select('class_id, joined_at, da_dong_at, so_tien, mien, han_dong, classes(name, hoc_phi, han_ngay, hoc_phi_tu)').eq('student', uid)
+      sb.from('enrollments').select('class_id, joined_at, da_dong_at, so_tien, mien, han_dong, classes(name, hoc_phi, han_ngay, hoc_phi_tu)').eq('student', uid),
+      sb.from('profiles').select('cg_muc, cg_khoa_den, cg_cam').eq('id', uid).maybeSingle()
     ]);
     var ses = (rs[0].data) || [], xem = (rs[1].data) || [], nop = (rs[2].data) || [], hoi = (rs[3].data) || [], bao = (rs[4].data) || [];
     var mat = {}, tongMat = 0;
@@ -2889,6 +3154,16 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
         }).join('') + '</ul>'
       : '<div class="trong">Chưa mở tài liệu nào.</div>';
 
+    /* v30: trạng thái khoá canh gác — chỉ hiện khối này khi có gì để nói (đã từng dính ít nhất 1 lần) */
+    var cgP = (rs[6] && rs[6].data) || {};
+    var cgDangKhoa = !!(cgP.cg_khoa_den && new Date(cgP.cg_khoa_den) > new Date());
+    if (cgP.cg_cam || cgDangKhoa || cgP.cg_muc > 0) {
+      o += '<h4>Canh gác chụp / quay màn hình</h4><p>'
+        + (cgP.cg_cam ? '<span class="pill off">Đã cấm vĩnh viễn</span>'
+            : cgDangKhoa ? '<span class="pill off">Đang khoá tới ' + esc(new Date(cgP.cg_khoa_den).toLocaleString('vi-VN')) + '</span>'
+            : '<span class="pill">Đã từng bị khoá ' + (cgP.cg_muc || 0) + ' lần · hiện không khoá</span>')
+        + ' <button type="button" class="btn btn-ghost" data-mokhoa="' + uid + '">Mở khoá ngay</button></p>';
+    }
     if (bao.length) {
       o += '<h4>Cảnh báo chụp màn hình</h4><ul>' + bao.map(function (b) {
         return '<li>' + esc(b.kind || '') + '<small>' + esc(b.material_title || '') + ' · ' + fmtWhen(b.at) + '</small></li>';
@@ -2904,10 +3179,10 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     /* hai hàng chờ (đăng ký mới, học phí) gom MỌI lớp — nạp trước, không phụ thuộc lớp đang chọn có sinh viên hay không (bẫy 12/9) */
     loadChoDangKy(); loadChoDuyet();
     var r = await sb.from('enrollments')
-      .select('student, joined_at, han_dong, da_dong_at, so_tien, mien, bao_chuyen_at, ghi_chu_hp, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)')
+      .select('student, joined_at, han_dong, da_dong_at, so_tien, mien, bao_chuyen_at, ghi_chu_hp, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at, cg_muc, cg_khoa_den, cg_cam)')
       .eq('class_id', curClass);
     coHocPhi = !(r.error && /han_dong|da_dong_at|so_tien|mien|bao_chuyen_at/.test(r.error.message || ''));
-    if (!coHocPhi) r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at)').eq('class_id', curClass);
+    if (!coHocPhi) r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role, gender, birth_year, major, must_change_pw, onboarded_at, cg_muc, cg_khoa_den, cg_cam)').eq('class_id', curClass);
     if (r.error && /gender|birth_year|major|must_change_pw|onboarded_at/.test(r.error.message || '')) {
       coHoSo = false;
       r = await sb.from('enrollments').select('student, joined_at, profiles(full_name, email, student_no, active, role)').eq('class_id', curClass);

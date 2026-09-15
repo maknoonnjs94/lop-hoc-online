@@ -38,8 +38,8 @@ const stub = `<script>
     profiles: [
       { id:'gv1', full_name:'Phạm Anh Ngọc', email:'gv@vnu.edu.vn', role:'admin', active:true },
       { id:'u1', full_name:'Nguyễn Minh Anh', email:'minhanh@vnu.edu.vn', role:'student', active:true, student_no:'23001234', gender:'nu', major:'Hóa dược', birth_year:2005, onboarded_at:d(-30*864e5), must_change_pw:false, avatar_path:'' },
-      { id:'u2', full_name:'Trần Quốc Bảo', email:'quocbao@vnu.edu.vn', role:'student', active:true, student_no:'23001235', gender:'nam', major:'Hóa học', birth_year:2005, onboarded_at:d(-20*864e5), must_change_pw:false, avatar_path:'' },
-      { id:'u3', full_name:'Lê Thu Hà', email:'thuha@vnu.edu.vn', role:'student', active:true, student_no:'23001236', gender:'nu', major:'Hóa dược', birth_year:2004, onboarded_at:null, must_change_pw:true, avatar_path:'' }
+      { id:'u2', full_name:'Trần Quốc Bảo', email:'quocbao@vnu.edu.vn', role:'student', active:true, student_no:'23001235', gender:'nam', major:'Hóa học', birth_year:2005, onboarded_at:d(-20*864e5), must_change_pw:false, avatar_path:'', cg_muc:1, cg_khoa_den:d(2*864e5), cg_cam:false },
+      { id:'u3', full_name:'Lê Thu Hà', email:'thuha@vnu.edu.vn', role:'student', active:true, student_no:'23001236', gender:'nu', major:'Hóa dược', birth_year:2004, onboarded_at:null, must_change_pw:true, avatar_path:'', cg_muc:3, cg_khoa_den:null, cg_cam:true }
     ],
     classes: [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9).', owner:'gv1', created_at:d(-60*864e5), hoc_phi: P.get('hp') === '0' ? undefined : 1500000, han_ngay: 14, hoc_phi_tu: d(-20*864e5) },
       { id:'c2', name:'Hóa hữu cơ K68', subject:'Hóa hữu cơ', archived:false, notice:'', owner:'gv1', created_at:d(-10*864e5), hoc_phi:1200000, han_ngay:14 }],
@@ -47,7 +47,9 @@ const stub = `<script>
       { id:'s1', class_id:'c1', no:5, title:'Chuẩn độ axit – bazơ', published:true, pinned:true, starts_at:d(2*36e5), held_on:null, note:'Đọc trước mục 5.2.', created_at:d(-2*864e5) },
       { id:'s2', class_id:'c1', no:4, title:'Cân bằng tạo phức', published:true, pinned:false, starts_at:null, held_on:'2026-09-01', note:'', created_at:d(-7*864e5) },
       { id:'s3', class_id:'c1', no:3, title:'Buổi nháp chưa mở', published:false, pinned:false, starts_at:null, held_on:null, note:'', created_at:d(-1*864e5) }
+    , { id:'lm1', class_id:'c1', no:1, title:'1.1 — Mở đầu', published:true, la_bai_giang:true, topic_id:'t1', created_at:d(-5*864e5) }
     ],
+    lecture_topics: [ { id:'t1', class_id:'c1', name:'Chủ đề 1: Mở đầu', order_no:1 } ],
     materials: [
       { id:'m4', session_id:'s1', kind:'lecture', title:'Bài giảng: chỉ thị màu', order_no:0, open_at:null, created_at:d(-2*864e5), gioi_han_giay:0, nhan_bai:false, han_nop:null },
       { id:'m1', session_id:'s1', kind:'pdf', title:'Phiếu bài tập buổi 5', order_no:1, open_at:null, created_at:d(-36e5), gioi_han_giay:0, nhan_bai:true, han_nop:d(3*864e5), cho_tai:false, o_tra_loi:[{ id:'oa', trang:1, x:29.3, y:18, w:18.2, h:2.4 },{ id:'ob', trang:1, x:15, y:25.9, w:18.2, h:2.4 },{ id:'oc', trang:1, x:15, y:33.8, w:11.4, h:2.4 },{ id:'od', trang:1, x:15, y:41.7, w:11.4, h:2.4 }] },
@@ -192,6 +194,7 @@ const stub = `<script>
   var DAPAN = { m1: { oa:{ dap_an:'0,08', sai_so:0.001 }, ob:{ dap_an:'phenolphtalein|phenolphthalein' }, oc:{ dap_an:'H2SO4' }, od:{ dap_an:'2' } } };
   function rpcChay(ten, a) {
     a = a || {};
+    if (ten === 'gv_mo_khoa_cg') { var pr = DB.profiles.filter(function (p) { return p.id === a.p_user; })[0]; if (pr) { pr.cg_muc = 0; pr.cg_khoa_den = null; pr.cg_cam = false; } return null; }
     if (ten === 'nhan_ban_buoi') { var goc = DB.sessions.filter(function (s) { return s.id === a.p_session; })[0]; var sid = moiId('se'); DB.sessions.push(Object.assign({}, goc, { id:sid, class_id:a.p_class, published:false, pinned:false, held_on:null, starts_at:null, created_at:new Date().toISOString() })); DB.materials.filter(function (m) { return m.session_id === a.p_session; }).forEach(function (m) { DB.materials.push(Object.assign({}, m, { id:moiId('ma'), session_id:sid })); }); return sid; }
     if (ten === 'bang_bai_nop') {
       var ra = [];

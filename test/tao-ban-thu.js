@@ -50,7 +50,10 @@ const stub = `<script>
     return a.replace(/[^a-z0-9]/g, '') === b.replace(/[^a-z0-9]/g, '') ? 'gan' : 'sai';
   }
 
-  var profile = { id:'u1', full_name: onb ? '' : (g === 'nu' ? 'Nguyễn Minh Anh' : 'Trần Quốc Bảo'), role:'student', active:true, gender: onb ? '' : g, theme:'', major: onb ? '' : 'Hóa dược', birth_year: onb ? null : 2005, student_no:'23001234', must_change_pw: onb, onboarded_at: onb ? null : d(-30*864e5) };
+  /* v30 canh gác leo thang — ?cgmuc=0|1|2 (đã từng dính mấy lần), ?cgkhoa=1 (đang khoá tạm sẵn), ?cgcam=1 (đã cấm) */
+  var cgMuc = Math.max(0, Math.min(2, Number(P.get('cgmuc')) || 0));
+  var profile = { id:'u1', full_name: onb ? '' : (g === 'nu' ? 'Nguyễn Minh Anh' : 'Trần Quốc Bảo'), role:'student', active:true, gender: onb ? '' : g, theme:'', major: onb ? '' : 'Hóa dược', birth_year: onb ? null : 2005, student_no:'23001234', must_change_pw: onb, onboarded_at: onb ? null : d(-30*864e5),
+    cg_muc: cgMuc, cg_khoa_den: P.get('cgkhoa') === '1' ? d(3 * 864e5) : null, cg_cam: P.get('cgcam') === '1' };
   var classes = [{ id:'c1', name:'Hóa phân tích K68', subject:'Hóa phân tích', archived:false, notice:'Tuần này học bù sáng thứ 7 (13/9). Mang máy tính cầm tay.' }];
   /* ?hp=chua_han|qua_han|da_dong|bao — học phí lớp c1 (v26); ?lop2=1 thêm lớp c2 không thu để thấy khoá theo từng lớp */
   var hpKieu = P.get('hp') || '';
@@ -71,7 +74,14 @@ const stub = `<script>
       { id:'m5', session_id:'s2', kind:'pdf', title:'Phiếu bài tập buổi 4', order_no:1, created_at:d(-7*864e5) },
       { id:'m6', session_id:'s2', kind:'text', title:'Ghi chú nhanh: hằng số bền', order_no:2, created_at:d(-7*864e5) } ] },
     { id:'s3', class_id:'c1', no:3, title:'Cân bằng axit – bazơ trong dung dịch', published:true, pinned:false, held_on:'2026-08-25', created_at:d(-14*864e5), materials:[
-      { id:'m7', session_id:'s3', kind:'pdf', title:'Phiếu bài tập buổi 3', order_no:1, created_at:d(-14*864e5) } ] } ];
+      { id:'m7', session_id:'s3', kind:'pdf', title:'Phiếu bài tập buổi 3', order_no:1, created_at:d(-14*864e5) } ] },
+    /* v31: module video bài giảng — buổi ẩn la_bai_giang=true, gắn topic_id */
+    { id:'lm1', class_id:'c1', no:1, title:'1.1 — Vì sao cần chuẩn độ', published:true, la_bai_giang:true, topic_id:'t1', created_at:d(-20*864e5), materials:[
+      { id:'lmm1', session_id:'lm1', kind:'video', title:'Video mở đầu', order_no:1, created_at:d(-20*864e5), gioi_han_giay:0 } ] },
+    { id:'lm2', class_id:'c1', no:2, title:'1.2 — Đường cong chuẩn độ (có bài giảng HTML)', published:true, la_bai_giang:true, topic_id:'t1', created_at:d(-19*864e5), materials:[
+      { id:'lmm2', session_id:'lm2', kind:'video', title:'Video 1.2', order_no:1, created_at:d(-19*864e5), gioi_han_giay:0 },
+      { id:'lmm3', session_id:'lm2', kind:'link', title:'Bài giảng HTML tương tác', order_no:2, created_at:d(-19*864e5), xem_khong_tai:true } ] } ];
+  var lectureTopics = [ { id:'t1', class_id:'c1', name:'Chủ đề 1: Mở đầu về chuẩn độ', order_no:1 } ];
   var views = [
     { material_id:'m2', session_id:'s1', last_at:d(-36e5), opens:2, progress:{ seconds:600, duration:1500 }, tong_giay: P.get('quy') === 'het' ? 3600 : 900 },
     { material_id:'m5', session_id:'s2', last_at:d(-6*864e5), opens:1, progress:{ page:3, pages:3, done:true } },
@@ -120,6 +130,18 @@ const stub = `<script>
   if (hoiCh === 'chuaghim') cauHoi = cauHoi.filter(function (c) { return !c.ghim; });
   var hoiSo = 0;
   /* cau_hoi: gửi câu hỏi mới thì phải thấy nó xuất hiện thật, không thì không thử được luồng */
+  /* v31: nội dung theo đúng material_id — cần cho lmm3 (link bài giảng HTML) trả về url thật */
+  var CONTENT_BY_ID = { lmm3: { url:'https://example.com/bai-giang-tuong-tac.html', storage_path:null, body:null } };
+  function qContent() {
+    var matId = null, o = {};
+    ['select','order','maybeSingle','upsert','update','insert','not','is','in','limit','single'].forEach(function (k) { o[k] = function () { return o; }; });
+    o.eq = function (k, v) { if (k === 'material_id') matId = v; return o; };
+    o.then = function (a, b) {
+      var data = CONTENT_BY_ID[matId] || (P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null }));
+      return Promise.resolve({ data:data, error:null }).then(a, b);
+    };
+    return o;
+  }
   function qHoi(){
     var o = q(cauHoi);
     o.insert = function (row) {
@@ -132,7 +154,7 @@ const stub = `<script>
   function q(data){ var o = {}; ['select','eq','order','maybeSingle','upsert','update','insert','not','is','in','limit','single'].forEach(function(k){ o[k] = function(){ return o; }; }); o.then = function(a, b){ return Promise.resolve({ data:data, error:null }).then(a, b); }; return o; }
   window.supabase = { createClient: function(){ return {
     auth: { getSession: function(){ return Promise.resolve({ data:{ session:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } } } }); }, onAuthStateChange: function(){}, signOut: function(){ alert('Đây là bản thử — thật thì sẽ đăng xuất.'); return Promise.resolve({}); }, signInWithPassword: function(){ return Promise.resolve({ data:{ user:{ id:'u1', email:'minhanh@vnu.edu.vn' } }, error:null }); }, updateUser: function(){ return Promise.resolve({ data:{}, error:null }); }, resetPasswordForEmail: function(){ return Promise.resolve({ error:null }); } },
-    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return qHoi(); if (t === 'trang_cong_khai') return q({ noi_dung:{ zalo:'0912 345 678' } }); if (t === 'sessions' && hpKieu === 'qua_han' && false) return q([]); if (t === 'material_contents') return q(P.get('st') === '1' ? { body:null, url:'stream:00000000000000000000000000000000', storage_path:null } : (coO ? { body:null, url:null, storage_path:'phieu5.pdf' } : { body:'Nội dung thử nghiệm của tài liệu.', url:null, storage_path:null })); return q([]); },
+    from: function(t){ if (t === 'profiles') return q(profile); if (t === 'classes') return q(classes); if (t === 'sessions') return q(sessions); if (t === 'view_events') return q(views); if (t === 'bai_nop') return q(baiNop); if (t === 'cau_hoi') return qHoi(); if (t === 'trang_cong_khai') return q({ noi_dung:{ zalo:'0912 345 678' } }); if (t === 'lecture_topics') return q(lectureTopics); if (t === 'sessions' && hpKieu === 'qua_han' && false) return q([]); if (t === 'material_contents') return qContent(); return q([]); },
     rpc: function(name, a){ if (name === 'hoan_tat_ho_so') { Object.assign(profile, { full_name:a.p_full_name, gender:a.p_gender, birth_year:a.p_birth_year, major:a.p_major, onboarded_at:new Date().toISOString(), theme: a.p_gender === 'nu' ? 'peach' : 'mint' }); } if (name === 'da_doi_mat_khau') profile.must_change_pw = false; if (name === 'dat_anh_dai_dien') profile.avatar_path = a.p_path;
       if (name === 'nop_bai') { baiNop = [{ material_id:a.p_material, nop_luc:new Date().toISOString(), loi_nhan:a.p_loi_nhan, tep:a.p_tep, cham_luc:null, diem:null, nhan_xet:'' }]; }
       if (name === 'rut_bai') baiNop = [];
@@ -154,7 +176,15 @@ const stub = `<script>
           tra_loi:a.p_tra_loi, chi_tiet:ket, may_cham:true, cham_luc:new Date().toISOString(),
           diem: dg + '/' + soO, nhan_xet:'' }];
         return Promise.resolve({ data:{ ok:true, so_o:soO, so_dung:dg, so_gan:gan, chi_tiet:ket }, error:null });
-      } return Promise.resolve({ data:{ ok:true }, error:null }); },
+      }
+      if (name === 'canh_gac_leo_thang') {
+        var mNew = cgMuc + 1;
+        if (mNew >= 3) { profile.cg_muc = 3; profile.cg_cam = true; return Promise.resolve({ data:[{ muc_moi:3, khoa_den:null, cam:true }], error:null }); }
+        var den = new Date(Date.now() + (mNew === 1 ? 3 : 30) * 864e5).toISOString();
+        profile.cg_muc = mNew; profile.cg_khoa_den = den;
+        return Promise.resolve({ data:[{ muc_moi:mNew, khoa_den:den, cam:false }], error:null });
+      }
+      return Promise.resolve({ data:{ ok:true }, error:null }); },
     channel: function(){ var c = { on: function(){ return c; }, subscribe: function(){ return c; } }; return c; }, removeChannel: function(){},
     storage: { from: function(ten){ return { createSignedUrl: function(){ return Promise.resolve(ten === 'bainop' ? { data:null, error:{ message:'bản thử không có tệp thật' } } : (ten === 'tailieu' ? { data:{ signedUrl:'/_test_phieu.pdf' }, error:null } : { data:{ signedUrl: window.__anh || '' }, error:null })); }, upload: function(p, b){ window.__anh = URL.createObjectURL(b); return Promise.resolve({ data:{ path:p }, error:null }); }, remove: function(){ window.__anh = ''; return Promise.resolve({ data:[], error:null }); } }; } }
   }; } };

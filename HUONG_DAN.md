@@ -558,6 +558,56 @@ lưới chip tự xuống dòng (tên dài cắt ba chấm, nhãn *Tạm đóng*
 Mục **Khoá học** (menu trái) là nơi xem chi tiết: dải Tổng quan nằm ngang, rồi **thẻ Học phí của bạn** đầy đủ từng khoá (+ dòng tổng,
 Đóng gộp) — thẻ này dời từ trang chủ xuống đây — rồi thẻ từng khoá. Thử nhanh: `_test_hoc.html?nlop=7` (7 khoá tên dài, đủ kiểu học phí).
 
+## Canh gác chụp / quay màn hình — leo thang khoá 3 ngày → 30 ngày → vĩnh viễn
+
+Cần chạy `schema_v30_canh_gac_leo_thang.sql` một lần (`/api/trang-thai` → `v30_canh_gac: true`).
+
+Trang học đã canh gác từ trước — **chỉ tính khi SV thật sự bấm**: PrintScreen, Win+Shift+S (dò qua mất
+tiêu điểm đúng nhịp phím), phần mềm quay màn hình đang chạy (app tự dò), Ctrl+P, Ctrl+S. Việc chỉ **nghi**
+(mất tiêu điểm không rõ lý do, mở Snipping Tool/Game Bar mà chưa chắc đã bấm) chỉ báo nhẹ, **không tính**
+vào số lần. Mỗi trang mang dấu chìm tên + máy tính bắt buộc cho video — hai lớp phòng đã có sẵn; đây là
+lớp thứ ba: hình phạt thật khi đã dính nhiều lần.
+
+**Leo thang:** đủ 3 lần chắc chắn *liên tiếp* trong một phiên →
+
+1. **Lần đầu:** khoá tài khoản thật **3 ngày** (không phải chỉ đăng xuất — đăng nhập lại vẫn báo đang khoá
+   tới giờ nào, ngày nào).
+2. **Tái phạm** (hết hạn khoá, vào học lại, rồi lại dính đủ 3 lần): khoá **30 ngày**.
+3. **Tái phạm lần nữa:** **cấm vĩnh viễn**.
+
+Dòng cảnh báo lúc đang đếm (1/3, 2/3) luôn đoán trước đúng mức **sắp tới**: lần đầu doạ "3 ngày", sau khi
+đã dính 1 lần thì doạ "30 ngày", dính 2 lần thì doạ "vĩnh viễn" — không bao giờ doạ sai mức.
+
+**Chặn thật ở máy chủ**, không chỉ đăng xuất: khoá/cấm được ghi vào hồ sơ, và hàm `is_active()` (RLS của
+buổi học/tài liệu/nội dung đều gọi hàm này) tự động trả `false` khi đang trong hạn khoá hoặc đã cấm — nên
+khoá xong là mất quyền xem hết, không cần vá từng bảng. Sinh viên không tự xoá khoá của mình được dù có
+rành kỹ thuật (có chốt bằng trigger, chỉ 2 hàm máy chủ mới sửa được 3 cột này). **Giảng viên tự thử trang**
+lỡ dính 3 lần thì chỉ đăng xuất như trước — không bị khoá (máy chủ tự bỏ qua nếu không phải vai trò sinh viên).
+
+**Mở khoá tay (ân xá / sửa nhầm):** Quản trị → tab Sinh viên → dòng có 🔒 *đang khoá*/*cấm vĩnh viễn* → bấm
+vào tên → hộp Hồ sơ có mục *Canh gác chụp / quay màn hình* → **Mở khoá ngay** (hỏi lại trước khi làm) —
+xoá sạch lịch sử, lần vi phạm sau tính lại từ đầu (khoá 3 ngày). Cột *Hồ sơ* trong danh sách lớp cũng hiện
+pill 🔒 ngay khi đang khoá, để không cần mở từng hồ sơ mới biết.
+
+## Video bài giảng — Chủ đề → Module (mục riêng, tách khỏi Buổi học)
+
+Cần chạy `schema_v31_video_bai_giang.sql` một lần (`/api/trang-thai` → `v31_video_bai_giang: true`).
+
+Mục **🎬 Video bài giảng** (menu trái của SV, tab riêng trong Quản trị) dành cho video quay sẵn xếp
+theo giáo trình — xem lúc nào cũng được, không cần đúng buổi lên lớp. **Buổi học** vẫn y nguyên: điểm
+danh, giao tài liệu, bài tập cho buổi lên lớp — hai mục không đụng nhau.
+
+- **Chủ đề** (VD: "Chủ đề 1: Mở đầu") gom vài **Module** nhỏ. Quản trị → tab Video bài giảng → cột trái
+  chọn/thêm/sửa/xoá/sắp thứ tự chủ đề, cột phải quản lý module của chủ đề đang chọn.
+- **Module** = một video (thêm được nhiều mục: video, link bài giảng HTML, PDF, ghi chú) — dùng lại
+  đúng khung "Thêm video" (Cloudflare Stream, quỹ giờ xem) như bên Buổi học, quen tay.
+- **Link bài giảng HTML**: thêm bằng nút *"＋ Link bài giảng HTML"* (thực ra là Liên kết thường, tick
+  ô **"Chỉ cho xem trong trang"**) — trang học nhúng khung xem có `sandbox`, **ẩn nút "Mở tab mới"** nên
+  sinh viên không tiện tải nguyên trang. **Không phải khoá tuyệt đối** — ai mở công cụ trình duyệt (F12)
+  vẫn thấy địa chỉ gốc trong mã nguồn trang; đây là ngăn thói quen bấm-tải-luôn, không phải mã hoá.
+- Sinh viên bấm vào thẻ Module là mở luôn video (hay mục đầu tiên); nút ◀ ▶ trong khung xem lướt đúng
+  các mục của module đó (không lẫn sang buổi khác).
+
 ## Bảo mật cơ bản — rà 12/9/2026
 
 **Đã có sẵn trong mã (kiểm từ ngoài):** mọi bảng dữ liệu đọc bằng khoá công khai đều trả rỗng hoặc bị từ chối (RLS); không chèn được

@@ -227,6 +227,19 @@
   .heading h1{ font-size:clamp(28px,3vw,38px); line-height:1.15; letter-spacing:-.025em; font-weight:800 }
   .heading p{ color:var(--muted); margin-top:6px; font-size:15px }
   /* ---------- Khoá học của tôi ---------- */
+  /* v31: mục Video bài giảng — Chủ đề rồi lưới Module, dùng lại ngôn ngữ .pcard/--tint/--line có sẵn */
+  .lectopic{ margin-bottom:26px } .lectopic:last-child{ margin-bottom:0 }
+  .lectopic h2{ font-size:16px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; gap:8px }
+  .lectopic h2 small{ font-weight:600; color:var(--muted); font-size:12.5px }
+  .lecgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px }
+  .leccard{ display:flex; flex-direction:column; gap:10px; text-align:left; padding:16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l); box-shadow:var(--shadow-1); cursor:pointer; font:inherit; color:inherit; transition:transform .12s,box-shadow .12s }
+  .leccard:hover{ transform:translateY(-2px); box-shadow:var(--shadow-2,var(--shadow-1)) }
+  .leccard .lc-ic{ width:40px; height:40px; border-radius:12px; display:grid; place-items:center; background:var(--tint); color:var(--primary); font-size:19px }
+  .leccard b{ display:block; font-size:14.5px; font-weight:700; line-height:1.3 }
+  .leccard .lc-sub{ font-size:12.5px; color:var(--muted); margin-top:2px }
+  .leccard .lc-pills{ display:flex; gap:6px; flex-wrap:wrap; margin-top:2px }
+  .leccard .lc-pills span{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:99px; background:var(--tint); color:var(--primary) }
+
   .khoas{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px }
   @media (max-width:900px){ .khoas{ grid-template-columns:1fr } }
   .kthe{ display:flex; flex-direction:column; gap:12px; cursor:pointer; transition:transform .12s, box-shadow .12s }
@@ -813,6 +826,7 @@
         <button type="button" data-view="home" class="on"><span class="ico" data-ico="home"></span>Trang chủ</button>
         <button type="button" data-view="khoa"><span class="ico" data-ico="stack"></span>Khoá học<b id="navKhoaN" hidden>0</b></button>
         <button type="button" data-view="lessons"><span class="ico" data-ico="video"></span>Bài giảng</button>
+        <button type="button" data-view="lec"><span class="ico" data-ico="video"></span>Video bài giảng</button>
         <button type="button" data-view="tasks"><span class="ico" data-ico="clipboard"></span>Bài tập<b id="navTaskN" hidden>0</b></button>
         <button type="button" data-view="schedule"><span class="ico" data-ico="calendar"></span>Lịch học</button>
         <button type="button" data-view="progress"><span class="ico" data-ico="chart"></span>Tiến độ</button>
@@ -868,6 +882,11 @@
             <aside class="sesnav" id="sesNav"></aside>
             <section class="sesmain" id="sesMain"></section>
           </div>
+        </section>
+
+        <section id="viewLec" hidden>
+          <div class="heading"><h1>Video bài giảng</h1><p>Video quay sẵn xếp theo giáo trình — xem lúc nào cũng được, không cần đúng buổi lên lớp.</p></div>
+          <div id="lecBody"></div>
         </section>
 
         <section id="viewTasks" hidden>
@@ -1004,6 +1023,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   window.addEventListener('error', function (e) { ghiLoiKhach(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno, { loai: 'error' }); });
   window.addEventListener('unhandledrejection', function (e) { var r = e.reason; ghiLoiKhach((r && (r.message || r.reason)) || String(r), '', { loai: 'promise', ma: r && r.code }); });
   var sessions = [], curSes = null, view = 'home';
+  var lecTopics = [], lecModules = [];   /* v31: Chủ đề / Module video bài giảng — tách khỏi sessions (Buổi học) */
   var views = {}, lanTruoc = 0, classNotice = '', rtChan = null, daNhacBuoi = {};
   var matList = [], matIdx = -1, tienDo = { timer: null, save: null };
   /* Ứng dụng máy tính gắn LopHocApp/ vào user agent.
@@ -1309,7 +1329,14 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   var lyDo = '';
   try { lyDo = sessionStorage.getItem('hoc-ly-do') || ''; sessionStorage.removeItem('hoc-ly-do'); } catch (e) {}
   if (lyDo === 'idle') msg($('loginMsg'), 'Đã tự đăng xuất vì không thấy thao tác nào trong 5 phút. Đăng nhập lại để tiếp tục.', 'info');
-  if (lyDo === 'chup') msg($('loginMsg'), 'Phiên học đã bị đóng vì thao tác chụp màn hình, in hoặc lưu lặp lại 3 lần. Sự việc đã được ghi nhận kèm tên bạn và báo cho giảng viên.', 'err');
+  if (lyDo === 'khoa_cg') {
+    var tinKhoaCG = ''; try { tinKhoaCG = sessionStorage.getItem('hoc-ly-do-tin') || ''; sessionStorage.removeItem('hoc-ly-do-tin'); } catch (e) {}
+    msg($('loginMsg'), tinKhoaCG || 'Tài khoản của bạn đang bị khoá do vi phạm quy định chống chụp/quay màn hình.', 'err');
+  }
+  if (lyDo === 'chup') {
+    var tinChup = ''; try { tinChup = sessionStorage.getItem('hoc-ly-do-tin') || ''; sessionStorage.removeItem('hoc-ly-do-tin'); } catch (e) {}
+    msg($('loginMsg'), tinChup || 'Phiên học đã bị đóng vì thao tác chụp màn hình, in hoặc lưu lặp lại 3 lần. Sự việc đã được ghi nhận kèm tên bạn và báo cho giảng viên.', 'err');
+  }
 
   if (!/^https:\/\/[a-z0-9-]+\.supabase\.co/.test(SUPABASE_URL)) {
     $('loginSub').textContent = 'Trang chưa được cấu hình.';
@@ -1442,6 +1469,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     /* Chưa có dòng hồ sơ (tài khoản tạo tay, trigger không chạy) → coi như sinh viên mới: vẫn phải đổi mật khẩu và khai. */
     profile = pr.data || { full_name: '', role: 'student', active: true, must_change_pw: true, onboarded_at: null, gender: '', theme: '' };
     if (profile.active === false) { alert('Tài khoản đang bị khoá. Liên hệ giảng viên.'); await sb.auth.signOut(); return; }
+    var lyDoKhoaCG = lyDoKhoaCanhGac(profile);   /* v30: kiểm cả lúc đăng nhập lại, không chỉ lúc vừa dính */
+    if (lyDoKhoaCG) {
+      try { sessionStorage.setItem('hoc-ly-do', 'khoa_cg'); sessionStorage.setItem('hoc-ly-do-tin', lyDoKhoaCG); } catch (e) {}
+      await sb.auth.signOut(); return;
+    }
     if (!laGV() && !TRONG_APP && REQUIRE_APP) { hienCanApp(); return; }
     var chot = await xinThietBi();
     if (!chot.ok) {
@@ -1837,7 +1869,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* bật đúng mục + thanh lớp theo view hiện tại — gọi ở cả goView lẫn renderView để đổi view bằng gán biến cũng đúng */
   function hienSection(v) {
     [].forEach.call($('nav').querySelectorAll('button[data-view]'), function (b) { b.classList.toggle('on', b.dataset.view === v); });
-    ['khoa', 'home', 'lessons', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
+    ['khoa', 'home', 'lessons', 'lec', 'tasks', 'schedule', 'progress', 'hoi', 'hocphi'].forEach(function (k) { $('view' + (k === 'hocphi' ? 'HocPhi' : k.charAt(0).toUpperCase() + k.slice(1))).hidden = k !== v; });
     $('classBar').style.display = (v === 'khoa' || classes.length < 2) ? 'none' : '';
   }
   function goView(v) {
@@ -1855,6 +1887,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     if (view === 'hocphi') { veHocPhi(); capNhatChuong(); return; }
     if (view === 'home') renderHome();
     else if (view === 'lessons') { renderNav(); renderMain(); }
+    else if (view === 'lec') renderLec();
     else if (view === 'tasks') renderTasks();
     else if (view === 'schedule') renderSchedule();
     else if (view === 'progress') renderProgress();
@@ -1891,11 +1924,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     hqDs = null;   /* đổi lớp hoặc có tin mới thì lấy lại hỏi đáp */
     var r = await sb.from('sessions').select('*, materials(*)').eq('class_id', curClass).eq('published', true);
     if (r.error) { $('homeGrid').innerHTML = '<div class="pcard" style="grid-column:1/-1"><div class="pempty">Không tải được danh sách buổi: ' + esc(r.error.message) + '</div></div>'; return; }
-    sessions = (r.data || []).sort(function (a, b) {
+    var tatCaSes = r.data || [];
+    /* v31: module video bài giảng là buổi ẩn (la_bai_giang=true) — tách hẳn khỏi Buổi học, không lẫn vào đây */
+    lecModules = tatCaSes.filter(function (s) { return s.la_bai_giang; });
+    sessions = tatCaSes.filter(function (s) { return !s.la_bai_giang; }).sort(function (a, b) {
       if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
       var d = mocHoatDong(b) - mocHoatDong(a);
       return d || ((b.no || 0) - (a.no || 0));
     });
+    try {
+      var rt = await sb.from('lecture_topics').select('*').eq('class_id', curClass).order('order_no', { ascending: true });
+      lecTopics = rt.error ? [] : (rt.data || []);
+    } catch (e) { lecTopics = []; }
     await taiLuotXem();
     await taiBaiNop();
     await taiHoiDaTra();
@@ -1906,6 +1946,54 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     renderView();
     if (moSau) { var ms = moSau; moSau = null; if (ms.ses) { curSes = ms.ses; goView('lessons'); } else if (ms.id) openMaterial(ms.id, ms.kind, ms.title); }
   }
+  /* =====================================================================
+     VIDEO BÀI GIẢNG (v31) — Chủ đề (lecTopics) → Module (lecModules, buổi ẩn la_bai_giang=true).
+     Bấm thẻ Module là mở luôn tài liệu đầu tiên trong khung xem sẵn có (openMaterial) — matList đặt
+     lại thành tài liệu của module đó nên nút ◀ ▶ trong khung xem lướt đúng trong module, không lẫn
+     sang buổi khác.
+     ===================================================================== */
+  function renderLec() {
+    var box = $('lecBody');
+    if (!lecModules.length) {
+      box.innerHTML = khoanhKhac('trong', 'Chưa có video bài giảng', 'Giảng viên chưa thêm chủ đề/module nào ở mục này — xem tạm ở Bài giảng theo buổi.', 'Xem Bài giảng', 'lessons');
+      return;
+    }
+    var theoChuDe = {};
+    lecModules.forEach(function (s) { var k = s.topic_id || '_'; (theoChuDe[k] = theoChuDe[k] || []).push(s); });
+    function sapNo(a, b) { return (a.no || 0) - (b.no || 0); }
+    var html = '';
+    lecTopics.forEach(function (t) {
+      var mods = (theoChuDe[t.id] || []).slice().sort(sapNo);
+      if (!mods.length) return;
+      html += '<div class="lectopic"><h2>' + esc(t.name || 'Chủ đề') + ' <small>' + mods.length + ' module</small></h2>'
+        + '<div class="lecgrid">' + mods.map(lecCardHtml).join('') + '</div></div>';
+    });
+    var chuaXep = (theoChuDe['_'] || []).slice().sort(sapNo);
+    if (chuaXep.length) html += '<div class="lectopic"><h2>Chưa xếp chủ đề</h2><div class="lecgrid">' + chuaXep.map(lecCardHtml).join('') + '</div></div>';
+    box.innerHTML = html || khoanhKhac('trong', 'Chưa có module nào mở', 'Các chủ đề hiện có đều chưa có module — quay lại sau nhé.', 'Xem Bài giảng', 'lessons');
+  }
+  function lecCardHtml(s) {
+    var now = Date.now();
+    var mats = (s.materials || []).filter(function (m) { return moKhoa(m, now); });
+    var xem = mats.filter(daXem).length;
+    var coHtml = mats.some(function (m) { return m.kind === 'link'; });
+    return '<button type="button" class="leccard" data-mod="' + s.id + '">'
+      + '<span class="lc-ic ico">' + I.video + '</span>'
+      + '<span><b>' + esc(s.title || 'Module') + '</b>'
+      + '<span class="lc-sub">' + (mats.length ? mats.length + ' mục' + (xem ? ' · đã xem ' + xem + '/' + mats.length : '') : 'Chưa có nội dung') + '</span></span>'
+      + (coHtml ? '<span class="lc-pills"><span>+ bài giảng HTML</span></span>' : '')
+      + '</button>';
+  }
+  $('lecBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mod]'); if (!b) return;
+    var s = lecModules.filter(function (x) { return x.id === b.dataset.mod; })[0]; if (!s) return;
+    var mats = (s.materials || []).filter(function (m) { return moKhoa(m, Date.now()); })
+      .sort(function (a, b2) { return (a.order_no || 0) - (b2.order_no || 0); });
+    if (!mats.length) { baoChup('Module chưa có nội dung', 'Giảng viên chưa thêm video hay tài liệu vào module này.', 'info'); return; }
+    matList = mats;
+    var first = mats[0], k = KIND[first.kind] || KIND.link;
+    openMaterial(first.id, first.kind, first.title || k.name);
+  });
   async function taiLuotXem() {
     views = {};
     try {
@@ -2559,8 +2647,9 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     hoiDaTra = (r.data || []).filter(function (q) { return q.tra_luc; });
   }
   function matById(id) {
-    for (var i = 0; i < sessions.length; i++) {
-      var ms = sessions[i].materials || [];
+    var kho = sessions.concat(lecModules);   /* v31: tài liệu có thể thuộc buổi HOẶC module video bài giảng */
+    for (var i = 0; i < kho.length; i++) {
+      var ms = kho[i].materials || [];
       for (var j = 0; j < ms.length; j++) if (ms[j].id === id) return ms[j];
     }
     return null;
@@ -3141,8 +3230,15 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       watermark(body.querySelector('.vstage')); if (yt) theoDoiYouTube(body.querySelector('iframe'), id); return;
     }
     if (c.url && !c.storage_path) {
-      body.innerHTML = '<div class="vstage"><iframe referrerpolicy="strict-origin-when-cross-origin"></iframe><p class="vhint">Trang không hiện được thì mở bằng nút bên dưới.</p><p style="text-align:center;margin-top:10px"><a class="btn sec" target="_blank" rel="noopener">Mở ở tab mới</a></p></div>';
-      body.querySelector('iframe').src = c.url; body.querySelector('a.btn').href = c.url; return;
+      /* v31: material.xem_khong_tai (đặt trong Quản trị khi thêm Liên kết) → nhúng khung xem có sandbox,
+         ẩn nút Mở tab mới, đỡ lộ link gốc để tải. Không phải khoá tuyệt đối — ai mở F12 vẫn thấy địa chỉ,
+         chỉ ngăn thói quen tải bằng một cú bấm. */
+      var mLink = matById(id), khongTai = !!(mLink && mLink.xem_khong_tai);
+      body.innerHTML = '<div class="vstage"><iframe' + (khongTai ? ' sandbox="allow-scripts allow-same-origin"' : '') + ' referrerpolicy="strict-origin-when-cross-origin"></iframe>'
+        + (khongTai ? '' : '<p class="vhint">Trang không hiện được thì mở bằng nút bên dưới.</p><p style="text-align:center;margin-top:10px"><a class="btn sec" target="_blank" rel="noopener">Mở ở tab mới</a></p>') + '</div>';
+      body.querySelector('iframe').src = c.url;
+      var lb = body.querySelector('a.btn'); if (lb) lb.href = c.url;
+      return;
     }
     var sig = await sb.storage.from('tailieu').createSignedUrl(c.storage_path, 3600);
     if (sig.error) { body.innerHTML = '<div class="vload">Không mở được tệp: ' + esc(sig.error.message) + '</div>'; return; }
@@ -3338,10 +3434,42 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     clearTimeout(shotTimer); shotTimer = setTimeout(function () { $('shot').hidden = true; }, kieu === 'info' || kieu === 'ok' ? 6000 : 10000);
   }
   function xoaClipboard() { try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(' ').then(function () {}, function () {}); } catch (e) {} }
+  /* v30: mức phạt SẮP TỚI nếu đủ 3 lần lần này — lần đầu doạ 3 ngày, đã dính 1 lần thì doạ 30 ngày,
+     đã dính 2 lần thì doạ vĩnh viễn. profile.cg_muc chưa có (chưa chạy schema_v30) thì coi như 0. */
+  function tenMucKeTiep(p) {
+    var m = (p && p.cg_muc) || 0;
+    return m <= 0 ? '3 ngày' : (m === 1 ? '30 ngày' : 'vĩnh viễn');
+  }
+  /* v30: tài khoản đang bị khoá tạm / cấm hẳn thì trả về câu báo, không thì trả về rỗng */
+  function lyDoKhoaCanhGac(p) {
+    if (!p) return '';
+    if (p.cg_cam) return 'Tài khoản của bạn đã bị CẤM VĨNH VIỄN do vi phạm quy định chống chụp/quay màn hình nhiều lần liên tiếp. Liên hệ giảng viên nếu có thắc mắc.';
+    if (p.cg_khoa_den) {
+      var den = new Date(p.cg_khoa_den);
+      if (den > new Date()) return 'Tài khoản của bạn đang bị khoá tới ' + den.toLocaleString('vi-VN') + ' do vi phạm quy định chống chụp/quay màn hình. Vui lòng quay lại sau.';
+    }
+    return '';
+  }
   function viPhamChac(kind, tieuDe, phu) {
     soLanChac++; ghiSuKien(kind);
-    if (soLanChac >= 3) { try { sessionStorage.setItem('hoc-ly-do', 'chup'); } catch (e) {} sb.auth.signOut(); return; }
-    baoChup(tieuDe, phu + ' Lần ' + soLanChac + '/3 — đủ 3 lần, phiên học sẽ bị đóng.');
+    if (soLanChac >= 3) {
+      /* v30: giảng viên tự thử trang lỡ dính 3 lần thì chỉ đóng phiên như trước — không khoá tài
+         khoản (canh_gac_leo_thang() ở máy chủ cũng tự bỏ qua nếu không phải sinh viên, phòng hờ);
+         sinh viên thì xin khoá THẬT ở máy chủ rồi mới đăng xuất, kèm đúng câu báo mức vừa dính. */
+      if (laGV()) { try { sessionStorage.setItem('hoc-ly-do', 'chup'); } catch (e) {} sb.auth.signOut(); return; }
+      function dongPhienKhoa(tin) {
+        try { sessionStorage.setItem('hoc-ly-do', 'chup'); if (tin) sessionStorage.setItem('hoc-ly-do-tin', tin); } catch (e) {}
+        sb.auth.signOut();
+      }
+      sb.rpc('canh_gac_leo_thang').then(function (r) {
+        var row = (r.data && r.data[0]) || {};
+        if (row.cam) dongPhienKhoa('Tài khoản của bạn đã bị CẤM VĨNH VIỄN do vi phạm quy định chống chụp/quay màn hình 3 lần liên tiếp, đây là lần thứ ba dính. Sự việc đã được ghi nhận kèm tên bạn và báo cho giảng viên.');
+        else if (row.khoa_den) dongPhienKhoa('Tài khoản của bạn đã bị khoá tới ' + new Date(row.khoa_den).toLocaleString('vi-VN') + ' do vi phạm quy định chống chụp/quay màn hình 3 lần liên tiếp. Sự việc đã được ghi nhận kèm tên bạn và báo cho giảng viên.');
+        else dongPhienKhoa();   /* chưa chạy schema_v30 (RPC không trả gì) — về lại câu cũ */
+      }, function () { dongPhienKhoa(); });   /* chưa chạy schema_v30 (không có RPC) — về lại câu cũ */
+      return;
+    }
+    baoChup(tieuDe, phu + ' Lần ' + soLanChac + '/3 — đủ 3 lần liên tiếp' + (laGV() ? ', phiên học sẽ bị đóng.' : ', tài khoản sẽ bị khoá ' + tenMucKeTiep(profile) + '.'));
   }
   function nhacLanDau() { if (daNhacLanDau) return; daNhacLanDau = true; baoChup('Tài liệu được bảo vệ', 'Mọi trang đều mang dấu chìm tên bạn. Chụp màn hình, in hay lưu đều được ghi nhận và báo cho giảng viên.', 'info'); }
   function keoTieuDiem() { try { $('vBody').focus({ preventScroll: true }); } catch (e) {} }

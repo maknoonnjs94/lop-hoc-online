@@ -41,6 +41,103 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-15 — Video bài giảng: Chủ đề → Module, tách khỏi Buổi học; link HTML "chỉ cho xem" (schema_v31)
+
+**T:** *"t muốn m điều chỉnh giao diện tạo video bài giảng, t sẽ thêm video bài giảng dưới dạng chủ đề
+1 2 3, trong chủ đề sẽ có các module nhỏ hơn, để SV theo dõi, và chỗ để thêm đường link html bài giảng
+(nhớ chỉ cho quyền xem, chặn tải html)"*. Hỏi lại 1 câu trước khi làm: mục mới tách hẳn khỏi Buổi học,
+t chọn "mục mới tách biệt" (không gộp vào Buổi).
+
+**Kỹ thuật:** không dựng bảng "module" riêng — Module CHÍNH LÀ một dòng `sessions` có sẵn, đánh dấu
+`la_bai_giang=true` + gắn `topic_id` (bảng mới `lecture_topics`). Nhờ vậy Module dùng lại NGUYÊN VẸN
+toàn bộ hạ tầng materials/video Cloudflare Stream/quỹ giờ xem/RLS đã chạy tốt — không xây lại từ đầu,
+không đụng gì tới Buổi học đang chạy thật.
+
+`schema_v31_video_bai_giang.sql`: bảng `lecture_topics` (class_id, name, order_no) + RLS; `sessions`
+thêm `la_bai_giang`, `topic_id`; `materials` thêm `xem_khong_tai` (cho kind='link').
+
+`web/quan-tri.html`: tab mới **🎬 Video bài giảng** — cột trái Chủ đề (`.citem`/`.clist` dùng lại từ
+sidebar lớp), cột phải Module (`.card.ses`/`.mats`/`.mat` dùng lại từ khung buổi, cho quen mắt). Tổng
+quát hoá 5 chỗ trong `matById`/`saveMaterial`/`delMaterial`/`moveMaterial` từ "chỉ tìm/tải trong
+`sessions`" thành "tìm/tải đúng `sessions` HOẶC `modules`" (`refreshBuoiHoacModule`) — nhờ vậy nút
+"＋ Video" trong module gọi thẳng `addMaterial()` sẵn có (khung chọn/tải video Stream, quỹ giờ xem)
+không phải viết lại. Thêm `oXemKhongTai()` — ô tick "Chỉ cho xem trong trang" khi thêm/sửa Liên kết.
+
+`web/hoc.html`: nav mới "🎬 Video bài giảng"; `loadSessions()` tách `la_bai_giang=true` ra `lecModules`
+(mảng `sessions` cho Buổi học không đổi gì) + nạp thêm `lecture_topics`; `renderLec()` xếp module theo
+chủ đề thành lưới thẻ; bấm thẻ là `matList` = tài liệu của module đó rồi `openMaterial()` — dùng lại
+khung xem toàn màn hình có sẵn (◀ ▶, dấu chìm, quỹ giờ…). Nhánh "link ngoài" trong `moNoiDung` tra
+`matById(id).xem_khong_tai` → nhúng `<iframe sandbox="allow-scripts allow-same-origin">`, bỏ nút "Mở
+tab mới".
+
+**Bẫy khi viết:** dòng ghi chú trong `oXemKhongTai()` gõ nhầm dấu phẩy `,` thay vì `+` giữa hai chuỗi
+nối nhau — cú pháp vẫn hợp lệ (thành toán tử phẩy) nên `node --check` không bắt được, chỉ lộ ra lúc bấm
+thử: hộp thoại thêm Liên kết mất trắng ô tick, hiện chữ "NaN" (dòng sau bắt đầu bằng `+` bị hiểu thành
+dấu cộng một ngôi, ép chuỗi thành số). Nhắc: bẫy `$` trong replace đã có trong sổ tay, giờ thêm bẫy
+`,` thay `+` khi nối chuỗi nhiều dòng — phải BẤM THỬ THẬT trên trình duyệt, không chỉ tin `node --check`.
+
+**Thử:** `_test_hoc.html` — mục Video bài giảng hiện đúng Chủ đề 1 với 2 module; module có link
+`xem_khong_tai` mở đúng `sandbox="allow-scripts allow-same-origin"`, không có nút Mở tab mới; module chỉ
+video mở thẳng, không qua bước chọn. `_test_quan-tri.html` — tạo chủ đề, tạo module, thêm Liên kết tick
+"Chỉ cho xem" → material hiện "· chỉ xem trong trang" đúng; publish/nháp module đổi qua lại đúng; Buổi
+học (tab cũ) không đổi gì, vẫn 3 buổi + tài liệu như trước.
+
+**Việc t cần làm:** chạy `schema_v31_video_bai_giang.sql`, publish lại web.
+
+---
+
+## 2026-09-15 — Canh gác chụp/quay màn hình leo thang: 3 ngày → 30 ngày → vĩnh viễn (schema_v30)
+
+**T:** *"vẫn còn chức năng cảnh báo khi SV thật sự bấm nút chụp màn hình đấy hay quay màn hình đấy chứ,
+nhớ là chỉ khi bấm thôi đấy nhé, và kèm dòng thông báo nếu 3 lần liên tiếp sẽ bị khóa tài khoản 3 ngày,
+sau khi mở tái phạm sẽ bị khóa tiếp 30 ngày, lần 3 là ban vĩnh viễn luôn (…dọa khóa 3 ngày trước, các lần
+sau sẽ dọa với khung 30 và vĩnh viễn), làm thử t xem"*.
+
+**Rà lại bộ canh gác có sẵn (đợt 11/9):** đúng như t nhớ — `viPhamChac()` chỉ đếm khi THẬT SỰ bấm
+(PrintScreen, Win+Shift+S dò qua mất tiêu điểm đúng nhịp phím, phần mềm quay đang chạy, Ctrl+P/S); mất
+tiêu điểm không rõ lý do hay mở Snipping Tool/Game Bar chỉ ghi `nghi_chup`, không tính. Không đổi gì ở
+chỗ này — chỉ thêm hình phạt sau khi đủ 3 lần.
+
+`schema_v30_canh_gac_leo_thang.sql`:
+- `profiles` thêm `cg_muc` (0..3), `cg_khoa_den` (khoá tạm tới lúc này), `cg_cam` (cấm hẳn).
+- Sửa lại `screenshot_events` cho phép ghi `quay`/`win_snip`/`nghi_chup` (schema_v6 trước đây chỉ cho
+  `printscreen/in/luu` — 3 loại kia âm thầm bị chặn ghi từ lâu, không ai biết).
+- `is_active()` sửa lại (không thêm hàm mới) để cũng trả `false` khi đang khoá/đã cấm — RLS của
+  sessions/materials/material_contents đều gọi hàm này sẵn nên khoá xong tự chặn hết, không cần vá
+  từng policy.
+- Trigger `chan_tu_sua_cg`: chặn sinh viên tự sửa 3 cột `cg_*` qua update() thẳng (RLS tự-sửa-hồ-sơ
+  không giới hạn theo cột) — chỉ 2 hàm `canh_gac_leo_thang()`/`gv_mo_khoa_cg()` bật cờ
+  `app.cg_trusted` mới sửa được.
+- `canh_gac_leo_thang()`: sinh viên tự gọi cho chính mình khi đủ 3 lần; bỏ qua nếu không phải role
+  student (phòng giảng viên tự thử trang bị dính).
+- `gv_mo_khoa_cg(uuid)`: giảng viên mở khoá tay.
+
+`web/hoc.html`: `viPhamChac()` gọi RPC khi đủ 3 lần, dựng câu báo chính xác mức vừa dính rồi mới đăng
+xuất (không phải đăng xuất trước); dòng 1/3, 2/3 đổi theo `tenMucKeTiep(profile.cg_muc)`. `enter()` kiểm
+`lyDoKhoaCanhGac(profile)` ngay sau khi đọc hồ sơ — đăng nhập lại lúc còn hạn khoá vẫn bị chặn kèm đúng
+giờ hết hạn. Chặn lúc đăng nhập ban đầu định dùng `alert()` theo kiểu dòng `profile.active===false` sẵn
+có — thử mới thấy `alert()` xong rồi tải lại trang thì mất trắng câu báo, không đọng lại gì trên màn
+đăng nhập; đổi sang cùng kiểu `sessionStorage` + dòng báo màu đỏ như `idle`/`chup` đã dùng.
+
+`web/quan-tri.html`: roster thêm 3 cột khoá vào select hồ sơ; `oHoSo()` hiện pill 🔒 *đang khoá*/*cấm
+vĩnh viễn*; hộp Hồ sơ SV (`moHoSoSV`) thêm mục *Canh gác chụp / quay màn hình* + nút *Mở khoá ngay* (hỏi
+lại trước khi làm, theo lệ `hỏi trước khi xoá`).
+
+**Bẫy khi thử:** vá mock `canh_gac_leo_thang` vào `test/tao-ban-thu.js` làm mất một dấu `}` đóng nhánh
+`nop_bai_o` trước đó → cả trang thử vỡ (SyntaxError, `window.supabase` không hiện) — không phải lỗi ở
+`web/hoc.html` thật. Nhớ: mỗi lần vá bằng chuỗi khớp-thay, kiểm `node --check` cả file gốc VÀ file thử
+sau khi build, không chỉ file gốc.
+
+**Thử:** `_test_hoc.html?cgmuc=0|1|2` (đã dính mấy lần — câu doạ 1/3, 2/3 đúng mức 3 ngày/30 ngày/vĩnh
+viễn), `?cgkhoa=1` (đang khoá tạm — chặn ngay lúc vào, đúng giờ hết hạn), `?cgcam=1` (đã cấm). Dính đủ 3
+lần ở `cgmuc=1` ra đúng "khoá tới …" (30 ngày sau); ở `cgmuc=2` ra đúng "CẤM VĨNH VIỄN". `_test_quan-
+tri.html`: u2 (Trần Quốc Bảo) đang khoá tạm, u3 (Lê Thu Hà) đã cấm — pill hiện đúng trong danh sách lớp
+và trong hộp Hồ sơ; bấm Mở khoá ngay cho u2 → pill biến mất, danh sách tự tải lại.
+
+**Việc t cần làm:** chạy `schema_v30_canh_gac_leo_thang.sql`, publish lại web + Worker.
+
+---
+
 ## 2026-09-12 — Infographic số 3: Đăng ký tài khoản (một tài khoản học mọi khoá, mật khẩu = mã SV)
 
 M hỏi đã có ảnh hướng dẫn đăng ký chưa — chưa. `pr/infographic-dang-ky.html` → `.png` 2160×2700 (cùng công thức Chrome headless),
