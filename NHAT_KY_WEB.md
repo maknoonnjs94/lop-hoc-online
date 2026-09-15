@@ -41,6 +41,33 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-09-16 — Thẻ "Bài mới" trang chủ: chữ tràn lên mặt nhân vật; app 1.0.19 khoá chống chụp cả cửa sổ con
+
+**T (ảnh thẻ "BÀI MỚI · Liên kết - Lai hóa trong Hóa hữu cơ", chữ đè ngang mặt bạn nữ):** *"chữ vẫn đè lên
+ảnh linh vật, t muốn chữ xuất hiện ở chỗ khác, m không fix à"* + *"Khi mở bài giảng ở tab mới, vẫn có thể
+dùng snipping tool để chụp màn hình được"*. (Lượt trước t sửa linh vật CỘT TRÁI — đúng nhưng chưa đủ; cái
+"nhân vật" trong ảnh này là minh hoạ thẻ hero trang chủ.)
+
+**Thẻ hero:** `.hero .copy` 48% + `.hero .art` 60% = chồng 8%, mép ảnh tan tới 42% — tên bài ngắn thì đẹp
+(bản chốt 9/9 "tan + lật"), tên dài xuống 2 dòng là chữ đi thẳng vào mặt nhân vật. Sửa: copy 52% / art 48%
+(không chồng), `overflow-wrap:anywhere`, mép tan ngắn lại (0→22%) vì không còn phần chồng phải che. Đo ở
+1366×800 với đúng tên bài của t: `copy.right − art.left = 0 px`, tiêu đề 2 dòng nằm gọn cột chữ. Nhân vật
+vẫn bleed sát mép phải + tan vào nền — không phải hai ô rời như bản t từng chê.
+
+**App 1.0.19 (lỗi thật):** chỉ cửa sổ chính gọi `setContentProtection(true)`; Liên kết không tick "chỉ xem"
+có nút "Mở ở tab mới" → `setWindowOpenHandler` cho phép cùng tên miền → Electron mở CỬA SỔ MỚI không hề
+được khoá → Snipping Tool chụp được bài giảng. Sửa: gom cả bộ khoá (content protection, ẩn menu, UA, chỉ
+đi trong tên miền, chặn Ctrl+P/S/U, F12, DevTools) vào `khoaCuaSo(win)`, gọi cho cửa sổ chính và đệ quy
+cho mọi cửa sổ con qua `did-create-window` (+ `overrideBrowserWindowOptions` sandbox/preload/devTools:false).
+Link ngoài tên miền (YouTube, Drive) vẫn mở bằng trình duyệt thường → không khoá được, chấp nhận; bài giảng
+riêng nên để trong `/bai-giang` (cùng tên miền) hoặc tick "Chỉ cho xem trong trang" (mở ngay trong cửa sổ
+chính, không cần cửa sổ con). Tag `v1.0.19`, Windows tự cập nhật qua R2.
+
+**Việc t cần làm:** F5 thấy thẻ hero mới ngay; app chờ tự cập nhật 1.0.19 (hoặc tải lại từ /tai-app) rồi
+thử lại Snipping Tool trên bài giảng mở tab mới — phải ra đen.
+
+---
+
 ## 2026-09-16 — "Vẫn không đổi gì": cột trái không cuộn nên nút Trợ giúp rơi khỏi màn hình; bỏ bong bóng linh vật; no-store + app 1.0.18 tự xoá cache
 
 **T (ảnh chụp + 4 lần báo):** *"giao diện nhân vật hoạt hình cứ hiện thông báo chữ… che đi trong rất xấu"*,
