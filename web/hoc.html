@@ -2347,7 +2347,6 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
             var k = KIND[m.kind] || KIND.link, ten = m.title || k.name;
             baoChup('Giảng viên vừa giao: ' + ten, tenBuoi(s) + ' · ' + k.name + '. Bấm chuông để mở.', 'ok');
             thongBaoMay('Giảng đường Hóa học: có tài liệu mới', ten + ' — ' + tenBuoi(s));
-            noiMascot('Có bài mới: ' + ten);
           });
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: 'class_id=eq.' + curClass }, function (p) {
