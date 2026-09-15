@@ -65,11 +65,35 @@ ipcMain.handle('lophoc:recorders', () => Array.from(dangQuay));
    --------------------------------------------------------------------- */
 let autoUpdater = null;
 try { autoUpdater = require('electron-updater').autoUpdater; } catch (e) { autoUpdater = null; }
+/* Ghi nhật ký cập nhật ra %APPDATA%\lop-hoc\cap-nhat.log — khi "tải ngầm mãi không thấy gì" thì mở file này
+   là biết đang tải tới đâu, lỗi gì (trước 1.0.20 mọi lỗi cập nhật bị nuốt im lặng, người dùng mù tịt). */
+function ghiLogCapNhat(dong) {
+  try {
+    const fs = require('fs');
+    const p = path.join(app.getPath('userData'), 'cap-nhat.log');
+    fs.appendFileSync(p, new Date().toISOString() + ' ' + dong + '\n', 'utf8');
+  } catch (e) {}
+}
+function baoTrangCapNhat(win, info) {
+  try { if (win && !win.isDestroyed()) win.webContents.send('lophoc:update', info); } catch (e) {}
+}
 function batTuCapNhat(win) {
   if (!autoUpdater || process.platform !== 'win32' || !app.isPackaged) return;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  ghiLogCapNhat('mở app, bản ' + app.getVersion());
+  autoUpdater.on('checking-for-update', () => ghiLogCapNhat('đang hỏi kho'));
+  autoUpdater.on('update-available', (info) => { ghiLogCapNhat('có bản ' + info.version + ', bắt đầu tải'); baoTrangCapNhat(win, { state: 'co_ban', version: info.version }); });
+  autoUpdater.on('update-not-available', (info) => ghiLogCapNhat('đang là bản mới nhất (' + (info && info.version) + ')'));
+  let mocPct = -10;
+  autoUpdater.on('download-progress', (p) => {
+    const pct = Math.floor(p.percent || 0);
+    if (pct - mocPct >= 10 || pct >= 100) { mocPct = pct; ghiLogCapNhat('tải ' + pct + '% (' + Math.round((p.transferred || 0) / 1048576) + '/' + Math.round((p.total || 0) / 1048576) + ' MB)'); }
+    baoTrangCapNhat(win, { state: 'dang_tai', pct: pct, mb: Math.round((p.transferred || 0) / 1048576), tong: Math.round((p.total || 0) / 1048576) });
+  });
   autoUpdater.on('update-downloaded', (info) => {
+    ghiLogCapNhat('tải xong bản ' + info.version);
+    baoTrangCapNhat(win, { state: 'xong', version: info.version });
     if (win.isDestroyed()) return;
     dialog.showMessageBox(win, {
       type: 'info', title: 'Có bản mới',
@@ -78,7 +102,11 @@ function batTuCapNhat(win) {
       buttons: ['Cập nhật ngay', 'Để sau'], defaultId: 0, cancelId: 1
     }).then(r => { if (r.response === 0) autoUpdater.quitAndInstall(); });
   });
-  autoUpdater.on('error', () => {});                     /* mạng lỗi thì im lặng, lần sau thử lại */
+  autoUpdater.on('error', (e) => {
+    const loi = String((e && e.message) || e).slice(0, 200);
+    ghiLogCapNhat('LỖI: ' + loi);
+    baoTrangCapNhat(win, { state: 'loi', message: loi });
+  });
   const kiem = () => { try { autoUpdater.checkForUpdates().catch(() => {}); } catch (e) {} };
   setTimeout(kiem, 8000);
   setInterval(kiem, 30 * 60 * 1000);
@@ -239,8 +267,8 @@ function taoCuaSo() {
 
   win.loadURL(SITE_URL);
 
-  /* dò phần mềm quay mỗi 4 giây, dừng khi đóng cửa sổ */
-  const nhip = setInterval(() => doPhanMemQuay(win), 4000);
+  /* dò phần mềm quay mỗi 10 giây (1.0.20: giãn từ 4 s — chạy tasklist quá dày làm giật khi xem bài giảng HTML), dừng khi đóng cửa sổ */
+  const nhip = setInterval(() => doPhanMemQuay(win), 10000);
   win.on('closed', () => clearInterval(nhip));
   return win;
 }

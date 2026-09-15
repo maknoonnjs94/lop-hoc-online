@@ -13,5 +13,7 @@ contextBridge.exposeInMainWorld('lopHocApp', {
   getMachineId: function () { return ipcRenderer.invoke('lophoc:ma-may'); },
   /* số phiên bản app, và bấm tay "Kiểm tra cập nhật" từ menu tài khoản trên trang */
   getVersion: function () { return ipcRenderer.invoke('lophoc:version'); },
-  checkUpdate: function () { return ipcRenderer.invoke('lophoc:check-update'); }
+  checkUpdate: function () { return ipcRenderer.invoke('lophoc:check-update'); },
+  /* tiến trình tải bản mới: { state: 'co_ban' | 'dang_tai' | 'xong' | 'loi', pct, mb, tong, version, message } */
+  onUpdate: function (cb) { ipcRenderer.on('lophoc:update', function (e, info) { cb(info || {}); }); }
 });

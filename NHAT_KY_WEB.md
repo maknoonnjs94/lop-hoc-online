@@ -18,7 +18,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Trang quản trị** — Buổi học (xoá mềm, Hoàn tác, 🗑 Thùng rác giữ 30 ngày) / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
 - **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` — đang ở **đợt 85**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc.
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
-- **App máy tính 1.0.17** (tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
+- **App máy tính 1.0.20** (tag 16/9: hiện % tải bản mới, log cap-nhat.log; 1.0.19 khoá chụp cửa sổ con; 1.0.17 tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
 **SQL:** v9 → **v28** đều `true` trên `/api/trang-thai` (kiểm 12/9). **v30, v32** vừa thêm (15/9) — t cần chạy SQL rồi mới thấy `true`; **v31 không cần chạy nữa** (đổi thiết kế trước khi t kịp chạy — xem mục 15/9 ở dưới).
 **Tên miền riêng:** `https://giangduonghoahoc.com` chạy từ 11/9 (Cloudflare Registrar, Custom Domain tên gốc); workers.dev song song, app 1.0.16 vẫn trỏ workers.dev, `SITE_URL` trong mã đã đổi cho bản sau.
@@ -39,6 +39,24 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-16 — App 1.0.20: "đang tải ngầm" mà không thấy gì → hiện % tải, báo lỗi rõ, ghi log
+
+**T thấy gì:** bấm *Kiểm tra cập nhật* báo "Có bản 1.0.19 — đang tải ngầm" rồi im bặt, không bao giờ hỏi khởi động lại.
+
+**Nguyên nhân tìm được:** không phải kho hỏng — R2 có đủ `latest.yml` (1.0.19), `LopHoc-win.exe` (85 MB) và `.blockmap`. Vấn đề là **mù tịt**: bản 1.0.19 trở về trước nuốt mọi lỗi cập nhật (`autoUpdater.on('error', () => {})`) và không báo tiến trình. 85 MB qua mạng ~270 KB/s là 5–10 phút; đóng app giữa chừng là tải lại từ đầu, nên "chờ 1 phút rồi tắt" thì không bao giờ xong.
+
+**Sửa (app 1.0.20):**
+- `main.js` `batTuCapNhat`: bắt đủ sự kiện `checking / available / not-available / download-progress / downloaded / error`; gửi cho trang qua kênh `lophoc:update`; ghi `%APPDATA%\lop-hoc\cap-nhat.log` (mỗi 10 % một dòng, lỗi ghi nguyên văn) — lần sau kêu "không cập nhật" thì mở file này là biết.
+- `preload.js`: thêm `lopHocApp.onUpdate(cb)`.
+- `hoc.html`: thông báo "Đang tải bản mới · 40% (34/85 MB) — cứ để app mở", mục menu đổi thành "Đang tải bản mới · 40%", tải xong báo "Khởi động lại app", lỗi thì hiện nguyên văn + đường tải tay `/tai-app`.
+- Dò phần mềm quay giãn từ 4 s → 10 s (`tasklist` chạy dày làm giật khi xem bài giảng HTML; mất thêm 6 s mới phát hiện OBS, chấp nhận được).
+
+**Cách lên 1.0.20 cho máy đang kẹt:** tải tay `LopHoc-win.exe` ở `/tai-app`, chạy đè lên bản đang cài (không cần gỡ), mở app → menu tài khoản phải ghi *Kiểm tra cập nhật · bản 1.0.20*. Từ bản này trở đi tự cập nhật sẽ nhìn thấy được.
+
+**Chưa test được:** chỉ `node --check`; luồng tải thật phải chờ GitHub build xong (tag `v1.0.20`) rồi thử trên máy Windows thật.
+
 ---
 
 ## 2026-09-16 — Bài giảng HTML mở chậm + giật: /bai-giang bị "no-cache" tải lại cả gói mỗi lần, dấu chìm mix-blend-mode nặng GPU

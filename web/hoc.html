@@ -1460,6 +1460,20 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       else if (r.reason === 'khong_ho_tro') baoChup('Bản này không tự cập nhật', 'Đang chạy bản chưa đóng gói.', 'info');
       else baoChup('Chưa kiểm tra được', 'Kiểm tra mạng rồi thử lại. (' + (r.reason || '') + ')', 'info');
     });
+    /* app 1.0.20+: báo tiến trình tải bản mới ngay trên trang — trước đây "đang tải ngầm" rồi im bặt, không biết
+       tải tới đâu hay lỗi gì (85 MB, mạng chậm mất 5–10 phút; đóng app giữa chừng là tải lại từ đầu) */
+    if (typeof window.lopHocApp.onUpdate === 'function') {
+      var capNhatMoc = -10;
+      window.lopHocApp.onUpdate(function (u) {
+        if (u.state === 'co_ban') baoChup('Có bản ' + u.version + ' — đang tải', 'Cứ để app mở, tải xong sẽ hỏi khởi động lại. Đóng app giữa chừng là phải tải lại từ đầu.', 'info');
+        else if (u.state === 'dang_tai') {
+          if (u.pct - capNhatMoc >= 10 || u.pct >= 100) { capNhatMoc = u.pct; baoChup('Đang tải bản mới · ' + u.pct + '%', (u.mb || 0) + ' / ' + (u.tong || 0) + ' MB — cứ để app mở.', 'info'); }
+          $('updLbl').textContent = 'Đang tải bản mới · ' + u.pct + '%';
+        }
+        else if (u.state === 'xong') { $('updLbl').textContent = 'Đã tải xong bản ' + u.version; baoChup('Đã tải xong bản ' + u.version, 'Khởi động lại app để cập nhật.', 'ok'); }
+        else if (u.state === 'loi') baoChup('Không tải được bản mới', (u.message || '') + ' — thử lại sau, hoặc tải tay tại ' + APP_URL, '');
+      });
+    }
   }
 
   /* ---------------- khoá một thiết bị ---------------- */
