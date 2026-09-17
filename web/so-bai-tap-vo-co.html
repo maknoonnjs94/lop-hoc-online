@@ -2611,7 +2611,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 93 · bản Hóa vô cơ · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 95 · bản Hóa vô cơ · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6913,13 +6913,12 @@
          câu cách câu như trên màn hình, chỗ trống cuối trang cứ để trống. */
       void sheetEl.offsetWidth;
 
-      /* Đợt 93: KHÔNG còn 1 canvas khổng lồ cho cả tài liệu — html2canvas 1.4.1 tự dựng lại layout
-         bằng canvas riêng của nó, và canvas càng cao càng dễ vượt giới hạn bộ nhớ/kết cấu GPU của
-         máy đang chạy (đặc biệt máy yếu hơn desktop) mà không hề báo lỗi, chỉ render sai — càng sâu
-         trong canvas càng sai. Mỗi trang giờ tự chụp cửa sổ RIÊNG của mình (x/y/width/height của
-         html2canvas cắt đúng phần cần, trả về canvas nhỏ đúng 1 trang) — không phụ thuộc tài liệu
-         dài bao nhiêu trang nữa. Xem [[so-bai-tap-pdf-html2canvas]]. */
-      var pageContentWpx = Math.round(sheetRect.width * SCALE);
+      /* Đợt 94: đợt 93 (canvas riêng từng trang, cắt bằng y>0 của html2canvas) SAI HƯỚNG — có bằng
+         chứng thực nghiệm: html2canvas(sheetEl, {y: X, height: H}) với X > 0 vẽ hỏng phần cuối của
+         .ps gần đáy cửa sổ cắt (tử số hiện, mẫu số/chữ nối sau mất), dù {y:0, height: H} (chụp từ đầu)
+         luôn đúng. Quay lại 1 canvas duy nhất (y=0 — cách html2canvas hoạt động ổn định), cắt từng
+         trang bằng drawImage canvas 2D thường ở dưới, không gọi lại html2canvas với y > 0 nữa. */
+      var bigCanvas = await html2canvas(sheetEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
       var headerCanvas = await html2canvas(headerEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
       /* footer chụp riêng cho TỪNG trang để điền đúng "Trang i/n" ở mép phải */
       var pageNoEl = footerEl.querySelector('.page-no');
@@ -6950,16 +6949,22 @@
         var isFirst = pi === 0;
         if (pi > 0) footerCanvas = await footerCanvasFor(pi, pages.length);
         var sliceTop = isFirst ? 0 : tops[page.start];
+        var topBlock = isFirst ? 0 : headerBlock;   /* page 1 already carries the real header + hero */
+        /* Đợt 95: html2canvas vẽ nội dung DÀI HƠN một chút so với đo DOM (đặc biệt câu có phân số
+           .ps), không đoán được chính xác câu nào lệch bao nhiêu — cắt khít theo bottoms[end] đo
+           được thì hụt mất đuôi. Chừa thêm SLICE_PAD, chặn trên bởi khoảng trống thật còn lại của
+           trang (maxAvail) nên không bao giờ vượt khung trang. */
+        var SLICE_PAD = 35;
+        var maxAvail = Math.max(0, pageHeightPx - footerBlock - topBlock);
         var sliceHeight = page.topOnly
           ? Math.max(0, Math.min(tops[0], pageHeightPx - footerBlock))   /* trang chỉ có phần đầu */
           : (page.end >= 0
-              ? Math.max(0, bottoms[page.end] - sliceTop)
+              ? Math.max(0, Math.min(maxAvail, (bottoms[page.end] - sliceTop) + SLICE_PAD))
               : Math.max(0, Math.min(contentEndPx, pageHeightPx - footerBlock)));
-        var topBlock = isFirst ? 0 : headerBlock;   /* page 1 already carries the real header + hero */
 
         /* Every page is a FULL A4 sheet, so the footer sits on the bottom margin, not under the text */
         var pageCanvas = document.createElement('canvas');
-        pageCanvas.width = pageContentWpx;
+        pageCanvas.width = bigCanvas.width;
         pageCanvas.height = Math.round(pageHeightPx * SCALE);
         var ctx = pageCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
@@ -6969,11 +6974,11 @@
           ctx.drawImage(headerCanvas, Math.round(padPx * SCALE), Math.round(padPx * SCALE));
         }
         if (sliceHeight > 0) {
-          var pageContentCanvas = await html2canvas(sheetEl, {
-            scale: SCALE, useCORS: true, backgroundColor: '#ffffff',
-            x: 0, y: sliceTop, width: sheetRect.width, height: sliceHeight
-          });
-          ctx.drawImage(pageContentCanvas, 0, Math.round(topBlock * SCALE));
+          ctx.drawImage(
+            bigCanvas,
+            0, Math.round(sliceTop * SCALE), bigCanvas.width, Math.round(sliceHeight * SCALE),
+            0, Math.round(topBlock * SCALE), bigCanvas.width, Math.round(sliceHeight * SCALE)
+          );
         }
         ctx.drawImage(
           footerCanvas,

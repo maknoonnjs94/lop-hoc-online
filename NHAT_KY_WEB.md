@@ -16,7 +16,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Trang công khai** `web/index.html` (`/`) — giới thiệu, khoá học, cách học, hỏi đáp nhanh, Zalo, tải app; nội dung sửa ở Quản trị → Trang công khai (v25).
 - **Trang học sinh viên** `web/hoc.html` (`/hoc`, **chỉ trong app** — `BAT_BUOC_APP = 'tat_ca'`) — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** có bộ gõ công thức (₂ ⁻ × → …), máy chấm hiểu mọi cách viết số khoa học, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
 - **Trang quản trị** — Buổi học (xoá mềm, Hoàn tác, 🗑 Thùng rác giữ 30 ngày) / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
-- **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` — đang ở **đợt 85**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc.
+- **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` (+ 4 bản môn) — đang ở **đợt 95**. Nút *Giao cho lớp* xuất PDF qua html2canvas. Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc. **Nhắc:** bản web KHÔNG tự lên theo Artifact — sau mỗi lần publish Artifact phải chạy thêm `Tools/build_web_so.js` từng sổ rồi `git push` mới lên đúng bản (đã quên mất 3 lần liền ở đợt 91-93, xem mục 2026-09-17 bên dưới).
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.20** (tag 16/9: hiện % tải bản mới, log cap-nhat.log; 1.0.19 khoá chụp cửa sổ con; 1.0.17 tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
@@ -39,6 +39,27 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-17 — Bản web Sổ Bài Tập đứng yên đợt 90 suốt 3 lần vá PDF (91→93) — quên dựng lại + đẩy
+
+**T thấy gì:** báo lỗi PDF cắt ngang công thức phân số (xem `So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md`
+mục đợt 91-93), bấm Ctrl+F5 rồi xuất lại vẫn thấy y hệt lỗi cũ. Hỏi lại thì menu Công cụ ghi "đợt 90 ·
+bản web" — tức m đang mở **bản web** (`giangduonghoahoc.com`), không phải bản Artifact t vẫn publish.
+
+**Vì sao:** bản web là 1 bản mirror tĩnh riêng (`web/so-bai-tap*.html`, dựng bởi `build_web_so.js` từ
+đúng file Artifact, chèn thêm cầu nối Supabase), KHÔNG tự cập nhật theo Artifact — phải tự tay dựng lại
++ `git push` (Cloudflare tự triển khai sau khi đẩy lên GitHub, trễ 1-3 phút). Suốt 3 đợt vá PDF gần đây
+t chỉ nhớ publish Artifact, quên hẳn bước này — Ctrl+F5 của m hoàn toàn đúng, chỉ là tải lại đúng bản
+đang đứng yên ở đợt 90.
+
+**Đã sửa:** `build_web_so.js` lại cả 5 sổ (gốc + 4 môn) từ đúng bản Artifact đợt 93, `git push` lên
+`main` — Cloudflare tự lên bản mới sau 1-3 phút.
+
+**Bài học ghi vào việc cần làm mỗi lần publish Sổ Bài Tập:** publish Artifact **xong phải luôn luôn**
+chạy `build_web_so.js` (đủ 5 sổ) + `git push` trong `Hoc_Online` ngay sau đó — 2 bước không tách rời
+nhau nữa, đừng để lặp lại lỗi này.
+
 ---
 
 ## 2026-09-16 — Dấu chìm tên+email trên bài tập PDF trông như vết bẩn — sửa màu cho nền trắng
