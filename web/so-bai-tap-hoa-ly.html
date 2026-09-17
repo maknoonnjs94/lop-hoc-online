@@ -2611,7 +2611,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 96 · bản Hóa lý · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 97 · bản Hóa lý · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6918,31 +6918,84 @@
          .ps gần đáy cửa sổ cắt (tử số hiện, mẫu số/chữ nối sau mất), dù {y:0, height: H} (chụp từ đầu)
          luôn đúng. Quay lại 1 canvas duy nhất (y=0 — cách html2canvas hoạt động ổn định), cắt từng
          trang bằng drawImage canvas 2D thường ở dưới, không gọi lại html2canvas với y > 0 nữa. */
-      var bigCanvas = await html2canvas(sheetEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
       var headerCanvas = await html2canvas(headerEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
+
+      /* Đợt 97: tài liệu càng dài, 1 ảnh gộp (bigCanvas) càng cao — có nguy cơ vượt giới hạn kết cấu
+         đồ hoạ (canvas/texture) của một số máy yếu, dù đã thử rất cao (26.682px) vẫn ổn trên máy bàn.
+         Chụp theo TỪNG LÔ vài trang một, mỗi lô là 1 lượt html2canvas RIÊNG luôn bắt đầu từ y=0 của
+         chính lô đó (cách chụp DUY NHẤT đã kiểm chứng không vẽ hỏng .ps — html2canvas({y:X>0}) từng
+         bị chứng minh vẽ hỏng phân số gần mép cắt, xem đợt 94) — ẩn bớt câu VÀ tiêu đề dạng/phần
+         ngoài lô bằng display:none rồi đo lại DOM ngay lúc đó, không còn phụ thuộc 1 ảnh khổng lồ
+         nào nữa nên không còn giới hạn độ dài tài liệu nào về mặt lý thuyết. */
+      /* Ngân sách theo CSS px (không theo số "trang" cố định) để tự thích ứng với mọi khổ giấy user
+         chỉnh trong "⚙ Khổ giấy / lề / cỡ chữ" — canvas mỗi lô cao khoảng 2x con số này (SCALE=2),
+         diện tích vẫn rất dư so với giới hạn kết cấu đồ hoạ phổ biến trên máy yếu (~16 triệu px²). */
+      var BATCH_TARGET_PX = 4000;
+      var BATCH_PAGES = Math.max(1, Math.floor(BATCH_TARGET_PX / Math.max(1, pageHeightPx)));
+      var problemPrevDisplay = problemEls.map(function (el) { return el.style.display; });
+      var allDividers = [].slice.call(sheetEl.querySelectorAll('.dang-divider, .section-divider'));
+      var dividerPrevDisplay = allDividers.map(function (el) { return el.style.display; });
+      var dividerOwner = allDividers.map(function (el) {
+        var next = el.nextElementSibling;
+        while (next && next.classList && (next.classList.contains('dang-divider') || next.classList.contains('section-divider'))) {
+          next = next.nextElementSibling;
+        }
+        return next ? problemEls.indexOf(next) : -1;
+      });
+      var batchLog = [];
+      var batch = { key: -1, canvas: null, tops: null, bottoms: null };
+
+      function batchRangeForPage(pi) {
+        var bStart = Math.floor(pi / BATCH_PAGES) * BATCH_PAGES;
+        var bEnd = Math.min(pages.length - 1, bStart + BATCH_PAGES - 1);
+        return { bStart: bStart, bEnd: bEnd };
+      }
+
+      async function ensureBatch(pi) {
+        var r = batchRangeForPage(pi);
+        if (batch.key === r.bStart) return;
+        var firstPage = pages[r.bStart];
+        var firstIdx = firstPage.topOnly ? 0 : Math.max(0, firstPage.start);
+        var lastPage = pages[r.bEnd];
+        var lastIdx = lastPage.end >= 0 ? lastPage.end : firstIdx;
+        /* hiện dư 1 câu sau lô để đủ chỗ dò viền thẻ của câu cuối lô */
+        var showTo = Math.min(problemEls.length - 1, lastIdx + 1);
+        problemEls.forEach(function (el, idx) {
+          el.style.display = (idx >= firstIdx && idx <= showTo) ? problemPrevDisplay[idx] : 'none';
+        });
+        allDividers.forEach(function (el, di) {
+          var idx = dividerOwner[di];
+          el.style.display = (idx >= firstIdx && idx <= showTo) ? dividerPrevDisplay[di] : 'none';
+        });
+        void sheetEl.offsetWidth;
+        var mb = measureProblems();
+        var canvas = await html2canvas(sheetEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
+        batch = { key: r.bStart, bEnd: r.bEnd, canvas: canvas, tops: mb.tops, bottoms: mb.bottoms };
+        batchLog.push({ bStart: r.bStart, bEnd: r.bEnd, firstIdx: firstIdx, showTo: showTo, canvasH: canvas.height });
+      }
 
       /* Đợt 96: html2canvas vẽ nội dung dài hơn đo DOM một khoảng KHÔNG ĐỀU theo từng câu (câu có
          phân số .ps lệch nhiều hơn hẳn) — đo đúng bằng cách dò điểm ảnh tìm viền thẻ .problem thật
-         trên chính bigCanvas, thay vì đoán một khoảng đệm chung. */
+         trên ảnh của chính lô đang xét, thay vì đoán một khoảng đệm chung. */
       var cardBorderRGB = (function () {
         var probe = sheetEl.querySelector('.problem');
         if (!probe) return null;
         var m = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/.exec(getComputedStyle(probe).borderTopColor || '');
         return m ? [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])] : null;
       })();
-      function detectCardEdge(scanTopCss, scanBottomCss) {
+      function detectCardEdge(canvas, scanTopCss, scanBottomCss) {
         if (!cardBorderRGB || scanBottomCss <= scanTopCss) return null;
         var y0 = Math.max(0, Math.round(scanTopCss * SCALE));
-        var y1 = Math.min(bigCanvas.height, Math.round(scanBottomCss * SCALE));
+        var y1 = Math.min(canvas.height, Math.round(scanBottomCss * SCALE));
         if (y1 <= y0) return null;
-        var w = bigCanvas.width;
-        var img = bigCanvas.getContext('2d').getImageData(0, y0, w, y1 - y0).data;
+        var w = canvas.width;
+        var img = canvas.getContext('2d').getImageData(0, y0, w, y1 - y0).data;
         var marginX = Math.round(20 * SCALE);
         var tol = 18;
         /* Lấy viền ĐẦU TIÊN gặp — vì mép quét (sliceTop của trang SAU) giờ đã tự cộng dồn đúng độ
-           lệch của mọi trang trước nó (xem "drift" ở vòng lặp dựng trang), viền đầu tiên tìm được kể
-           từ mép đo DOM của chính câu này luôn đúng là viền của chính nó, không còn lẫn sang câu sau
-           nữa. */
+           lệch của mọi trang trước nó TRONG CÙNG 1 LÔ (xem "drift" ở vòng lặp dựng trang), viền đầu
+           tiên tìm được kể từ mép đo DOM của chính câu này luôn đúng là viền của chính nó, không còn
+           lẫn sang câu sau nữa. */
         for (var row = 0; row < (y1 - y0); row++) {
           var match = 0, total = 0, base = row * w * 4;
           for (var x = marginX; x < w - marginX; x++) {
@@ -6984,34 +7037,37 @@
          cuối câu trước (đã gặp thật ở câu 6→7 khi chỉ vá riêng từng trang mà không cộng dồn). */
       var drift = 0;
 
+      var lastBatchKey = -1;
       for (var pi = 0; pi < pages.length; pi++) {
         var page = pages[pi];
         var isFirst = pi === 0;
         if (pi > 0) footerCanvas = await footerCanvasFor(pi, pages.length);
-        var domTop = isFirst ? 0 : tops[page.start];
+        await ensureBatch(pi);
+        if (batch.key !== lastBatchKey) { drift = 0; lastBatchKey = batch.key; }   /* lô mới = ảnh mới chụp từ y=0, lệch tính lại từ đầu */
+        var domTop = isFirst ? 0 : batch.tops[page.start];
         var sliceTop = domTop + (isFirst ? 0 : drift);
         var topBlock = isFirst ? 0 : headerBlock;   /* page 1 already carries the real header + hero */
         var maxAvail = Math.max(0, pageHeightPx - footerBlock - topBlock);
         var sliceHeight;
         if (page.topOnly) {
-          sliceHeight = Math.max(0, Math.min(tops[0], pageHeightPx - footerBlock));   /* trang chỉ có phần đầu */
+          sliceHeight = Math.max(0, Math.min(batch.tops[0], pageHeightPx - footerBlock));   /* trang chỉ có phần đầu */
         } else if (page.end >= 0) {
-          var tight = Math.max(0, bottoms[page.end] - domTop);
+          var tight = Math.max(0, batch.bottoms[page.end] - domTop);
           /* dò thêm tối đa 300px quá mép đo DOM — đủ rộng cho ca lệch nhiều nhất đã gặp (câu nhiều
              phân số), chặn trên bởi khoảng trống thật còn lại của trang. sliceTop đã cộng dồn "drift"
              nên viền ĐẦU TIÊN tìm được kể từ đây luôn đúng là viền của chính câu này. */
           var scanCap = Math.min(maxAvail, tight + 300);
-          var edge = detectCardEdge(sliceTop + Math.max(0, tight - 5), sliceTop + scanCap);
+          var edge = detectCardEdge(batch.canvas, sliceTop + Math.max(0, tight - 5), sliceTop + scanCap);
           var actualHeight = edge !== null ? Math.max(tight, edge - sliceTop) : tight;
           sliceHeight = Math.min(maxAvail, actualHeight);
-          drift += (actualHeight - tight);   /* cộng dồn cho trang SAU, kể cả khi actualHeight bị maxAvail cắt bớt ở trang này */
+          drift += (actualHeight - tight);   /* cộng dồn cho trang SAU TRONG CÙNG LÔ, kể cả khi actualHeight bị maxAvail cắt bớt ở trang này */
         } else {
           sliceHeight = Math.max(0, Math.min(contentEndPx, pageHeightPx - footerBlock));
         }
 
         /* Every page is a FULL A4 sheet, so the footer sits on the bottom margin, not under the text */
         var pageCanvas = document.createElement('canvas');
-        pageCanvas.width = bigCanvas.width;
+        pageCanvas.width = batch.canvas.width;
         pageCanvas.height = Math.round(pageHeightPx * SCALE);
         var ctx = pageCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
@@ -7022,9 +7078,9 @@
         }
         if (sliceHeight > 0) {
           ctx.drawImage(
-            bigCanvas,
-            0, Math.round(sliceTop * SCALE), bigCanvas.width, Math.round(sliceHeight * SCALE),
-            0, Math.round(topBlock * SCALE), bigCanvas.width, Math.round(sliceHeight * SCALE)
+            batch.canvas,
+            0, Math.round(sliceTop * SCALE), batch.canvas.width, Math.round(sliceHeight * SCALE),
+            0, Math.round(topBlock * SCALE), batch.canvas.width, Math.round(sliceHeight * SCALE)
           );
         }
         ctx.drawImage(
@@ -7069,6 +7125,8 @@
     } finally {
       stretchedRules.forEach(function (r) { r.el.style[r.prop] = r.prev; });
       hideEls.forEach(function (el, i) { el.style.display = prevDisplay[i]; });
+      if (typeof problemPrevDisplay !== 'undefined') { problemEls.forEach(function (el, i) { el.style.display = problemPrevDisplay[i]; }); }
+      if (typeof dividerPrevDisplay !== 'undefined') { allDividers.forEach(function (el, i) { el.style.display = dividerPrevDisplay[i]; }); }
       sheetEl.style.width = prevWidth;
       sheetEl.style.maxWidth = prevMaxWidth;
       sheetEl.style.flexShrink = prevFlexShrink;
