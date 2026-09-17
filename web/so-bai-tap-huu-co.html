@@ -680,8 +680,17 @@
   .can sub, .can sup, .ps sub, .ps sup { line-height: 0; }
   .can-bac { position: absolute; left: .02em; top: -.32em; font-size: 60%; line-height: 1; vertical-align: baseline; }
   .can-kh { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; color: transparent; white-space: nowrap; pointer-events: none; }
-  .ps { position: relative; display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle;
+  /* Đợt 92: KHÔNG dùng flexbox nữa — html2canvas 1.4.1 tự dựng lại layout (không phải engine thật
+     của trình duyệt) và có thể tính sai chiều cao/vị trí của .ps khi nó là inline-flex cột, nhất là
+     khi phân số nằm giữa dòng có chữ nối ngay sau ("= kết quả"): tử số hiện, mẫu số mất/đè lên chữ
+     sau. Không tái hiện được lỗi trong môi trường test nhưng đã thấy 2 lần trên PDF thật của user ở
+     2 tài liệu khác nhau, cả hai lần đều KHÔNG liên quan mép trang. Dùng lại kỹ thuật phân số kiểu
+     cũ (trước flexbox): .ps là inline-block, tử số/mẫu số là 2 khối con xếp chồng tự nhiên, canh
+     giữa bằng text-align — không có chỗ nào cho html2canvas hiểu sai chiều cao nữa. Nhìn trên màn
+     hình y hệt bản cũ vì vertical-align:middle hoạt động như nhau trên inline-block. */
+  .ps { position: relative; display: inline-block; vertical-align: middle;
     text-align: center; line-height: 1.2; margin: 0 .1em; white-space: nowrap; }
+  .ps-tu, .ps-mau { display: block; }
   .ps-tu { padding: 0 .22em .06em; border-bottom: .085em solid currentColor; }
   .ps-mau { padding: .06em .22em 0; }
   .tex-block-plain { display: block; margin: 8px auto; text-align: center; }
@@ -2602,7 +2611,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-15 · đợt 90 · bản Hóa hữu cơ · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 93 · bản Hóa hữu cơ · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6868,9 +6877,17 @@
         var result = [];
         if (!problemEls.length) return [{ start: -1, end: -1 }];
 
+        /* Đợt 91: paginate() đo trên DOM thật (getBoundingClientRect), nhưng ảnh cắt trang lấy
+           từ bigCanvas do html2canvas tự dựng lại layout — câu có phân số/căn thức (.ps/.can,
+           dựng bằng inline-flex + CSS tuỳ biến) có thể được html2canvas vẽ cao hơn vài chục px
+           so với DOM đo được. Câu nào vừa khít đáy trang theo phép đo DOM thì dễ bị lệch đúng vào
+           chỗ đã cắt, cắt ngang giữa công thức. Bớt SAFE_MARGIN khỏi ngân sách mỗi trang để câu
+           chạm sát đáy bị đẩy hẳn sang trang sau thay vì bị cắt dở. */
+        var SAFE_MARGIN = 32;
+
         /* Lý thuyết dài có thể chiếm gần hết trang 1 — khi đó câu đầu tiên
            phải sang trang 2, trang 1 chỉ có phần đầu trang. */
-        var firstBudget = pageHeightPx - probeFooterBlock;
+        var firstBudget = pageHeightPx - probeFooterBlock - SAFE_MARGIN;
         var startIdx = 0;
         if (b[0] > firstBudget && t[0] > 0) {
           result.push({ start: 0, end: -1, topOnly: true });
@@ -6880,7 +6897,7 @@
         for (var i = startIdx; i < problemEls.length; i++) {
           var fp = result.length === 0;
           var ct = fp ? 0 : t[s];
-          var bud = pageHeightPx - probeFooterBlock - (fp ? 0 : probeHeaderBlock);
+          var bud = pageHeightPx - probeFooterBlock - (fp ? 0 : probeHeaderBlock) - SAFE_MARGIN;
           if (b[i] - ct > bud && i > s) { result.push({ start: s, end: i - 1 }); s = i; i--; }
         }
         result.push({ start: s, end: problemEls.length - 1 });
@@ -6896,7 +6913,13 @@
          câu cách câu như trên màn hình, chỗ trống cuối trang cứ để trống. */
       void sheetEl.offsetWidth;
 
-      var bigCanvas = await html2canvas(sheetEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
+      /* Đợt 93: KHÔNG còn 1 canvas khổng lồ cho cả tài liệu — html2canvas 1.4.1 tự dựng lại layout
+         bằng canvas riêng của nó, và canvas càng cao càng dễ vượt giới hạn bộ nhớ/kết cấu GPU của
+         máy đang chạy (đặc biệt máy yếu hơn desktop) mà không hề báo lỗi, chỉ render sai — càng sâu
+         trong canvas càng sai. Mỗi trang giờ tự chụp cửa sổ RIÊNG của mình (x/y/width/height của
+         html2canvas cắt đúng phần cần, trả về canvas nhỏ đúng 1 trang) — không phụ thuộc tài liệu
+         dài bao nhiêu trang nữa. Xem [[so-bai-tap-pdf-html2canvas]]. */
+      var pageContentWpx = Math.round(sheetRect.width * SCALE);
       var headerCanvas = await html2canvas(headerEl, { scale: SCALE, useCORS: true, backgroundColor: '#ffffff' });
       /* footer chụp riêng cho TỪNG trang để điền đúng "Trang i/n" ở mép phải */
       var pageNoEl = footerEl.querySelector('.page-no');
@@ -6936,7 +6959,7 @@
 
         /* Every page is a FULL A4 sheet, so the footer sits on the bottom margin, not under the text */
         var pageCanvas = document.createElement('canvas');
-        pageCanvas.width = bigCanvas.width;
+        pageCanvas.width = pageContentWpx;
         pageCanvas.height = Math.round(pageHeightPx * SCALE);
         var ctx = pageCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
@@ -6946,11 +6969,11 @@
           ctx.drawImage(headerCanvas, Math.round(padPx * SCALE), Math.round(padPx * SCALE));
         }
         if (sliceHeight > 0) {
-          ctx.drawImage(
-            bigCanvas,
-            0, Math.round(sliceTop * SCALE), bigCanvas.width, Math.round(sliceHeight * SCALE),
-            0, Math.round(topBlock * SCALE), bigCanvas.width, Math.round(sliceHeight * SCALE)
-          );
+          var pageContentCanvas = await html2canvas(sheetEl, {
+            scale: SCALE, useCORS: true, backgroundColor: '#ffffff',
+            x: 0, y: sliceTop, width: sheetRect.width, height: sliceHeight
+          });
+          ctx.drawImage(pageContentCanvas, 0, Math.round(topBlock * SCALE));
         }
         ctx.drawImage(
           footerCanvas,
