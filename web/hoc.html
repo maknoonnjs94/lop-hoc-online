@@ -784,7 +784,7 @@
     <button class="linkish" id="forgotBtn" type="button">Quên mật khẩu</button>
   </form>
   <p class="fine"><span class="ico"><svg viewBox="0 0 24 24"><path d="m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5Z"/><path d="M8 11l3 3 5-6"/></svg></span>
-    <span>Trang tự đăng xuất sau 5 phút không thao tác. <a href="tai-app.html">Tải ứng dụng cho máy tính</a>.</span></p>
+    <span>Trang tự đăng xuất sau 15 phút không thao tác. <a href="tai-app.html">Tải ứng dụng cho máy tính</a>.</span></p>
 </main>
 
 <!-- ================= LẦN ĐẦU: ĐỔI MẬT KHẨU + KHAI HỒ SƠ ================= -->
@@ -1001,7 +1001,7 @@
       <li><kbd>Ctrl</kbd>+<kbd>K</kbd> tìm bất cứ thứ gì, gõ không dấu cũng ra. Đang mở tài liệu: <kbd>←</kbd><kbd>→</kbd> chuyển bài.</li>
       <li>Nút <b>Góc của bạn</b> ở thanh trên cùng đổi màu giao diện (4 mẫu), nhân vật, và tải ảnh thật của bạn làm ảnh đại diện.</li>
       <li>Tài liệu mang dấu chìm tên bạn. Chụp màn hình, quay, in đều được ghi nhận và báo cho giảng viên.</li>
-      <li>Mỗi tài khoản dùng trên một máy. Đổi máy thì nhắn giảng viên gỡ máy cũ. Không thao tác 5 phút, trang tự đăng xuất.</li>
+      <li>Mỗi tài khoản dùng trên một máy. Đổi máy thì nhắn giảng viên gỡ máy cũ. Không thao tác 15 phút, trang tự đăng xuất.</li>
     </ul>
     <button class="btn block" type="button" id="helpClose">Đã hiểu</button>
   </div>
@@ -1038,7 +1038,7 @@
   <div class="box">
     <div class="ring"><svg viewBox="0 0 84 84"><circle class="bg" cx="42" cy="42" r="36"/><circle class="fg" id="idleRing" cx="42" cy="42" r="36"/></svg><b id="idleN">30</b></div>
     <h3>Bạn còn đó không?</h3>
-    <p>Không thấy thao tác nào trong 5 phút. Trang sẽ tự đăng xuất để bảo vệ tài khoản.</p>
+    <p>Không thấy thao tác nào trong 15 phút. Trang sẽ tự đăng xuất để bảo vệ tài khoản.</p>
     <button class="btn block" id="idleStay" type="button">Tôi vẫn đang học</button>
   </div>
 </div>
@@ -1380,7 +1380,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   /* ---------------- khởi động ---------------- */
   var lyDo = '';
   try { lyDo = sessionStorage.getItem('hoc-ly-do') || ''; sessionStorage.removeItem('hoc-ly-do'); } catch (e) {}
-  if (lyDo === 'idle') msg($('loginMsg'), 'Đã tự đăng xuất vì không thấy thao tác nào trong 5 phút. Đăng nhập lại để tiếp tục.', 'info');
+  if (lyDo === 'idle') msg($('loginMsg'), 'Đã tự đăng xuất vì không thấy thao tác nào trong 15 phút. Đăng nhập lại để tiếp tục.', 'info');
   if (lyDo === 'khoa_cg') {
     var tinKhoaCG = ''; try { tinKhoaCG = sessionStorage.getItem('hoc-ly-do-tin') || ''; sessionStorage.removeItem('hoc-ly-do-tin'); } catch (e) {}
     msg($('loginMsg'), tinKhoaCG || 'Tài khoản của bạn đang bị khoá do vi phạm quy định chống chụp/quay màn hình.', 'err');
@@ -3456,7 +3456,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
 
   /* =====================================================================
      CANH GÁC — chỉ chạy sau khi đã đăng nhập: PrintScreen, Win+Shift+S (qua mất tiêu điểm),
-     phần mềm quay do app dò, Ctrl+P/S, 3 lần thì đóng phiên, che mờ khi rời cửa sổ, idle 5 phút.
+     phần mềm quay do app dò, Ctrl+P/S, 3 lần thì đóng phiên, che mờ khi rời cửa sổ, idle 15 phút.
      ===================================================================== */
   var canhGac = false, shotTimer = null, soLanChac = 0, daNhacLanDau = false;
   var moc = { alt: 0, ctrl: 0, meta: 0, metaShift: 0, roiChuot: 0 };
@@ -3513,7 +3513,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
   function cheMo(on) { $('viewer').classList.toggle('unfocused', !!on); }
   $('veil').addEventListener('click', function () { window.focus(); cheMo(false); keoTieuDiem(); });
 
-  var IDLE_MS = 5 * 60 * 1000, WARN_S = 30, lastAct = Date.now(), idleOn = false, idleLeft = WARN_S, idleTick = null;
+  var IDLE_MS = 15 * 60 * 1000, WARN_S = 30, lastAct = Date.now(), idleOn = false, idleLeft = WARN_S, idleTick = null;
   function hoatDong() { lastAct = Date.now(); if (idleOn) tatHoiIdle(); }
   function hoiIdle() {
     idleOn = true; idleLeft = WARN_S; $('idleN').textContent = idleLeft; $('idleRing').style.strokeDashoffset = 0; $('idle').hidden = false;

@@ -979,6 +979,22 @@
     white-space: nowrap;
   }
   .part .lines-step .n { min-width: 26px; }
+  .lines-in {
+    flex-shrink: 0;
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--paper-line);
+    border-radius: 8px;
+    background: var(--paper-soft);
+    color: var(--ink);
+    font: 700 13px "Be Vietnam Pro", Arial, sans-serif;
+    text-align: center;
+    vertical-align: middle;
+    -moz-appearance: textfield;
+  }
+  .lines-in::-webkit-outer-spin-button, .lines-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .lines-in:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: var(--primary); }
 
   .add-problem-row { display: flex; justify-content: center; margin-top: 14px; }
   .add-problem-row .btn { font-family: "Be Vietnam Pro", Arial, sans-serif; }
@@ -1852,7 +1868,7 @@
       padding: var(--paper-margin, 10mm);
     }
     .problem { border-color: #cfd8e0; break-inside: avoid; }
-    .problem-tools, .lines-step, .add-problem-row, .hero-logo-remove { display: none !important; }
+    .problem-tools, .lines-step, .lines-in, .add-problem-row, .hero-logo-remove { display: none !important; }
     .hero-logo { cursor: default; }
     /* margin: 0 — QUAN TRỌNG. Hễ @page còn lề khác 0 là Chrome/Edge tự chèn thêm một hàng
        ngày giờ + tên trang + URL + số trang vào mép giấy. Đặt 0 thì nó bỏ hẳn phần đó,
@@ -2611,7 +2627,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-17 · đợt 97 · bản Hóa vô cơ · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-24 · đợt 98 · bản Hóa vô cơ · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -3547,7 +3563,7 @@
   <style>
     /* ================= đợt 52: Bảng giảng — viết tay bằng bút (S Pen / bút cảm ứng / chuột) ================= */
     body.lecture .topbar, body.lecture .week-tabs, body.lecture .problem-tools, body.lecture .theory-tools,
-    body.lecture .lines-step, body.lecture .add-problem-row, body.lecture .hero-logo-remove, body.lecture .page-mark,
+    body.lecture .lines-step, body.lecture .lines-in, body.lecture .add-problem-row, body.lecture .hero-logo-remove, body.lecture .page-mark,
     body.lecture .save-state, body.lecture .format-bar { display: none !important; }
     body.lecture .canvas { display: block; padding: calc(var(--ink-bar-h, 56px) + 14px) 8px 140px; }
     body.lecture .sheet { margin: 0 auto; max-width: none; box-shadow: 0 8px 30px rgba(0, 0, 0, .18); }   /* giữ nguyên bề rộng giấy khi phóng to → nét không lệch */
@@ -5775,6 +5791,7 @@
 
   function escapeAttr(s) { return String(s).replace(/"/g, '&quot;'); }
 
+  var PART_LINES_MAX = 20;   /* answerLinesHtml cũng chặn ở 20 */
   function answerLinesHtml(count, compact, style) {
     var n = Math.max(1, Math.min(20, Number(count) || 1));
     var kind = style || 'lines';
@@ -6034,11 +6051,7 @@
           html += '    <li class="part">';
           html += '      <div class="part-row">';
           html += '        <div class="part-question" contenteditable="true" spellcheck="false" data-path="problems.' + pi + '.parts.' + si + '.html">' + part.html + '</div>';
-          html += '        <span class="lines-step no-print" title="Số dòng kẻ để làm bài">';
-          html += '          <button type="button" data-action="part-lines-minus" data-pid="' + p.id + '" data-sid="' + part.id + '">−</button>';
-          html += '          <span class="n">' + part.lines + '</span>';
-          html += '          <button type="button" data-action="part-lines-plus" data-pid="' + p.id + '" data-sid="' + part.id + '">+</button>';
-          html += '        </span>';
+          html += '        <input type="number" class="lines-in no-print" min="1" max="' + PART_LINES_MAX + '" step="1" inputmode="numeric" value="' + (part.lines || 1) + '" title="Số dòng kẻ để làm bài (1–' + PART_LINES_MAX + ')" data-pid="' + p.id + '" data-sid="' + part.id + '">';
           html += '        <button type="button" class="mini-btn danger no-print" data-action="delete-part" data-pid="' + p.id + '" data-sid="' + part.id + '">×</button>';
           html += '      </div>';
           html += isTeacher()
@@ -7280,12 +7293,9 @@
         var gone = (problem.figures || []).filter(function (f) { return f.id === act.dataset.fid; })[0];
         problem.figures = (problem.figures || []).filter(function (f) { return f.id !== act.dataset.fid; });
         if (gone && gone.imgId) releaseImageIfOrphan(gone.imgId);   /* ảnh không còn câu nào dùng thì bỏ khỏi kho luôn */
-      } else if (action === 'part-lines-plus') {
+      } else if (action === 'part-lines-set') {
         var part = problem.parts.find(function (s) { return s.id === act.dataset.sid; });
-        if (part) part.lines = Math.min(6, (part.lines || 1) + 1);
-      } else if (action === 'part-lines-minus') {
-        var part2 = problem.parts.find(function (s) { return s.id === act.dataset.sid; });
-        if (part2) part2.lines = Math.max(1, (part2.lines || 1) - 1);
+        if (part) part.lines = act.dataset.n;
       } else if (action === 'move-up' && pi > 0) {
         week.problems.splice(pi - 1, 0, week.problems.splice(pi, 1)[0]);
       } else if (action === 'move-down' && pi < week.problems.length - 1) {
@@ -7293,6 +7303,24 @@
       }
     });
   }
+
+  function partLinesCommit(inp) {
+    var n = Math.round(Number(inp.value));
+    n = Math.max(1, Math.min(PART_LINES_MAX, n || 1));
+    var wk = currentWeek(), p = wk && wk.problems.filter(function (x) { return x.id === inp.dataset.pid; })[0];
+    var part = p && (p.parts || []).filter(function (s) { return s.id === inp.dataset.sid; })[0];
+    if (!part || part.lines === n) { inp.value = part ? part.lines : n; return; }
+    applyProblemAction('part-lines-set', inp.dataset.pid, { dataset: { sid: inp.dataset.sid, n: n } });
+  }
+  document.getElementById('sheet').addEventListener('change', function (e) {
+    if (e.target.classList && e.target.classList.contains('lines-in')) partLinesCommit(e.target);
+  });
+  document.getElementById('sheet').addEventListener('focusin', function (e) {
+    if (e.target.classList && e.target.classList.contains('lines-in')) e.target.select();
+  });
+  document.getElementById('sheet').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('lines-in')) { e.preventDefault(); e.target.blur(); }
+  });
 
   document.getElementById('sheet').addEventListener('input', function (e) {
     var target = e.target;
