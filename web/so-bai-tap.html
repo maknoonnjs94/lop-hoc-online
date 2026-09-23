@@ -340,9 +340,8 @@
   .cmd-empty { padding: 16px; color: var(--app-muted); font-size: 13px; }
   .page-band { list-style: none; margin: 0; padding: 0; }
   .page-band .pb-clone { pointer-events: none; }
-  /* vạch trang chèn giữa hai ý nhỏ của một câu dài: kéo ra hết bề ngang trang (bù padding .parts
-     26px + padding thẻ 14px + viền 1px) và phủ nền giấy lên viền thẻ câu */
-  .page-band.pb-in-problem { margin: 0 -15px 0 -41px; background-color: var(--paper); }
+  /* vạch trang chèn giữa câu (lề âm do updatePageMarks đo và đặt): phủ nền giấy lên viền thẻ câu */
+  .page-band.pb-in-problem { display: block; background-color: var(--paper); }
   .page-band .pb-gutter { margin: 0 calc(-1 * var(--paper-margin, 10mm)); }
   .page-band .pb-gap {
     display: flex; align-items: center; justify-content: center;
@@ -2629,7 +2628,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-24 · đợt 99 · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-24 · đợt 100 · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6113,25 +6112,32 @@
 
   var pageMarkTimer = null;
 
-  /* Đợt 99: câu dài hơn cả một trang (nhiều ý nhỏ, mỗi ý tới 20 dòng) được sang trang ở chỗ giữa hai
-     ý nhỏ — trước đây chỉ ngắt giữa hai câu nên câu quá dài không có vạch trang và bị PDF cắt cụt.
-     Câu vừa một trang vẫn là một khối như cũ. from = 0: từ đầu câu; to = -1: tới hết câu. */
-  function pageUnitPlan(els, fullBudget) {
+  /* Đợt 99–100: ngắt trang không chỉ giữa hai câu mà cả trước mỗi ý nhỏ và GIỮA HAI DÒNG KẺ — đề
+     còn vừa trang trước thì ở lại, dòng kẻ chia sang cả hai trang. Mỗi đề luôn kéo theo ít nhất dòng
+     kẻ đầu của nó (không ngắt trước dòng kẻ đầu). Ô kẻ ô / để trống và câu trắc nghiệm không chia.
+     Điểm ngắt phải lấy từ DOM còn nguyên (trước khi chèn vạch trang) để chỉ số không lệch. */
+  function pageBreakEls(el) {
+    return [].slice.call(el.querySelectorAll('.parts > .part, .answer-block:not(.grid):not(.blank) > .rule'))
+      .filter(function (x) {
+        return x.classList.contains('part') ? x !== x.parentNode.querySelector('.part') : x !== x.parentNode.querySelector('.rule');
+      });
+  }
+  /* from = -1: từ đầu câu; to = -1: tới hết câu; còn lại là chỉ số trong pageBreakEls(câu) */
+  function pageUnitPlan(els) {
     var plan = [];
     els.forEach(function (el, p) {
-      var parts = el.getBoundingClientRect().height > fullBudget ? el.querySelectorAll('.parts > .part') : [];
-      var from = 0;
-      for (var k = 1; k < parts.length; k++) { plan.push({ p: p, from: from, to: k }); from = k; }
+      var n = pageBreakEls(el).length, from = -1;
+      for (var k = 0; k < n; k++) { plan.push({ p: p, from: from, to: k }); from = k; }
       plan.push({ p: p, from: from, to: -1 });
     });
     return plan;
   }
   function measureUnits(plan, els, originTop, topOf) {
-    var t = [], b = [];
+    var t = [], b = [], brk = {};
     plan.forEach(function (u) {
-      var el = els[u.p], parts = el.querySelectorAll('.parts > .part');
-      t.push((u.from ? parts[u.from].getBoundingClientRect().top : (topOf ? topOf(el) : el.getBoundingClientRect().top)) - originTop);
-      b.push((u.to >= 0 ? parts[u.to].getBoundingClientRect().top : el.getBoundingClientRect().bottom) - originTop);
+      var el = els[u.p], br = brk[u.p] || (brk[u.p] = pageBreakEls(el));
+      t.push((u.from >= 0 ? br[u.from].getBoundingClientRect().top : (topOf ? topOf(el) : el.getBoundingClientRect().top)) - originTop);
+      b.push((u.to >= 0 ? br[u.to].getBoundingClientRect().top : el.getBoundingClientRect().bottom) - originTop);
     });
     return { tops: t, bottoms: b };
   }
@@ -6180,7 +6186,7 @@
         if (!hEl || !fEl || problems.length !== liveProblems.length) return;
         var headerBlock = pPad + hEl.getBoundingClientRect().height + 12;
         var footerBlock = 22 + fEl.getBoundingClientRect().height + pPad;
-        plan = pageUnitPlan(problems, pH - footerBlock - headerBlock);
+        plan = pageUnitPlan(problems);
         var mu = measureUnits(plan, problems, pRect.top);
         var tops = mu.tops, bottoms = mu.bottoms;
         pages = [];
@@ -6236,11 +6242,12 @@
        chiều cao khoảng đệm (toàn ghi) — thay vì chèn-đọc-chèn-đọc từng trang một như trước (mỗi lần
        đọc ngay sau ghi buộc trình duyệt tính lại bố cục cả trang, N trang = N lần giật). */
     var bandInfos = [];
+    var liveBreaks = liveProblems.map(pageBreakEls);   /* lấy trước khi chèn vạch nào */
     for (var p = 0; p < n - 1; p++) {
       var endUnit = plan[pages[p].end];
       var endEl = endUnit && liveProblems[endUnit.p];
       if (!endEl) continue;
-      var nextPart = endUnit.to >= 0 ? endEl.querySelectorAll('.parts > .part')[endUnit.to] : null;
+      var nextPart = endUnit.to >= 0 ? liveBreaks[endUnit.p][endUnit.to] : null;
       var band = document.createElement('li');
       band.className = 'page-band page-mark no-print';
       band.setAttribute('contenteditable', 'false');
@@ -6261,6 +6268,12 @@
       else endEl.parentNode.insertBefore(band, endEl.nextSibling);
       bandInfos.push({ p: p, band: band, spacer: spacer });
     }
+    /* vạch trang nằm trong câu (giữa ý / giữa dòng kẻ) lồng sâu mức nào cũng kéo ra đúng hết bề ngang
+       nội dung trang: đo cả lô một lượt rồi mới đặt lề */
+    var cL = sheetRect.left + padPx, cR = sheetRect.right - padPx;
+    bandInfos.filter(function (i) { return i.band.classList.contains('pb-in-problem'); })
+      .map(function (i) { var r = i.band.getBoundingClientRect(); return { band: i.band, l: r.left - cL, r: cR - r.right }; })
+      .forEach(function (x) { x.band.style.marginLeft = -x.l + 'px'; x.band.style.marginRight = -x.r + 'px'; });
     var sheetT = sheetTop();   /* một lần đọc cho cả lô, không phải mỗi trang một lần */
     bandInfos.forEach(function (info) {
       var bandTop = info.band.getBoundingClientRect().top - sheetT;
@@ -6904,10 +6917,10 @@
         }
         return top;
       }
-      /* Đợt 99: đo theo "khối trang" (pageUnitPlan) thay vì theo câu — câu dài quá một trang được
-         chia ở chỗ giữa hai ý nhỏ. Kế hoạch chia lập MỘT lần ở đây, các lần đo sau (từng lô ẩn bớt
-         câu) dùng lại đúng kế hoạch đó để chỉ số khối không lệch nhau. */
-      var plan = pageUnitPlan(problemEls, pageHeightPx - probeFooterBlock - probeHeaderBlock - 32);
+      /* Đợt 99–100: đo theo "khối trang" (pageUnitPlan) thay vì theo câu — ngắt được trước ý nhỏ và
+         giữa hai dòng kẻ. Kế hoạch chia lập MỘT lần ở đây, các lần đo sau (từng lô ẩn bớt câu) dùng
+         lại đúng kế hoạch đó để chỉ số khối không lệch nhau. */
+      var plan = pageUnitPlan(problemEls);
       function measureProblems() {
         return measureUnits(plan, problemEls, sheetEl.getBoundingClientRect().top, topWithDividers);
       }
