@@ -16,7 +16,7 @@ Cách đọc: mục mới nhất ở trên. Mỗi mục: làm gì, m đã phải
 - **Trang công khai** `web/index.html` (`/`) — giới thiệu, khoá học, cách học, hỏi đáp nhanh, Zalo, tải app; nội dung sửa ở Quản trị → Trang công khai (v25).
 - **Trang học sinh viên** `web/hoc.html` (`/hoc`, **chỉ trong app** — `BAT_BUOC_APP = 'tat_ca'`) — 6 mục: Trang chủ · Bài giảng · Bài tập · Lịch học · Tiến độ · **Hỏi đáp** (Câu hỏi thường gặp do giảng viên ghim, theo buổi học, câu của bạn; ẩn danh). Nộp bài (ảnh/PDF), **ô điền đáp án trên PDF** có bộ gõ công thức (₂ ⁻ × → …), máy chấm hiểu mọi cách viết số khoa học, bảng điểm, nhắc hạn nộp, quyền tải về từng tệp (đáp án không bao giờ cho tải), 4 giao diện × 8 nhân vật, video Cloudflare Stream có quỹ giờ xem, app máy tính bắt buộc cho video.
 - **Trang quản trị** — Buổi học (xoá mềm, Hoàn tác, 🗑 Thùng rác giữ 30 ngày) / Sinh viên / Kho tệp (giờ xem + ước tính hoá đơn) / Theo dõi / Bài nộp (chấm, xem bài đã điền, sửa kết luận máy, thống kê) / Hỏi đáp (ghim FAQ, soạn sẵn, xếp thứ tự) / Cảnh báo. Sao lưu 13 bảng.
-- **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` (+ 4 bản môn) — đang ở **đợt 98**. Nút *Giao cho lớp* xuất PDF qua html2canvas, giờ chụp theo từng lô nên không còn giới hạn độ dài tài liệu (xem `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` mục đợt 97). Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc. **Nhắc:** bản web KHÔNG tự lên theo Artifact — sau mỗi lần publish Artifact phải chạy thêm `Tools/build_web_so.js` từng sổ rồi `git push` mới lên đúng bản (đã quên mất 3 lần liền ở đợt 91-93, xem mục 2026-09-17 bên dưới).
+- **Bản web của Sổ Bài Tập** `web/so-bai-tap.html` (+ 4 bản môn) — đang ở **đợt 99**. Nút *Giao cho lớp* xuất PDF qua html2canvas, giờ chụp theo từng lô nên không còn giới hạn độ dài tài liệu (xem `..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` mục đợt 97). Công thức: Equation của Word → LaTeX → dựng thật; `Tools/thu_cong_thuc.js` là bộ thử 65 phép cho cả đường bóc. **Nhắc:** bản web KHÔNG tự lên theo Artifact — sau mỗi lần publish Artifact phải chạy thêm `Tools/build_web_so.js` từng sổ rồi `git push` mới lên đúng bản (đã quên mất 3 lần liền ở đợt 91-93, xem mục 2026-09-17 bên dưới).
 - **Worker** `worker.js`: `/api/tao-tai-khoan`, `/api/cap-lai-mat-khau`, `/api/stream/*`, `/api/trang-thai`. Ba secret đủ, Stream trả 200.
 - **App máy tính 1.0.20** (tag 16/9: hiện % tải bản mới, log cap-nhat.log; 1.0.19 khoá chụp cửa sổ con; 1.0.17 tag 12/9, trỏ giangduonghoahoc.com/hoc; 1.0.16 vẫn chạy qua workers.dev) — vỏ Electron, chống chụp/quay, khoá theo mã máy, tự cập nhật qua R2.
 
@@ -39,6 +39,14 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 - `Ca` chỉ được đổi thành `C_a` ở ngữ cảnh chắc chắn (sau dấu nhân, bài có K_a); còn lại giữ nguyên vì Ca là canxi.
 
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
+---
+
+## 2026-09-24 — Sổ Bài Tập đợt 99: câu dài sang trang giữa hai ý nhỏ
+
+Đợt 98 cho ý nhỏ tới 20 dòng làm lộ lỗi cũ: câu dài hơn một trang mất vạch trang trên màn hình và bị
+PDF cắt cụt phần tràn. Giờ câu quá dài được ngắt giữa hai ý nhỏ (chi tiết ở
+`..\So_Bai_Tap_HUS\NHAT_KY_PHIEN_LAM_VIEC.md` mục đợt 99). Dựng lại cả 5 `web/so-bai-tap*.html`.
+
 ---
 
 ## 2026-09-24 — Trang học: tự đăng xuất 5 → 15 phút · Sổ Bài Tập đợt 98

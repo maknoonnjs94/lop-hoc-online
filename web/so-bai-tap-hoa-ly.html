@@ -340,6 +340,9 @@
   .cmd-empty { padding: 16px; color: var(--app-muted); font-size: 13px; }
   .page-band { list-style: none; margin: 0; padding: 0; }
   .page-band .pb-clone { pointer-events: none; }
+  /* vạch trang chèn giữa hai ý nhỏ của một câu dài: kéo ra hết bề ngang trang (bù padding .parts
+     26px + padding thẻ 14px + viền 1px) và phủ nền giấy lên viền thẻ câu */
+  .page-band.pb-in-problem { margin: 0 -15px 0 -41px; background-color: var(--paper); }
   .page-band .pb-gutter { margin: 0 calc(-1 * var(--paper-margin, 10mm)); }
   .page-band .pb-gap {
     display: flex; align-items: center; justify-content: center;
@@ -2627,7 +2630,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-24 · đợt 98 · bản Hóa lý · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-24 · đợt 99 · bản Hóa lý · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6111,6 +6114,29 @@
 
   var pageMarkTimer = null;
 
+  /* Đợt 99: câu dài hơn cả một trang (nhiều ý nhỏ, mỗi ý tới 20 dòng) được sang trang ở chỗ giữa hai
+     ý nhỏ — trước đây chỉ ngắt giữa hai câu nên câu quá dài không có vạch trang và bị PDF cắt cụt.
+     Câu vừa một trang vẫn là một khối như cũ. from = 0: từ đầu câu; to = -1: tới hết câu. */
+  function pageUnitPlan(els, fullBudget) {
+    var plan = [];
+    els.forEach(function (el, p) {
+      var parts = el.getBoundingClientRect().height > fullBudget ? el.querySelectorAll('.parts > .part') : [];
+      var from = 0;
+      for (var k = 1; k < parts.length; k++) { plan.push({ p: p, from: from, to: k }); from = k; }
+      plan.push({ p: p, from: from, to: -1 });
+    });
+    return plan;
+  }
+  function measureUnits(plan, els, originTop, topOf) {
+    var t = [], b = [];
+    plan.forEach(function (u) {
+      var el = els[u.p], parts = el.querySelectorAll('.parts > .part');
+      t.push((u.from ? parts[u.from].getBoundingClientRect().top : (topOf ? topOf(el) : el.getBoundingClientRect().top)) - originTop);
+      b.push((u.to >= 0 ? parts[u.to].getBoundingClientRect().top : el.getBoundingClientRect().bottom) - originTop);
+    });
+    return { tops: t, bottoms: b };
+  }
+
   function schedulePageMarks() {
     clearTimeout(pageMarkTimer);
     pageMarkTimer = setTimeout(updatePageMarks, 250);
@@ -6130,6 +6156,7 @@
        Đo trên một bản sao ẩn ép đúng khổ giấy đang chọn để khớp với lúc xuất PDF. */
     var dims = paperDims();
     var pages = [{ start: -1, end: -1 }];
+    var plan = [];
     if (liveProblems.length) {
       var probe = sheetEl.cloneNode(true);
       probe.id = '';
@@ -6154,21 +6181,18 @@
         if (!hEl || !fEl || problems.length !== liveProblems.length) return;
         var headerBlock = pPad + hEl.getBoundingClientRect().height + 12;
         var footerBlock = 22 + fEl.getBoundingClientRect().height + pPad;
-        var tops = [], bottoms = [];
-        problems.forEach(function (el) {
-          var r = el.getBoundingClientRect();
-          tops.push(r.top - pRect.top);
-          bottoms.push(r.bottom - pRect.top);
-        });
+        plan = pageUnitPlan(problems, pH - footerBlock - headerBlock);
+        var mu = measureUnits(plan, problems, pRect.top);
+        var tops = mu.tops, bottoms = mu.bottoms;
         pages = [];
         var s = 0;
-        for (var i = 0; i < problems.length; i++) {
+        for (var i = 0; i < plan.length; i++) {
           var first = pages.length === 0;
           var ct = first ? 0 : tops[s];
           var budget = pH - footerBlock - (first ? 0 : headerBlock);
           if (bottoms[i] - ct > budget && i > s) { pages.push({ start: s, end: i - 1 }); s = i; i--; }
         }
-        pages.push({ start: s, end: problems.length - 1 });
+        pages.push({ start: s, end: plan.length - 1 });
       } finally {
         probe.remove();
       }
@@ -6214,8 +6238,10 @@
        đọc ngay sau ghi buộc trình duyệt tính lại bố cục cả trang, N trang = N lần giật). */
     var bandInfos = [];
     for (var p = 0; p < n - 1; p++) {
-      var endEl = liveProblems[pages[p].end];
+      var endUnit = plan[pages[p].end];
+      var endEl = endUnit && liveProblems[endUnit.p];
       if (!endEl) continue;
+      var nextPart = endUnit.to >= 0 ? endEl.querySelectorAll('.parts > .part')[endUnit.to] : null;
       var band = document.createElement('li');
       band.className = 'page-band page-mark no-print';
       band.setAttribute('contenteditable', 'false');
@@ -6232,7 +6258,8 @@
       var headClone = cloneFurniture(headerLive, '');
       band.appendChild(headClone);
       pageAnchors.push(headClone);
-      endEl.parentNode.insertBefore(band, endEl.nextSibling);
+      if (nextPart) { band.classList.add('pb-in-problem'); nextPart.parentNode.insertBefore(band, nextPart); }
+      else endEl.parentNode.insertBefore(band, endEl.nextSibling);
       bandInfos.push({ p: p, band: band, spacer: spacer });
     }
     var sheetT = sheetTop();   /* một lần đọc cho cả lô, không phải mỗi trang một lần */
@@ -6866,24 +6893,24 @@
       var probeFooterBlock = FOOTER_GAP + probeFooter + padPx;
       var probeHeaderBlock = padPx + probeHeader + HEADER_GAP;
 
+      /* Tiêu đề dạng bài / "Phần N" đứng NGAY TRƯỚC câu thì đi cùng câu — mép trên của
+         khối là mép trên của tiêu đề. Không thì khi câu đầu trang là câu mở dạng, lát cắt
+         bắt đầu từ mép câu và tiêu đề rơi ra ngoài: trên màn hình có, PDF mất. */
+      function topWithDividers(el) {
+        var top = el.getBoundingClientRect().top;
+        var prev = el.previousElementSibling;
+        while (prev && prev.classList && (prev.classList.contains('dang-divider') || prev.classList.contains('section-divider'))) {
+          top = Math.min(top, prev.getBoundingClientRect().top);
+          prev = prev.previousElementSibling;
+        }
+        return top;
+      }
+      /* Đợt 99: đo theo "khối trang" (pageUnitPlan) thay vì theo câu — câu dài quá một trang được
+         chia ở chỗ giữa hai ý nhỏ. Kế hoạch chia lập MỘT lần ở đây, các lần đo sau (từng lô ẩn bớt
+         câu) dùng lại đúng kế hoạch đó để chỉ số khối không lệch nhau. */
+      var plan = pageUnitPlan(problemEls, pageHeightPx - probeFooterBlock - probeHeaderBlock - 32);
       function measureProblems() {
-        var t = [], b = [];
-        var rect = sheetEl.getBoundingClientRect();
-        problemEls.forEach(function (el) {
-          var r = el.getBoundingClientRect();
-          var top = r.top;
-          /* Tiêu đề dạng bài / "Phần N" đứng NGAY TRƯỚC câu thì đi cùng câu — mép trên của
-             khối là mép trên của tiêu đề. Không thì khi câu đầu trang là câu mở dạng, lát cắt
-             bắt đầu từ mép câu và tiêu đề rơi ra ngoài: trên màn hình có, PDF mất. */
-          var prev = el.previousElementSibling;
-          while (prev && prev.classList && (prev.classList.contains('dang-divider') || prev.classList.contains('section-divider'))) {
-            top = Math.min(top, prev.getBoundingClientRect().top);
-            prev = prev.previousElementSibling;
-          }
-          t.push(top - rect.top);
-          b.push(r.bottom - rect.top);
-        });
-        return { tops: t, bottoms: b };
+        return measureUnits(plan, problemEls, sheetEl.getBoundingClientRect().top, topWithDividers);
       }
 
       function paginate(t, b) {
@@ -6907,13 +6934,13 @@
         }
 
         var s = startIdx;
-        for (var i = startIdx; i < problemEls.length; i++) {
+        for (var i = startIdx; i < plan.length; i++) {
           var fp = result.length === 0;
           var ct = fp ? 0 : t[s];
           var bud = pageHeightPx - probeFooterBlock - (fp ? 0 : probeHeaderBlock) - SAFE_MARGIN;
           if (b[i] - ct > bud && i > s) { result.push({ start: s, end: i - 1 }); s = i; i--; }
         }
-        result.push({ start: s, end: problemEls.length - 1 });
+        result.push({ start: s, end: plan.length - 1 });
         return result;
       }
 
@@ -6968,9 +6995,11 @@
         var r = batchRangeForPage(pi);
         if (batch.key === r.bStart) return;
         var firstPage = pages[r.bStart];
-        var firstIdx = firstPage.topOnly ? 0 : Math.max(0, firstPage.start);
+        var firstUnit = plan[firstPage.topOnly ? 0 : Math.max(0, firstPage.start)];
+        var firstIdx = firstUnit ? firstUnit.p : 0;
         var lastPage = pages[r.bEnd];
-        var lastIdx = lastPage.end >= 0 ? lastPage.end : firstIdx;
+        var lastUnit = lastPage.end >= 0 ? plan[lastPage.end] : null;
+        var lastIdx = lastUnit ? lastUnit.p : firstIdx;
         /* hiện dư 1 câu sau lô để đủ chỗ dò viền thẻ của câu cuối lô */
         var showTo = Math.min(problemEls.length - 1, lastIdx + 1);
         problemEls.forEach(function (el, idx) {
@@ -7070,7 +7099,10 @@
              phân số), chặn trên bởi khoảng trống thật còn lại của trang. sliceTop đã cộng dồn "drift"
              nên viền ĐẦU TIÊN tìm được kể từ đây luôn đúng là viền của chính câu này. */
           var scanCap = Math.min(maxAvail, tight + 300);
-          var edge = detectCardEdge(batch.canvas, sliceTop + Math.max(0, tight - 5), sliceTop + scanCap);
+          /* khối dừng giữa câu (trước một ý nhỏ) thì không có viền đáy thẻ để dò — dòng kẻ cùng màu
+             viền sẽ bị nhận nhầm, nên cắt đúng mép đo DOM */
+          var edge = plan[page.end].to >= 0 ? null
+            : detectCardEdge(batch.canvas, sliceTop + Math.max(0, tight - 5), sliceTop + scanCap);
           var actualHeight = edge !== null ? Math.max(tight, edge - sliceTop) : tight;
           sliceHeight = Math.min(maxAvail, actualHeight);
           drift += (actualHeight - tight);   /* cộng dồn cho trang SAU TRONG CÙNG LÔ, kể cả khi actualHeight bị maxAvail cắt bớt ở trang này */
