@@ -695,6 +695,15 @@
   .ps-tu, .ps-mau { display: block; }
   .ps-tu { padding: 0 .22em .06em; border-bottom: .085em solid currentColor; }
   .ps-mau { padding: .06em .22em 0; }
+  /* đợt 101: hệ \begin{cases} — ngoặc nhọn phóng theo số dòng, các dòng canh trái */
+  .tex-cases { display: inline-block; vertical-align: middle; white-space: nowrap; }
+  .tex-cases .tc-brace { display: inline-block; vertical-align: middle; font-weight: 300; line-height: 1;
+    transform-origin: center; margin-right: .15em; }
+  .tex-cases .tc-n2 { transform: scaleY(2.2); }
+  .tex-cases .tc-n3 { transform: scaleY(3.2); }
+  .tex-cases .tc-n4 { transform: scaleY(4.2); }
+  .tex-cases .tc-rows { display: inline-block; vertical-align: middle; text-align: left; }
+  .tex-cases .tc-row { display: block; line-height: 1.35; }
   .tex-block-plain { display: block; margin: 8px auto; text-align: center; }
   .theory-body .tex-block-plain { margin: 10px auto; }
 
@@ -2629,7 +2638,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-24 · đợt 100 · bản Hóa lý · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-09-28 · đợt 101 · bản Hóa lý · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -4396,8 +4405,17 @@
     alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', Delta: 'Δ', lambda: 'λ', mu: 'μ',
     nu: 'ν', sigma: 'σ', Sigma: 'Σ', Omega: 'Ω', pi: 'π', theta: 'θ', phi: 'φ', chi: 'χ',
     circ: '°', angle: '∠', perp: '⊥', parallel: '∥', partial: '∂', sum: '∑', prod: '∏',
-    ldots: '…', cdots: '⋯'
+    ldots: '…', cdots: '⋯',
+    /* đợt 101: cơ lượng tử / hóa lý */
+    hbar: 'ℏ', Psi: 'Ψ', psi: 'ψ', Phi: 'Φ', varphi: 'φ', omega: 'ω', epsilon: 'ε', varepsilon: 'ε',
+    eta: 'η', kappa: 'κ', rho: 'ρ', tau: 'τ', xi: 'ξ', zeta: 'ζ', Gamma: 'Γ', Lambda: 'Λ', Pi: 'Π',
+    Theta: 'Θ', Xi: 'Ξ', int: '∫', iint: '∬', iiint: '∭', oint: '∮', nabla: '∇', ell: 'ℓ',
+    dagger: '†', langle: '⟨', rangle: '⟩', in: '∈', notin: '∉', forall: '∀', exists: '∃',
+    Rightarrow: '⇒', Leftrightarrow: '⇔', sim: '∼', simeq: '≃', ll: '≪', gg: '≫', vdots: '⋮', prime: '′'
   };
+  /* dấu trên chữ (\hat{A} → Â): ký tự tổ hợp Unicode đứng ngay sau chữ — vẫn là chữ thật */
+  var TEX_ACCENTS = { hat: '̂', widehat: '̂', bar: '̄', overline: '̅', tilde: '̃',
+    dot: '̇', ddot: '̈', vec: '⃗' };
 
   /* Dịch một chuỗi lệnh LaTeX (đã nằm trong $...$) sang HTML chữ thường + <sup>/<sub> */
   function texCommandToPlain(src) {
@@ -4412,6 +4430,24 @@
     });
 
     s = s.replace(/\\left|\\right/g, '');
+    /* \hat{A}, \hat A, \hat{\Psi}: lookahead để \dots, \hbar, \vector… không bị nhận nhầm */
+    s = s.replace(/\\(hat|widehat|bar|overline|tilde|dot|ddot|vec)(?![a-zA-Z])\s*(?:\{([^{}]*)\}|(\\[a-zA-Z]+|[A-Za-z0-9]))/g,
+      function (m, cmd, grp, one) {
+        var x = (grp != null ? grp : one).trim().replace(/^\\([a-zA-Z]+)$/, function (mm, n) {
+          return TEX_SYMBOLS.hasOwnProperty(n) ? TEX_SYMBOLS[n] : mm;
+        });
+        return x + TEX_ACCENTS[cmd];
+      });
+    /* hệ có ngoặc nhọn: mỗi dòng một hàng, dấu & chỉ là chỗ canh cột → khoảng trắng. Dựng bằng
+       inline-block (không flexbox — html2canvas, xem đợt 92); dấu { là thực thể &#123; vì cuối hàm
+       xoá mọi ngoặc nhọn LaTeX còn sót. */
+    s = s.replace(/\\begin\s*\{cases\}([\s\S]*?)\\end\s*\{cases\}/g, function (m, body) {
+      var rows = body.split(/\\\\/).map(function (r) { return r.replace(/&amp;|&/g, ' ').trim(); })
+        .filter(function (r) { return r; });
+      return '<span class="tex-cases"><span class="tc-brace tc-n' + Math.min(rows.length, 4) + '">&#123;</span>'
+        + '<span class="tc-rows">' + rows.map(function (r) { return '<span class="tc-row">' + r + '</span>'; }).join('')
+        + '</span></span>';
+    });
     /* \sqrt và \frac dựng THẲNG thành căn thức / phân số. Khác hẳn cách cũ (đổi ra chữ
        "√(…)" rồi để bộ quét DOM đoán lại): ở đây biết CHẮC cái gì nằm dưới căn, cái gì là tử
        là mẫu, nên không bao giờ ôm hụt hay ôm lố. Chữ gốc vẫn nằm trong .can-kh để copy và
@@ -4420,6 +4456,13 @@
     s = s.replace(/\\sqrt\s*(\S)/g, function (m, x) { return texCan('', x); });
     s = s.replace(/\\[dt]?frac\s*(\S)\s*(\S)/g, function (m, a, b) { return texPs(a, b); });
 
+    /* hàm có tên (\cos\chi, \sin x) cách biến một khoảng như LaTeX in ra: "cos χ", không dính "cosχ";
+       còn \partial x, \nabla f thì liền nhau: "∂x" */
+    s = s.replace(/\\(sin|cos|tan|cot|sinh|cosh|tanh|ln|log|lg|exp|lim|det|max|min)(?![a-zA-Z])(?=\s*[\\A-Za-z])/g, '$1 ')
+         .replace(/\\partial\s+(?=[A-Za-z])/g, '∂').replace(/\\nabla\s+(?=[A-Za-z])/g, '∇')
+         /* dấu trừ đứng riêng (đầu biểu thức, sau dấu cách, "(", "=", "[", ",") là dấu trừ thật − như LaTeX in,
+            không đụng gạch nối kiểu l_{C-C} */
+         .replace(/(^|[\s(=\[,])-(?=\s*[\dA-Za-z\\(\[<])/g, '$1−');   /* "<": ngay trước phân số/căn đã dựng */
     /* Lệnh lạ (\lg, \log, \sin, \varepsilon…) không có trong bảng ký hiệu thì GIỮ NGUYÊN TÊN CHỮ,
        không được xóa trắng — mất một chữ "lg" hay "log" giữa công thức làm sai cả câu hỏi. */
     s = s.replace(/\\([a-zA-Z]+)/g, function (m, name) {
@@ -4436,7 +4479,7 @@
     }
     /* Dấu trừ đầu số mũ dùng dấu trừ thật (−) cho khớp với chỗ bộ vá số mũ sinh ra,
        không thì cùng một trang có chỗ "10⁻⁴" chỗ "10-4" nhìn lệch nhau. */
-    s = s.replace(/<sup>([^<]*)<\/sup>/g, function (m, x) { return '<sup>' + x.replace(/^[-\u2010-\u2014]/, '−') + '</sup>'; });
+    s = s.replace(/<sup>[-\u2010-\u2014]/g, '<sup>−');   /* cả số mũ lồng: e^{-x^2} */
     return s.replace(/[{}]/g, '').replace(/ {2,}/g, ' ').trim();
   }
 
