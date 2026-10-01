@@ -41,6 +41,23 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-10-01 — /api/* chết (404 trống) dù cấu hình đúng → phát lại Worker là sống
+
+**T thấy gì:** Quản trị → thêm Video báo "Máy chủ chưa có phần /api (bản mới chưa phát xong…)".
+
+**Đo được:** cả giangduonghoahoc.com lẫn workers.dev trả `404`, `Content-Length: 0`, mang header của
+`web/_headers` (HSTS, permissions-policy) → yêu cầu do PHẦN TỆP TĨNH trả, không tới worker.js. Nhưng Worker vẫn
+chạy cho "/" (UA LopHocApp vẫn được chuyển sang trang học) — tức chỉ mục `/api/*` của `run_worker_first` bị
+mất ở bản đang chạy. Repo không đổi: wrangler.jsonc/worker.js giữ nguyên từ 15/9; `wrangler dev` bản 4.145 trên
+máy chạy đúng hết; 6 lần Workers Builds gần nhất đều "success" (check-run trên GitHub không có log chi tiết).
+
+**Sửa:** commit rỗng `f9fa7c2` để Workers Builds phát lại cùng mã → `/api/trang-thai` 200 (khoá service role
+có, Stream 200), `/api/stream/danh-sach` không đăng nhập trả 401 JSON đúng. Không rõ lần phát nào làm hỏng.
+**Lần sau gặp "chưa có phần /api":** `curl -sI <miền>/api/trang-thai` — 404 rỗng + header _headers = Worker
+không được gọi → phát lại (commit rỗng) trước khi nghi mã; xem kết quả ở check-run "Workers Builds" của commit.
+
+---
+
 ## 2026-09-28 — Sổ Bài Tập đợt 101: LaTeX cho Hóa lý + file nhập "Bài tập hoá lí 1"
 
 Bộ dịch công thức thêm dấu mũ toán tử (Â), ℏ Ψ ∂ ∫…, hệ ngoặc nhọn. Sổ Hóa lý bản web lưu trên Supabase
