@@ -41,6 +41,55 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-10-11 — Bỏ hẳn tự đăng xuất khi không thao tác (chỉ giữ canh gác chụp/quay)
+
+**T yêu cầu:** vẫn bị out sau 15 phút → bỏ luôn tính năng, chỉ giữ cảnh báo khi chụp/quay màn hình.
+
+**Phát hiện:** bản sửa 05/10 bên dưới **chưa từng được commit/đẩy lên** — trang đang chạy vẫn là bản 24/9
+(đếm 15 phút, không thấy chuột trong video). Nay thay cả hai bằng việc bỏ hẳn.
+
+**Sửa (`web/hoc.html`):** gỡ hộp "Bạn còn đó không?", toàn bộ đồng hồ nghỉ (`IDLE_MS`, `IDLE_CUNG`,
+`hoatDong`, `hoatDongNgam`, vòng 5 giây, các bộ nghe chuột/phím/khung nhúng), hai chỗ gọi trong vòng
+ghi tiến độ video, câu "tự đăng xuất sau 15 phút" ở màn đăng nhập và trong Hỏi đáp, câu báo `hoc-ly-do=idle`.
+**Giữ nguyên:** PrintScreen, Win+Shift+S, Ctrl+P/S, phần mềm quay do app dò, 3 lần thì khoá, che mờ khi rời
+cửa sổ, nhắc lần đầu. CSS `.idle` để lại (vô hại).
+
+**Đã test:** cú pháp script nội tuyến sạch; mở trang tại máy, không lỗi console, màn đăng nhập hiện đúng.
+
+## 2026-10-05 — Đang xem video vẫn bị đẩy ra sau 15 phút (sửa tận gốc, không phải nới số phút)
+
+**T thấy gì:** ngồi xem, chuột vẫn rê, mà vẫn bị đăng xuất đúng một lần ở mốc 15 phút.
+
+**Vì sao:** đồng hồ nghỉ chỉ nghe sự kiện chuột/phím trên `window` của trang cha. Video Cloudflare Stream,
+YouTube và tài liệu nhúng đều nằm trong `iframe` khác nguồn — chuột chạy, bấm, cuộn bên trong khung đó
+**không lọt ra ngoài**, trang cha thấy im như tờ. Ai ngồi xem video là chắc chắn dính. Lần 24/9 nâng
+`IDLE_MS` 5 → 15 phút chỉ đẩy lùi chứ không chữa. Tệ hơn: video thường chạy toàn màn hình, mà hộp đếm
+ngược 30 giây nằm trong trang cha nên bị màn hình video phủ kín — out mà không kịp thấy gì.
+
+**Sửa (`web/hoc.html`, một mình nó):**
+- Tách hai loại dấu hiệu: **thao tác thật** (chuột/phím/cuộn/chạm trên trang cha → `lastThat`) và
+  **dấu hiệu ngầm** (→ chỉ `lastAct`). Ngầm gồm: video đang chạy, chuột đang nằm trong khung nhúng,
+  tiêu điểm vào/ra khung nhúng, trang vừa lấy lại tiêu điểm, đổi toàn màn hình.
+- 15 phút không có dấu hiệu nào → hỏi như cũ. Mốc cứng **2 giờ** không có thao tác thật thì vẫn hỏi,
+  dù video còn chạy — không để phiên mở vô hạn trên máy đã bỏ đi.
+- Dấu hiệu ngầm **không tự tắt** hộp đã hiện; phải có thao tác thật hoặc bấm "Tôi vẫn đang học".
+- Chuột vào/ra khung nhúng: trang cha vẫn nhận được `mouseover`/`mouseout` của chính thẻ `iframe`
+  (chỉ không thấy chuột chạy bên trong) — dùng đúng hai sự kiện đó để biết chuột còn nằm trong khung.
+- Video đang chạy = đang học: mốc `currentTime` nhích (Stream) / `getCurrentTime()` nhích (YouTube) trong
+  vòng lặp ghi tiến độ sẵn có, 10 giây một nhịp.
+- Hiện hộp đếm ngược thì **thoát toàn màn hình trước** rồi kéo tiêu điểm về nút "Tôi vẫn đang học".
+- Sự kiện nghe ở `capture`, thêm `pointermove`/`click`/`keyup`/`touchmove` cho chắc.
+
+**Đã test** (bản thử tại máy, rút `IDLE_MS` còn 15 giây và mốc cứng 40 giây, chuột thật rê trong pane):
+không thao tác gì → 15 giây hiện hộp, hết 30 nhịp thì đăng xuất (đúng như cũ); đưa chuột vào khung nhúng
+rồi buông tay → qua 21 giây vẫn không bị đẩy ra, nhịp ngầm đều 5 giây một lần; để tiếp tới mốc cứng 40 giây
+→ hộp hiện, tiêu điểm nhảy vào đúng nút; rê chuột một cái → hộp tắt, hai đồng hồ về 0. `test/ra-soat.js` sạch.
+
+**Chưa test được tại máy:** nhịp "video đang chạy" (bản thử không đăng nhập thật nên không xin được vé xem
+Stream) và bước thoát toàn màn hình (pane trình duyệt chặn Fullscreen API). Cả hai đều bọc `try/catch`.
+
+---
+
 ## 2026-10-01 — Sổ Bài Tập đợt 102: hình lớn chiếm trọn hàng khi xếp nhiều cột
 
 Cho đề Hữu cơ "Kiểm tra tuần 2 chương 7" (file nạp `So_Bai_Tap_HUS\Sao_luu\NhapTuan2_HuuCo_KiemTraChuong7.json`,
