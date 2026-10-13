@@ -345,6 +345,8 @@
   .uptien{ margin:8px 0 4px } .uptien .bar{ height:10px; border-radius:99px; background:var(--surface-2, #eee); overflow:hidden }
   .uptien .bar i{ display:block; height:100%; width:0; border-radius:99px; background:var(--primary); transition:width .3s }
   .uptien .chu{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:5px }
+  details.ses.keo-vao, .modbox.keo-vao{ outline:2px dashed var(--primary); outline-offset:3px }
+  .addrow .keo-hint{ color:var(--muted); font-size:12px; align-self:center; margin-left:4px }
   .uptien .chu button{ border:0; background:none; color:var(--danger, #a72e48); font:inherit; font-size:12.5px; cursor:pointer; text-decoration:underline }
   /* ---------- Trang công khai ---------- */
   .tck{ display:grid; gap:14px }
@@ -699,6 +701,7 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
       + '  <button class="btn sm" data-a="add-mat" data-s="' + sesId + '"' + mod + ' data-k="link">＋ Liên kết</button>'
       + '  <button class="btn sm" data-a="add-mat" data-s="' + sesId + '"' + mod + ' data-k="text">＋ Ghi chú</button>'
       + '  <button class="btn sm" data-a="add-mat" data-s="' + sesId + '"' + mod + ' data-k="answer">＋ Đáp án (khoá theo giờ)</button>'
+      + '  <span class="keo-hint">hoặc kéo thả PDF / ảnh / video vào đây</span>'
       + '</div>';
   }
 
@@ -1624,6 +1627,123 @@ var SUPABASE_ANON_KEY = 'sb_publishable_wYan8ql2gDukI261zLrXeA_fUCG9bnP';
     hangCho = hangCho.concat(ds); hangTong += ds.length;
     chayHangCho();
   });
+
+  /* ---------------- Kéo thả nhiều tệp vào buổi ----------------
+     Thả lên thẻ buổi (kể cả đang thu gọn) → tài liệu rời của buổi; thả lên một module → vào module đó.
+     PDF/ảnh và video tự nhận loại theo đuôi tệp; hiện hộp xác nhận (giờ mở, nhận bài, quỹ xem…) rồi
+     thêm lần lượt — tệp trước, video sau (video tải lên Stream từng cái, xong cái nào tạo mục cái đó).
+     Đang mở hộp "Thêm" mà thả vào hộp thì tệp đi thẳng vào ô chọn tệp của hộp đó. */
+  var DUOI_VIDEO = /\.(mp4|m4v|mov|mkv|webm|avi|wmv|flv|mpe?g|3gp)$/i, DUOI_TEP = /\.(pdf|png|jpe?g|gif|webp|bmp|heic)$/i;
+  function loaiTepTha(f) {
+    if (/^video\//.test(f.type) || DUOI_VIDEO.test(f.name)) return 'video';
+    if (f.type === 'application/pdf' || /^image\//.test(f.type) || DUOI_TEP.test(f.name)) return 'tep';
+    return '';
+  }
+  function coTep(e) { return e.dataTransfer && [].indexOf.call(e.dataTransfer.types || [], 'Files') >= 0; }
+  function dichTha(e) {
+    var ses = e.target.closest && e.target.closest('details.ses[data-s]'); if (!ses) return null;
+    var mo = e.target.closest('.modbox[data-mod]');
+    return { el: mo || ses, sesId: ses.dataset.s, modId: mo ? mo.dataset.mod : null };
+  }
+  var dichDangSang = null;
+  function sangDich(el) {
+    if (dichDangSang === el) return;
+    if (dichDangSang) dichDangSang.classList.remove('keo-vao');
+    dichDangSang = el; if (el) el.classList.add('keo-vao');
+  }
+  document.addEventListener('dragover', function (e) {
+    if (!coTep(e)) return;
+    e.preventDefault();   /* luôn chặn: thả trượt ra ngoài thì trình duyệt/app không tự mở tệp */
+    var d = $('dlg').hidden ? dichTha(e) : null;
+    e.dataTransfer.dropEffect = d || (!$('dlg').hidden && e.target.closest('#dlg')) ? 'copy' : 'none';
+    sangDich(d ? d.el : null);
+  });
+  document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) sangDich(null); });
+  document.addEventListener('drop', function (e) {
+    if (!coTep(e)) return;
+    e.preventDefault(); sangDich(null);
+    var ds = [].slice.call(e.dataTransfer.files || []); if (!ds.length) return;
+    /* hộp "Thêm" đang mở: đổ vào ô chọn tệp của nó */
+    if (!$('dlg').hidden) {
+      if (!e.target.closest('#dlg')) return;
+      var oVid = $('fStFile'), oTep = $('fFile');
+      var dt = new DataTransfer();
+      if (oVid) { ds.filter(function (f) { return loaiTepTha(f) === 'video'; }).forEach(function (f) { dt.items.add(f); }); if (dt.files.length) { oVid.files = dt.files; oVid.dispatchEvent(new Event('change', { bubbles: true })); } }
+      else if (oTep) {
+        ds.filter(function (f) { return loaiTepTha(f) === 'tep'; }).slice(0, oTep.multiple ? 999 : 1).forEach(function (f) { dt.items.add(f); });
+        if (dt.files.length) { oTep.files = dt.files; msg($('dlgMsg'), 'Đã nhận ' + dt.files.length + ' tệp — bấm ' + $('dlgOk').textContent + '.', 'ok'); }
+      }
+      return;
+    }
+    var d = dichTha(e); if (!d) { toast('Thả tệp lên một buổi học (hoặc một module trong buổi).'); return; }
+    thaTepVaoBuoi(d.sesId, d.modId, ds);
+  });
+
+  function thaTepVaoBuoi(sesId, modId, ds) {
+    var ses = sessions.filter(function (x) { return x.id === sesId; })[0] || {};
+    var mo = modId ? ((ses.modules || []).filter(function (x) { return x.id === modId; })[0] || {}) : null;
+    var tep = [], vid = [], bo = [];
+    ds.forEach(function (f) {
+      var l = loaiTepTha(f);
+      if (l === 'tep' && f.size > 40 * 1024 * 1024) bo.push(f.name + ' — trên 40 MB, nén lại hoặc tách nhỏ');
+      else if (l === 'video' && f.size > 30 * 1024 * 1024 * 1024) bo.push(f.name + ' — trên 30 GB, Cloudflare không nhận');
+      else if (l === 'tep') tep.push(f); else if (l === 'video') vid.push(f);
+      else bo.push(f.name + ' — không phải PDF, ảnh hay video');
+    });
+    if (!tep.length && !vid.length) {
+      dialog('Không thêm được tệp nào', '<ul>' + bo.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>', function () { return true; }, 'Đóng', { giu: true });
+      return;
+    }
+    var mb = function (n) { return n >= 1048576 ? Math.round(n / 1048576) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; };
+    var dong = function (f, ic) { return '<li>' + ic + ' ' + esc(f.name) + ' <small style="color:var(--muted)">· ' + mb(f.size) + '</small></li>'; };
+    var body = '<p class="hint" style="margin-top:0">Vào <b>' + esc(ses.title || 'buổi') + '</b>' + (mo ? ' → module <b>' + esc(mo.title || '') + '</b>' : '')
+      + '. Mỗi tệp thành một mục riêng, tên lấy theo tên tệp — sửa tên từng cái sau.</p>'
+      + '<ul style="margin:0 0 12px;padding-left:18px;max-height:200px;overflow:auto">'
+      + tep.map(function (f) { return dong(f, '📄'); }).join('') + vid.map(function (f) { return dong(f, '🎬'); }).join('') + '</ul>'
+      + (bo.length ? '<p class="hint">Bỏ qua: ' + esc(bo.join(' · ')) + '</p>' : '');
+    if (tep.length) body += '<label class="f">' + tep.length + ' tệp PDF / ảnh thêm thành<select id="fThaKieu"><option value="pdf">' + esc(KIND.pdf.name) + '</option><option value="lecture">' + esc(KIND.lecture.name) + '</option></select></label>';
+    body += '<label class="f">Mở lúc (để trống là mở ngay)<input id="fOpen" type="datetime-local"><small>Áp cho tất cả các mục trong lượt này.</small></label>';
+    if (tep.length) body += oNhanBai(false, null) + oChoTai(false);
+    if (vid.length) body += oChonQuy(0) + '<div id="fStTien"></div>';
+    vidChon = []; hangCho = []; dangHangDoi = false;
+    dialog('Thêm ' + (tep.length + vid.length) + ' tệp vào buổi', body, async function () {
+      justOpenSes = sesId;
+      var openAt = fromLocalInput(val('fOpen'));
+      var chungTep = { openAt: openAt, quyGiay: null, nhanBai: $('fNhan') ? $('fNhan').checked : null, hanNop: $('fHan') ? fromLocalInput(val('fHan')) : null, choTai: $('fTai') ? $('fTai').checked : null, xemKhongTai: null };
+      var chungVid = { openAt: openAt, quyGiay: $('fQuy') ? (Number(val('fQuy')) || 0) * 60 : 0, nhanBai: null, hanNop: null, choTai: null, xemKhongTai: null };
+      var kieuTep = $('fThaKieu') ? $('fThaKieu').value : 'pdf';
+      var order = ((ses.materials) || []).reduce(function (m, x) { return Math.max(m, x.order_no || 0); }, 0) + 1;
+      var tong = tep.length + vid.length, soXong = 0, hong = [], ten;
+      dangHangDoi = true;
+      for (var i = 0; i < tep.length && dangHangDoi; i++) {
+        ten = tep[i].name.replace(/\.[^.]+$/, '');
+        msg($('dlgMsg'), 'Đang thêm ' + (i + 1) + '/' + tong + ': ' + ten + '…', 'ok');
+        var loi = await luuMotTaiLieu(null, sesId, kieuTep, modId, ten, { file: tep[i], ten: ten }, chungTep, order++, false);
+        if (loi) hong.push({ ten: ten, loi: loi }); else soXong++;
+      }
+      hangTong = vid.length; hangSo = 0;
+      for (var j = 0; j < vid.length && dangHangDoi; j++) {
+        ten = vid[j].name.replace(/\.[^.]+$/, ''); hangSo = j + 1;
+        msg($('dlgMsg'), 'Video ' + (j + 1) + '/' + vid.length + ': đang tải "' + ten + '" lên Cloudflare — đừng đóng hộp thoại…', 'ok');
+        try {
+          var uid = await taiVideoLen(vid[j]);
+          var loi2 = await luuMotTaiLieu(null, sesId, 'video', modId, ten, { url: 'stream:' + uid, ten: ten }, chungVid, order++, false);
+          if (loi2) hong.push({ ten: ten, loi: loi2 }); else soXong++;
+        } catch (err) { if (dangHangDoi) hong.push({ ten: ten, loi: String(err && err.message || err) }); }
+      }
+      var dung = !dangHangDoi;
+      dangHangDoi = false; hangTong = 0; hangSo = 0;
+      await loadSessions();
+      if (dung && $('dlg').hidden) { toast('Đã dừng — thêm được ' + soXong + '/' + tong + ' mục.'); return; }
+      if (!hong.length && !dung) { toast('Đã thêm ' + soXong + ' tài liệu.' + (vid.length ? ' Video cần vài phút để Cloudflare xử lý.' : '')); return; }
+      var conLai = tong - soXong - hong.length;
+      dialog('Thêm được ' + soXong + '/' + tong + ' mục',
+        (hong.length ? '<p class="hint">Các mục dưới đây <b>chưa</b> được thêm — kéo thả lại riêng chúng:</p><ul>'
+          + hong.map(function (h) { return '<li><b>' + esc(h.ten) + '</b> — ' + esc(h.loi) + '</li>'; }).join('') + '</ul>' : '')
+        + (conLai > 0 ? '<p class="hint">Đã dừng giữa chừng: ' + conLai + ' tệp chưa được thêm (kể cả tệp đang tải dở) — kéo thả lại riêng chúng.</p>' : ''),
+        function () { return true; }, 'Đóng', { giu: true });
+    }, 'Thêm ' + (tep.length + vid.length) + ' mục');
+  }
 
   function editMaterial(id) {
     var m = matById(id); if (!m) return;

@@ -41,6 +41,25 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-10-13 (sau) — Quản trị: kéo thả nhiều tệp vào buổi
+
+**T yêu cầu:** kéo thả nhiều tệp thẳng vào buổi.
+
+**Sửa (`web/quan-tri.html`):**
+- Thả tệp lên **thẻ buổi** (kể cả đang thu gọn) → tài liệu rời của buổi; thả lên **một module** → vào module đó.
+  Đang kéo qua thì vùng nhận có viền đứt nét; hàng nút ＋ có dòng nhắc "hoặc kéo thả PDF / ảnh / video vào đây".
+- Tự nhận loại theo kiểu/đuôi tệp: PDF/ảnh → tệp (chọn thêm thành Phiếu bài tập hay Bài giảng viết tay),
+  video → tải lên Stream. Tệp khác (docx…), PDF > 40 MB, video > 30 GB → liệt kê "Bỏ qua".
+- Hộp xác nhận "Thêm N tệp vào buổi": danh sách tệp, giờ mở chung, nhận bài / cho tải (cho PDF), quỹ xem (cho video).
+  Chạy tệp trước, video sau (từng cái, có tiến trình + Dừng); hỏng/dừng giữa chừng → hộp kết quả liệt kê mục chưa thêm.
+- Đang mở hộp "＋ Tệp PDF" / "＋ Video" mà thả vào hộp → tệp đi thẳng vào ô chọn tệp của hộp đó.
+- `dragover`/`drop` có tệp luôn `preventDefault` ở cả trang — thả trượt ra ngoài không làm app/trình duyệt mở tệp.
+
+**Đã test** (bản thử, DragEvent + DataTransfer giả, mạng video giả): thả 4 tệp (pdf, png, mp4, docx) lên buổi →
+hộp đúng 3 mục + bỏ qua docx; Thêm (kiểu Bài giảng viết tay) → 3 mục vào buổi, buổi vẫn mở. Thả vào module →
+mục nằm trong module. Thả 3 tệp vào hộp ＋ Tệp PDF đang mở → nhận 2 PDF. Thả 2 video rồi Dừng → hộp kết quả 0/2.
+Console sạch, `test/ra-soat.js` sạch. **Chưa test:** kéo thả bằng chuột thật từ Explorer vào app Windows.
+
 ## 2026-10-13 — Quản trị: thêm nhiều PDF / nhiều video một lúc cho một buổi
 
 **T yêu cầu:** đẩy nhiều tài liệu PDF hay video cùng lúc vào một buổi, khỏi mở hộp "Thêm" từng cái.
