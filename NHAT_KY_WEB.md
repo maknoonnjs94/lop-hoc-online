@@ -41,6 +41,29 @@ curl -s https://lop-hoc-online.giangduonghoahoc.workers.dev/api/trang-thai
 **Bẫy khi ghi nhật ký (đã dính 11/9):** `String.replace(moc, chuoi)` hiểu `$`+backtick và `$'` trong chuỗi thay thế là mẫu đặc biệt → chèn cả đầu tệp vào giữa mục. Từ nay dùng `replace(moc, function () { return chuoi; })` hoặc ghép chuỗi tay.
 ---
 
+## 2026-10-13 — Quản trị: thêm nhiều PDF / nhiều video một lúc cho một buổi
+
+**T yêu cầu:** đẩy nhiều tài liệu PDF hay video cùng lúc vào một buổi, khỏi mở hộp "Thêm" từng cái.
+
+**Sửa (`web/quan-tri.html`):**
+- **＋ Tệp PDF / ảnh** (và các loại tệp khác): ô chọn tệp có `multiple` — giữ Ctrl chọn nhiều, mỗi tệp
+  thành một tài liệu riêng, tên lấy theo tên tệp, cùng giờ mở / nhận bài / cho tải.
+- **＋ Video:** "Chọn video đã tải lên" giờ bấm được nhiều dòng (bấm lại = bỏ chọn); "Tải video lên" chọn
+  được nhiều tệp, chạy **lần lượt** theo hàng chờ (thanh tiến trình "Video 2/5 · tên — MB"), tệp nhỏ
+  chuyển sang XHR để có tiến trình + nút Dừng. Video xong cái nào vào dải "Sẽ thêm N video" (có ✕ bỏ).
+  Một tệp hỏng không chặn các tệp sau; cuối hàng báo "Tải xong x/y, hỏng: …".
+- Bấm Thêm khi video còn đang tải → chặn, báo chờ. Đóng hộp → dừng cả hàng chờ.
+- `saveMaterial` tách thành vòng lặp + `luuMotTaiLieu` (tạo/sửa đúng một mục). Một mục thì y như cũ
+  (lỗi → giữ hộp, báo lỗi). Nhiều mục mà hỏng một phần → những mục đã thêm giữ nguyên, hiện hộp kết quả
+  liệt kê mục chưa thêm (để không bấm lại rồi bị trùng). Ô "Tên hiển thị" chỉ dùng khi thêm đúng một mục.
+- Sửa tài liệu: không đổi (vẫn một tệp).
+
+**Đã test** (bản thử `_test_quan-tri.html`, mạng tải giả): chọn 2 video có sẵn → 2 chip, bỏ/chọn lại đúng;
+tải 3 video (tệp thứ 2 giả HTTP 500) → chạy lần lượt, bấm Thêm giữa chừng bị chặn, cuối báo 2/3; Thêm →
+4 mục video vào buổi, tên theo video. 3 PDF một lúc → 3 tài liệu "Phieu 1", "Phieu 2", "De cuong".
+Sửa tên một tài liệu cũ vẫn đúng. Console sạch, `test/ra-soat.js` sạch.
+**Chưa test thật:** tải lên Cloudflare Stream thật nhiều tệp liền (bản thử không có mạng thật).
+
 ## 2026-10-11 — Bỏ hẳn tự đăng xuất khi không thao tác (chỉ giữ canh gác chụp/quay)
 
 **T yêu cầu:** vẫn bị out sau 15 phút → bỏ luôn tính năng, chỉ giữ cảnh báo khi chụp/quay màn hình.
