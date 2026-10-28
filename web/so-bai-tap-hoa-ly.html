@@ -568,9 +568,10 @@
     align-items: flex-start;
     gap: 8px;
     flex: 0 1 auto;
-    min-width: calc(50% - 10px);  /* đợt 104: đúng nửa hàng (trừ nửa khoảng cách 20px) → B, D bắt đầu từ giữa, 2 cột đối xứng */
+    min-width: calc(60% - 10px);  /* đợt 105: cột 1 (A, C) chiếm 60% hàng, cột 2 (B, D) 40% → B, D sát mép phải hơn */
     max-width: 100%;               /* phương án dài: được phép rộng hết hàng, không bị bóp chật */
   }
+  .mc-opt:nth-child(even) { min-width: calc(40% - 10px); }
   .mc-letter {
     flex-shrink: 0;
     display: grid;
@@ -769,6 +770,9 @@
     font-weight: 700;
     color: var(--primary);
   }
+  /* đợt 105: trắc nghiệm — chip điểm nằm dưới "Câu N." để đề bài được rộng, đỡ tốn dòng */
+  .problem-num.stack-pts { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .problem-num.stack-pts .points-chip { margin-left: 0; }
   /* Tiêu đề khối dạng bài: phiếu chia thành từng cụm, mỗi cụm là một dạng.
      Học sinh nhìn là biết cụm này luyện dạng gì. */
   .dang-divider { list-style: none; margin: 22px 0 10px; break-after: avoid; break-inside: avoid; }
@@ -2639,7 +2643,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-10-28 · đợt 104 · bản Hóa lý · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-10-28 · đợt 105 · bản Hóa lý · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
@@ -6067,7 +6071,7 @@
       html += '    <button type="button" class="mini-btn danger" data-action="delete-problem" data-pid="' + p.id + '">Xóa câu</button>';
       html += '  </div>';
       html += '  <div class="problem-head">';
-      html += '    <span class="problem-num">' + qLabelText(week, pi)
+      html += '    <span class="problem-num' + (qtypeOf(p) === 'mc' && p.points != null ? ' stack-pts' : '') + '">' + qLabelText(week, pi)
               + (p.points == null ? '' : ' <span class="points-chip" contenteditable="true" spellcheck="false"'
                  + ' data-points="' + p.id + '">' + formatPoints(p.points) + ' điểm</span>')
               + '</span>';
