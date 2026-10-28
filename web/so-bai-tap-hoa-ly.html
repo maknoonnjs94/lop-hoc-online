@@ -568,7 +568,7 @@
     align-items: flex-start;
     gap: 8px;
     flex: 0 1 auto;
-    min-width: min(45%, 220px);   /* phương án ngắn: neo tối thiểu ~nửa hàng để 2 câu đứng cạnh nhau */
+    min-width: calc(50% - 10px);  /* đợt 104: đúng nửa hàng (trừ nửa khoảng cách 20px) → B, D bắt đầu từ giữa, 2 cột đối xứng */
     max-width: 100%;               /* phương án dài: được phép rộng hết hàng, không bị bóp chật */
   }
   .mc-letter {
@@ -2639,7 +2639,7 @@
     </div></div>
     <!-- Dấu bản cập nhật: tăng số đợt MỖI LẦN publish, khớp số đợt trong NHAT_KY_PHIEN_LAM_VIEC.md.
          Tab mở sẵn từ trước khi publish không tự đổi — thấy số đợt thấp hơn nhật ký thì bấm F5. -->
-    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-10-28 · đợt 103 · bản Hóa lý · bản web</div>
+    <div class="menu-build" title="Số đợt khớp với nhật ký làm việc. Nếu thấp hơn đợt mới nhất trong nhật ký thì tab này đang chạy bản cũ — bấm F5 để tải bản mới.">Bản cập nhật: 2026-10-28 · đợt 104 · bản Hóa lý · bản web</div>
   </div>
   <input type="file" id="restoreFileInput" accept=".json,application/json" hidden>
 
